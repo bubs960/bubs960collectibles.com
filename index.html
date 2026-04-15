@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bubs960 | Authenticated Registry - Coming Soon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #020617;
+            font-family: 'Inter', sans-serif;
+            color: white;
+            overflow-x: hidden;
+            margin: 0;
+        }
+
+        .glow-red {
+            box-shadow: 0 0 40px rgba(239, 68, 68, 0.3);
+        }
+
+        .bg-glow {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.15;
+            z-index: 0;
+        }
+
+        .blur-circle {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+        }
+
+        .top-left {
+            top: -10%;
+            left: -10%;
+            width: 50vw;
+            height: 50vh;
+            background: #ef4444;
+        }
+
+        .bottom-right {
+            bottom: -10%;
+            right: -10%;
+            width: 40vw;
+            height: 40vh;
+            background: #1e3a8a;
+        }
+
+        .italic-900 {
+            font-weight: 900;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- BACKGROUND DEPTH -->
+    <div class="bg-glow">
+        <div class="blur-circle top-left"></div>
+        <div class="blur-circle bottom-right"></div>
+    </div>
+
+    <div class="relative z-10 min-h-screen flex flex-col">
+        <!-- HEADER -->
+        <header class="p-8 md:p-12 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <div class="bg-red-600 p-2 rounded-xl glow-red">
+                    <!-- Shield SVG -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-4xl italic-900 tracking-tighter uppercase leading-none">
+                        Bubs<span class="text-red-600">960</span>
+                    </h1>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-[0.4em] mt-1">Authenticated
+                        Registry</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 flex flex-col items-center justify-center px-6 py-12 text-center max-w-4xl mx-auto w-full">
+            <div
+                class="inline-flex items-center gap-2 bg-slate-900/50 border border-slate-800 px-5 py-2 rounded-full mb-10">
+                <span class="relative flex h-2.5 w-2.5">
+                    <span
+                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600"></span>
+                </span>
+                <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Registry Indexing
+                    Live</span>
+            </div>
+
+            <h2 class="text-6xl md:text-9xl italic-900 uppercase tracking-tighter leading-[0.85] mb-10">
+                The Future <br>Of The <span class="text-red-600">Hunt.</span>
+            </h2>
+
+            <p class="text-base md:text-xl text-slate-400 font-medium max-w-2xl leading-relaxed mb-12">
+                Establishing the world's most comprehensive authenticated collectible registry.
+                Real-time pricing, visual set-tracking, and AI-powered identification for serious collectors.
+            </p>
+
+            <!-- CTA AREA -->
+            <div class="w-full max-w-lg space-y-6">
+                <div class="pt-2">
+                    <a href="https://chromewebstore.google.com/detail/figurepinner-%E2%80%94-action-fig/okacelmjpogkmeejifeiemmnghlldbod"
+                        target="_blank"
+                        class="inline-flex items-center gap-3 bg-red-600 hover:bg-white hover:text-black text-white font-bold uppercase tracking-widest px-10 py-5 rounded-2xl transition-all shadow-2xl active:scale-95">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m7.5 4.27 9 5.15" />
+                            <path
+                                d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+                            <path d="m3.3 7 8.7 5 8.7-5" />
+                            <path d="M12 22V12" />
+                        </svg>
+                        Get FigurePinner Extension
+                    </a>
+                </div>
+            </div>
+
+            <!-- STATUS TILES -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mt-24">
+                <div class="bg-slate-900/40 border border-slate-800 p-8 rounded-[2.5rem] text-left">
+                    <div class="text-red-600 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m7.5 4.27 9 5.15" />
+                            <path
+                                d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+                            <path d="m3.3 7 8.7 5 8.7-5" />
+                            <path d="M12 22V12" />
+                        </svg>
+                    </div>
+                    <h4 class="text-xs font-black uppercase italic">20,000+ Assets</h4>
+                    <p class="text-[10px] text-slate-500 mt-1 font-medium">Global catalog indexing verified.</p>
+                </div>
+                <div class="bg-slate-900/40 border border-slate-800 p-8 rounded-[2.5rem] text-left">
+                    <div class="text-red-600 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </svg>
+                    </div>
+                    <h4 class="text-xs font-black uppercase italic">Secure Vaults</h4>
+                    <p class="text
