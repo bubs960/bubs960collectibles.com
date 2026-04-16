@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bubs960 Collectibles | Authenticated Wrestling Registry - Coming Soon</title>
+    <title>Bubs960 Collectibles | Authenticated Vault - Coming Soon</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
@@ -17,11 +17,14 @@
             overflow-x: hidden;
         }
 
-        /* Premium Slanted Heavy Typography */
         .brand-text {
             font-weight: 900;
             font-style: italic;
             letter-spacing: -0.05em;
+        }
+
+        .accent-yellow {
+            color: #FACC15;
         }
 
         .bg-glow {
@@ -32,7 +35,7 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
-            opacity: 0.15;
+            opacity: 0.1;
             z-index: 0;
         }
 
@@ -50,37 +53,28 @@
             background: #ef4444;
         }
 
-        .bottom-right {
-            bottom: -10%;
-            right: -10%;
-            width: 40vw;
-            height: 40vh;
-            background: #1e3a8a;
-        }
-
-        .cta-glow {
-            box-shadow: 0 0 30px rgba(239, 68, 68, 0.3);
+        .badge-blue {
+            background: rgba(30, 58, 138, 0.3);
+            border: 1px solid #1e40af;
+            color: #60a5fa;
         }
     </style>
 </head>
 
 <body class="selection:bg-red-600 selection:text-white">
-    <!-- BACKGROUND DEPTH -->
     <div class="bg-glow">
         <div class="blur-circle top-left"></div>
-        <div class="blur-circle bottom-right"></div>
     </div>
 
     <div class="relative z-10 min-h-screen flex flex-col">
-        <!-- HEADER -->
-        <header class="p-8 md:p-12">
-            <div class="flex items-center gap-5">
-                <!-- RESTORED VERSION 1 LOGO: WRESTLER SHIELD -->
+        <!-- HEADER (MATCHING SCREENSHOT AESTHETIC) -->
+        <header
+            class="w-full max-w-6xl mx-auto px-8 py-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div class="flex items-center gap-6">
+                <!-- VERSION 1 WRESTLER LOGO -->
                 <div class="relative">
-                    <svg width="60" height="60" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Shield Base -->
+                    <svg width="65" height="65" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M50 5L90 20V50C90 75 70 90 50 95C30 90 10 75 10 50V20L50 5Z" fill="#ef4444" />
-                        <!-- Wrestler Silhouette -->
                         <path
                             d="M50 25C53 25 55 27 55 30C55 33 53 35 50 35C47 35 45 33 45 30C45 27 47 25 50 25ZM35 45L45 40V55L40 75H45L50 60L55 75H60L55 55V40L65 45L70 40L55 35H45L30 40L35 45Z"
                             fill="white" />
@@ -88,42 +82,39 @@
                     </svg>
                 </div>
                 <div>
-                    <h1 class="text-4xl brand-text uppercase leading-none text-white tracking-tighter">
-                        Bubs<span class="text-red-600">960</span>
+                    <h1 class="text-6xl brand-text uppercase leading-none text-white tracking-tighter">
+                        BUBS<span class="text-red-600">960</span>
                     </h1>
-                    <p class="text-[10px] text-slate-500 font-black uppercase tracking-[0.45em] mt-1">Authenticated
-                        Collectibles</p>
+                    <p class="text-xl font-black italic accent-yellow uppercase tracking-[0.2em] mt-1">
+                        AUTHENTICATED VAULT
+                    </p>
                 </div>
+            </div>
+
+            <div class="badge-blue px-6 py-2 rounded-sm">
+                <p class="text-[10px] font-black uppercase tracking-widest">
+                    VAULT STATUS: INDEXING
+                </p>
             </div>
         </header>
 
-        <!-- MAIN CONTENT -->
-        <main class="flex-1 flex flex-col items-center justify-center px-6 py-12 text-center max-w-4xl mx-auto w-full">
-            <div
-                class="inline-flex items-center gap-2 bg-slate-900/80 border border-slate-800 px-5 py-2 rounded-full mb-10">
-                <span class="relative flex h-2 w-2">
-                    <span
-                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
-                </span>
-                <span class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Vault Alpha Indexing In
-                    Progress</span>
-            </div>
+        <div class="w-full max-w-6xl mx-auto h-px bg-slate-900 mb-20" />
 
-            <h2 class="text-6xl md:text-9xl brand-text uppercase tracking-tighter leading-[0.85] mb-10 text-white">
-                The Future <br>Of The <span class="text-red-600">Hunt.</span>
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 flex flex-col items-center justify-center px-6 text-center max-w-4xl mx-auto w-full pb-20">
+            <h2 class="text-6xl md:text-8xl brand-text uppercase tracking-tighter leading-[0.85] mb-8 text-white">
+                THE FUTURE <br>OF THE <span class="text-red-600">HUNT.</span>
             </h2>
 
-            <p class="text-base md:text-xl text-slate-400 font-medium max-w-2xl leading-relaxed mb-12">
-                Bubs960 is establishing the world's most comprehensive authenticated wrestling collectible registry.
-                Our 20,000+ asset vault is currently being audited for real-time market accuracy.
+            <p
+                class="text-base md:text-xl text-slate-500 font-medium max-w-2xl leading-relaxed mb-12 uppercase tracking-widest italic">
+                Registry Alpha v4.0 • 20,000+ Verified Assets Offline
             </p>
 
-            <!-- CALL TO ACTION AREA -->
             <div class="w-full max-w-lg space-y-6">
                 <a href="https://chromewebstore.google.com/detail/figurepinner-%E2%80%94-action-fig/okacelmjpogkmeejifeiemmnghlldbod"
                     target="_blank"
-                    class="inline-flex items-center gap-3 bg-white text-black font-black uppercase tracking-widest px-10 py-5 rounded-2xl transition-all shadow-2xl hover:bg-red-600 hover:text-white active:scale-95 cta-glow">
+                    class="inline-flex items-center gap-3 bg-white text-black font-black uppercase tracking-widest px-10 py-5 rounded-2xl transition-all shadow-2xl hover:bg-red-600 hover:text-white active:scale-95">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="11" cy="11" r="8" />
@@ -131,12 +122,9 @@
                     </svg>
                     Get FigurePinner Extension
                 </a>
-                <p class="text-[9px] text-slate-600 font-black uppercase tracking-widest italic">Inventory Registry
-                    Launching Spring 2024</p>
             </div>
         </main>
 
-        <!-- FOOTER -->
         <footer class="p-12 border-t border-slate-900 text-center">
             <p class="text-[11px] text-slate-700 font-black uppercase tracking-[0.5em]">© 2024 BUBS960 COLLECTIBLES •
                 ESTABLISHED IN THE VAULT</p>
