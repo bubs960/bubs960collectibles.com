@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "FigurePinner",
+    "slug": "figurepinner",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "scheme": "figurepinner",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.bubs960.figurepinner",
+      "userInterfaceStyle": "dark"
+    },
+    "android": {
+      "package": "com.bubs960.figurepinner",
+      "userInterfaceStyle": "dark",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [{ "scheme": "figurepinner", "host": "figure" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "plugins": ["expo-font"]
+  }
+}
