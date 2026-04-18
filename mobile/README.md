@@ -51,12 +51,23 @@ npm run typecheck
 
 Set in `.env` or via EAS build secrets:
 
-- `EXPO_PUBLIC_FIGUREPINNER_API` — base URL for the Cloudflare API (defaults to `https://figurepinner.com`)
-- `EXPO_PUBLIC_EBAY_CAMPAIGN_ID` — eBay Partner Network campaign ID (empty string = no affiliate credit)
+- `EXPO_PUBLIC_FIGUREPINNER_API` — Cloudflare Worker base URL.
+  Defaults to `https://figurepinner-api.bubs960.workers.dev`.
+  **Important**: `figurepinner.com` is the marketing site (HTML only) — it does
+  NOT proxy to the API. Never point this at the bare domain.
+- `EXPO_PUBLIC_EBAY_CAMPAIGN_ID` — eBay Partner Network campaign ID.
+  Defaults to `5339147406` (the live Bubs960 EPN campaign).
+- `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` — Clerk publishable key for mobile auth.
 
 ## Open items
 
-- [ ] Confirm the Cloudflare Worker hostname to point `EXPO_PUBLIC_FIGUREPINNER_API` at.
+- [ ] `apple-app-site-association` + `assetlinks.json` hosted on figurepinner.com
+      to make `https://figurepinner.com/figure/:id` links open the app.
+- [ ] Confirm Clerk JWT template for mobile. Backend (`@clerk/nextjs/server`
+      `auth()`) should accept `Authorization: Bearer <jwt>` — may need a
+      "mobile" JWT template enabled in the Clerk dashboard.
+- [ ] Consider custom-domain route `api.figurepinner.com` → Worker (cleaner
+      public-facing URL, not blocking TestFlight).
 - [ ] Wire Own/Want mutations (currently no-op; backend endpoints TBD).
 - [ ] Auth: Clerk integration (web uses Clerk under `/sign-in` + `/sign-up`).
 - [ ] Offline / stale-while-revalidate caching (spec §11).

@@ -1,20 +1,27 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   ActivityIndicator,
   Animated,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   StyleSheet,
   Text,
   View,
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useAuth } from '@clerk/clerk-expo';
 import { colors, heroCollapseThreshold, spacing } from '@/theme/tokens';
 import { type } from '@/theme/typography';
 import { useFigureDetail } from '@/hooks/useFigureDetail';
+import { useCollection } from '@/hooks/useCollection';
 import { renderLoreBand } from '@/shared/renderLoreBand';
 import { cleanFigureName } from '@/shared/cleanFigureName';
 import { formatPriceDollars } from '@/shared/formatters';
 import { buildEbayUrl } from '@/api/figureApi';
+import { track } from '@/analytics/dispatch';
 import { Hero } from '@/components/figure/Hero';
 import { ValueStrip } from '@/components/figure/ValueStrip';
 import { LoreBand } from '@/components/figure/LoreBand';
@@ -25,25 +32,32 @@ import { CharacterThread } from '@/components/figure/CharacterThread';
 import { CtaCardList, CtaItem } from '@/components/figure/CtaCardList';
 import { DetailsCard } from '@/components/figure/DetailsCard';
 import { StickyActionBar } from '@/components/figure/StickyActionBar';
+import type { RootStackParamList } from '@/navigation/types';
 
-interface Props {
-  figureId: string;
-  isPro?: boolean;
-  onNavigateFigure: (figureId: string) => void;
-  onRequireAuth: () => void;
-}
+type Nav = NativeStackNavigationProp<RootStackParamList, 'FigureDetail'>;
+type RouteP = RouteProp<RootStackParamList, 'FigureDetail'>;
 
-export function FigureDetailScreen({
-  figureId,
-  isPro = false,
-  onNavigateFigure,
-  onRequireAuth,
-}: Props) {
+const SCROLL_DEPTHS: Array<25 | 50 | 75 | 100> = [25, 50, 75, 100];
+
+export function FigureDetailScreen() {
+  const navigation = useNavigation<Nav>();
+  const route = useRoute<RouteP>();
+  const { figureId } = route.params;
+  const { isSignedIn } = useAuth();
+
   const { data, loading, error } = useFigureDetail(figureId);
-  const [scrollY] = useState(new Animated.Value(0));
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const maxDepthRef = useRef<number>(0);
+  const emittedDepthsRef = useRef<Set<number>>(new Set());
   const dims = useWindowDimensions();
 
   const lore = useMemo(() => (data ? renderLoreBand(data) : null), [data]);
+  const collection = useCollection(() => data?.figure ?? null);
+
+  // Emit figure_viewed once per figure_id per screen mount.
+  useEffect(() => {
+    if (data) track('figure_viewed', { figure_id: figureId });
+  }, [data, figureId]);
 
   if (loading) {
     return (
@@ -61,16 +75,13 @@ export function FigureDetailScreen({
     );
   }
 
-  const { figure, price, collection, social, series_siblings, character_thread, rarity_tier } =
-    data;
+  const { figure, price, social, series_siblings, character_thread, rarity_tier } = data;
   const name = cleanFigureName(figure.name);
   const ebayUrl = buildEbayUrl(figure);
-  const signedIn = collection !== null;
 
   const showSeries = (series_siblings?.length ?? 0) > 0;
   const showThread = (character_thread?.length ?? 0) > 0;
-  const showCollection =
-    !!(collection?.series_completion && collection.series_completion.total > 0) || !!social;
+  const showCollection = !!social; // series_completion not yet shipped
 
   const ctas: CtaItem[] = [
     {
@@ -83,7 +94,7 @@ export function FigureDetailScreen({
       id: 'share',
       title: 'Share this figure',
       subtitle: 'Send a branded card to a friend',
-      onPress: () => {},
+      onPress: () => track('figure_share_tapped', { figure_id: figureId, share_destination: 'system' }),
     },
   ];
 
@@ -92,6 +103,52 @@ export function FigureDetailScreen({
     outputRange: [0, 1],
     extrapolate: 'clamp',
   });
+
+  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    // Feed animated value for the collapsing header.
+    scrollY.setValue(e.nativeEvent.contentOffset.y);
+    // Scroll-depth emission per spec §12.
+    const y = e.nativeEvent.contentOffset.y;
+    const h = e.nativeEvent.layoutMeasurement.height;
+    const total = e.nativeEvent.contentSize.height;
+    if (total <= h || total === 0) return;
+    const pct = Math.min(100, Math.round(((y + h) / total) * 100));
+    if (pct <= maxDepthRef.current) return;
+    maxDepthRef.current = pct;
+    for (const mark of SCROLL_DEPTHS) {
+      if (pct >= mark && !emittedDepthsRef.current.has(mark)) {
+        emittedDepthsRef.current.add(mark);
+        track('figure_scroll_depth', { figure_id: figureId, max_depth_pct: mark });
+      }
+    }
+  };
+
+  const onRequireAuth = (trigger: 'own' | 'want') => {
+    track('auth_required_shown', { figure_id: figureId, trigger });
+    navigation.navigate('SignIn');
+  };
+
+  const onToggleOwned = () => {
+    if (!isSignedIn) {
+      onRequireAuth('own');
+      return;
+    }
+    track('figure_own_toggled', { figure_id: figureId, next_state: !collection.owned });
+    void collection.toggleOwned();
+  };
+
+  const onToggleWanted = () => {
+    if (!isSignedIn) {
+      onRequireAuth('want');
+      return;
+    }
+    track('figure_want_toggled', { figure_id: figureId, next_state: !collection.wanted });
+    void collection.toggleWanted();
+  };
+
+  const onEbayTapped = () => {
+    track('figure_ebay_tapped', { figure_id: figureId });
+  };
 
   return (
     <View style={styles.root}>
@@ -110,18 +167,13 @@ export function FigureDetailScreen({
       </Animated.View>
 
       <Animated.ScrollView
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true },
-        )}
+        onScroll={handleScroll}
         scrollEventThrottle={16}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: 120 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Zone 1 */}
         <Hero figure={figure} rarity={rarity_tier} />
 
-        {/* Zone 2 — value strip. Hide when no pricing. */}
         {price ? (
           <View style={styles.section}>
             <ValueStrip price={price} />
@@ -132,60 +184,60 @@ export function FigureDetailScreen({
           </View>
         )}
 
-        {/* Zone 3 — lore band. Hides via null-matrix until content ships. */}
         {lore?.visible && (
           <View style={styles.section}>
             <LoreBand lore={lore} />
           </View>
         )}
 
-        {/* Zone 4 — market panel. Only when pricing exists. */}
         {price && (
           <View style={styles.section}>
-            <MarketPanel price={price} ebayUrl={ebayUrl} isPro={isPro} />
+            <MarketPanel price={price} ebayUrl={ebayUrl} isPro={false} />
           </View>
         )}
 
-        {/* Details card — always visible since KB fields always exist. */}
         <View style={styles.section}>
           <DetailsCard figure={figure} />
         </View>
 
-        {/* Zone 5 */}
         {showCollection && (
           <View style={styles.section}>
-            <CollectionPanel collection={collection} social={social} />
+            <CollectionPanel collection={null} social={social} />
           </View>
         )}
 
-        {/* Zone 6 */}
         {showSeries && (
           <View style={styles.section}>
-            <SeriesContext siblings={series_siblings!} onSelect={onNavigateFigure} />
+            <SeriesContext
+              siblings={series_siblings!}
+              onSelect={(id) => navigation.push('FigureDetail', { figureId: id })}
+            />
           </View>
         )}
 
-        {/* Zone 7 */}
         {showThread && (
           <View style={styles.section}>
-            <CharacterThread entries={character_thread!} onSelect={onNavigateFigure} />
+            <CharacterThread
+              entries={character_thread!}
+              onSelect={(id) => navigation.push('FigureDetail', { figureId: id })}
+            />
           </View>
         )}
 
-        {/* Zone 8 */}
         <View style={styles.section}>
           <CtaCardList items={ctas} />
         </View>
       </Animated.ScrollView>
 
       <StickyActionBar
-        signedIn={signedIn}
-        owned={collection?.owned ?? false}
-        wanted={collection?.wanted ?? false}
+        signedIn={!!isSignedIn}
+        owned={collection.owned}
+        wanted={collection.wanted}
         ebayUrl={ebayUrl}
-        onToggleOwned={() => {}}
-        onToggleWanted={() => {}}
-        onRequireAuth={onRequireAuth}
+        onToggleOwned={onToggleOwned}
+        onToggleWanted={onToggleWanted}
+        onRequireAuth={() => onRequireAuth('own')}
+        onEbayTapped={onEbayTapped}
       />
     </View>
   );

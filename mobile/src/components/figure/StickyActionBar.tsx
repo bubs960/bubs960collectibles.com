@@ -14,6 +14,7 @@ interface Props {
   onToggleOwned: () => void;
   onToggleWanted: () => void;
   onRequireAuth: () => void;
+  onEbayTapped?: () => void;
 }
 
 export function StickyActionBar(props: Props) {

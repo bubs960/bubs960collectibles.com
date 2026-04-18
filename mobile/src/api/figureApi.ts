@@ -1,8 +1,10 @@
 import type { ApiFigureV1, ApiPriceV1, FigureDetail } from '@/shared/types';
 
-// Cloudflare Worker / Pages Function base. Overridden at build time via
-// EXPO_PUBLIC_FIGUREPINNER_API. The web equivalent is NEXT_PUBLIC_API_BASE.
-const DEFAULT_BASE = 'https://figurepinner.com';
+// Cloudflare Worker endpoint — NOT the marketing site at figurepinner.com.
+// The bare domain serves HTML; the API lives on a .workers.dev route.
+// Matches the CSP connect-src in the Chrome extension's dashboard.html.
+// Overridden at build time via EXPO_PUBLIC_FIGUREPINNER_API.
+const DEFAULT_BASE = 'https://figurepinner-api.bubs960.workers.dev';
 
 export interface FigureFetchOptions {
   authToken?: string | null;
@@ -75,10 +77,27 @@ export class FigureFetchError extends Error {
   }
 }
 
-// eBay affiliate URL builder. Mirrors figurepinner-site/src/app/figure/[figure_id]/page.tsx.
-// Pass EBAY_CAMPAIGN_ID in via EXPO_PUBLIC_EBAY_CAMPAIGN_ID.
+// eBay affiliate URL builder. Matches the template used by the Chrome extension
+// (affiliate-config.js) — not the web figure page, which omits LH_BIN and
+// customid. mkrid=711-53200-19255-0 is the US rotator (do not change).
+// customid=figurepinner tags mobile-sourced clicks so EPN can segment revenue
+// by surface. Campaign ID comes from EXPO_PUBLIC_EBAY_CAMPAIGN_ID; falls back
+// to the live Bubs960 EPN ID so builds without env config still attribute.
+const DEFAULT_EBAY_CAMPAIGN_ID = '5339147406';
+const EBAY_CUSTOM_ID = 'figurepinner';
+
 export function buildEbayUrl(figure: ApiFigureV1): string {
-  const campaignId = process.env.EXPO_PUBLIC_EBAY_CAMPAIGN_ID ?? '';
+  const campaignId = process.env.EXPO_PUBLIC_EBAY_CAMPAIGN_ID || DEFAULT_EBAY_CAMPAIGN_ID;
   const terms = encodeURIComponent(`${figure.brand} ${figure.line} ${figure.series} ${figure.name}`);
-  return `https://www.ebay.com/sch/i.html?_nkw=${terms}&_sop=15&mkcid=1&mkrid=711-53200-19255-0&campid=${campaignId}&toolid=10001`;
+  return (
+    `https://www.ebay.com/sch/i.html` +
+    `?_nkw=${terms}` +
+    `&_sop=15` +
+    `&LH_BIN=1` +
+    `&mkcid=1` +
+    `&mkrid=711-53200-19255-0` +
+    `&campid=${campaignId}` +
+    `&toolid=10001` +
+    `&customid=${EBAY_CUSTOM_ID}`
+  );
 }

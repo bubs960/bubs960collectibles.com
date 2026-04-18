@@ -1,8 +1,9 @@
-import React, { useCallback, useState } from 'react';
+import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet, Text, View } from 'react-native';
+import { ClerkProvider } from '@clerk/clerk-expo';
 import { useFonts as useBebas, BebasNeue_400Regular } from '@expo-google-fonts/bebas-neue';
 import {
   useFonts as useInter,
@@ -10,14 +11,16 @@ import {
   Inter_500Medium,
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
-import { FigureDetailScreen } from '@/screens/FigureDetailScreen';
+import { AppNavigator } from '@/navigation/AppNavigator';
+import { tokenCache } from '@/auth/tokenCache';
 import { colors } from '@/theme/tokens';
 import { type } from '@/theme/typography';
 
+const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '';
+
 export default function App() {
-  // Both font families fetched from Google Fonts via @expo-google-fonts.
-  // The PostScript names used here must match those referenced in
-  // src/theme/typography.ts.
+  // Google-fonts-hosted assets. The PostScript names here must match
+  // src/theme/typography.ts references.
   const [bebasReady] = useBebas({
     'BebasNeue-Regular': BebasNeue_400Regular,
   });
@@ -28,13 +31,6 @@ export default function App() {
   });
   const fontsReady = bebasReady && interReady;
 
-  const [stack, setStack] = useState<string[]>(['mattel-elite-11-rey-mysterio']);
-
-  const push = useCallback((id: string) => setStack((s) => [...s, id]), []);
-  const requireAuth = useCallback(() => {
-    // Wire up to Clerk when auth lands. Phase 1 stub.
-  }, []);
-
   if (!fontsReady) {
     return (
       <View style={styles.loading}>
@@ -43,20 +39,15 @@ export default function App() {
     );
   }
 
-  const currentFigureId = stack[stack.length - 1];
-
   return (
-    <GestureHandlerRootView style={styles.root}>
-      <SafeAreaProvider>
-        <StatusBar style="light" />
-        <FigureDetailScreen
-          key={currentFigureId}
-          figureId={currentFigureId}
-          onNavigateFigure={push}
-          onRequireAuth={requireAuth}
-        />
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
+      <GestureHandlerRootView style={styles.root}>
+        <SafeAreaProvider>
+          <StatusBar style="light" />
+          <AppNavigator />
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </ClerkProvider>
   );
 }
 
