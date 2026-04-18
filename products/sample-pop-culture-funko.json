@@ -1,0 +1,25 @@
+{
+  "handle": "sdcc-exclusive-funko-chase",
+  "title": "SDCC Exclusive Funko Pop Chase",
+  "subtitle": "Con Exclusive — Limited Run",
+  "collection": "Pop Culture & Exclusives",
+  "description": "<p>San Diego Comic-Con exclusive Funko Pop chase variant. Limited-run sticker on box, pristine window, and box protector included. Never opened.</p><p>Perfect for the display shelf or the investor who likes to sit on sealed exclusives.</p>",
+  "vendor": "Bubs960 Collectibles",
+  "productType": "Funko Pop",
+  "tags": ["funko", "sdcc", "exclusive", "chase", "sealed"],
+  "status": "draft",
+  "price": "85.00",
+  "compareAtPrice": "120.00",
+  "sku": "BUBS-FUNKO-SDCC-001",
+  "inventory": 1,
+  "condition": "New — Sealed with protector",
+  "year": "2024",
+  "series": "SDCC Exclusive",
+  "images": [],
+  "buyLinks": {
+    "shopify": null,
+    "ebay": "https://www.ebay.com/usr/bubs960",
+    "whatnot": null
+  },
+  "featured": false
+}
