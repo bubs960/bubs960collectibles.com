@@ -94,7 +94,13 @@ export function SignInScreen() {
             )}
           </Pressable>
 
-          <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
+          <Pressable
+            onPress={() => navigation.goBack()}
+            hitSlop={16}
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss sign in"
+            style={styles.dismissBtn}
+          >
             <Text style={styles.dismiss}>Not now</Text>
           </Pressable>
         </View>
@@ -150,11 +156,16 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 18,
   },
+  dismissBtn: {
+    marginTop: spacing.md,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   dismiss: {
     ...type.meta,
     color: colors.muted,
     textAlign: 'center',
-    marginTop: spacing.md,
   },
   pressed: {
     opacity: 0.9,

@@ -392,8 +392,11 @@ const styles = StyleSheet.create({
   searchBtn: {
     marginTop: spacing.xs,
     marginRight: spacing.md,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
+    minHeight: 44,
+    minWidth: 44,
+    paddingHorizontal: spacing.md,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderRadius: 999,
     backgroundColor: 'rgba(10, 13, 28, 0.6)',
     borderWidth: 1,

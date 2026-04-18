@@ -51,7 +51,14 @@ export function LoreBand({ lore }: Props) {
           {textContent}
         </Text>
         {approxLong && (
-          <Pressable onPress={toggle} accessibilityRole="button">
+          <Pressable
+            onPress={toggle}
+            accessibilityRole="button"
+            accessibilityLabel={expanded ? 'Collapse context' : 'Expand context'}
+            accessibilityState={{ expanded }}
+            hitSlop={12}
+            style={styles.moreBtn}
+          >
             <Text style={styles.more}>{expanded ? 'Read less ↑' : 'Read more ↓'}</Text>
           </Pressable>
         )}
@@ -84,6 +91,10 @@ const styles = StyleSheet.create({
   emphasis: {
     ...type.body,
     color: colors.accentWarm,
+  },
+  moreBtn: {
+    minHeight: 44,
+    justifyContent: 'center',
   },
   more: {
     ...type.meta,

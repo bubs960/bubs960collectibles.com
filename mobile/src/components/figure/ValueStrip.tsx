@@ -10,41 +10,65 @@ interface Props {
 }
 
 export function ValueStrip({ price }: Props) {
+  // Accessibility labels follow the spec §10 example exactly:
+  //   "Median price, $24.50, from 17 sold comps"
+  const compsSuffix =
+    price.soldCount && price.soldCount > 0 ? `from ${price.soldCount} sold comps` : null;
+
   return (
     <View style={styles.grid}>
       <Cell
         label="Avg sold"
+        a11yLabel="Average sold price"
         value={formatPriceDollars(price.avgSold)}
-        sub={price.soldCount ? `${price.soldCount} comps` : null}
+        sub={compsSuffix}
         highlight
       />
-      <Cell label="Median" value={formatPriceDollars(price.medianSold)} sub={null} />
-      <Cell label="Low" value={formatPriceDollars(price.minSold)} sub={null} />
-      <Cell label="High" value={formatPriceDollars(price.maxSold)} sub={null} />
+      <Cell
+        label="Median"
+        a11yLabel="Median price"
+        value={formatPriceDollars(price.medianSold)}
+        sub={compsSuffix}
+      />
+      <Cell
+        label="Low"
+        a11yLabel="Low price"
+        value={formatPriceDollars(price.minSold)}
+        sub={null}
+      />
+      <Cell
+        label="High"
+        a11yLabel="High price"
+        value={formatPriceDollars(price.maxSold)}
+        sub={null}
+      />
     </View>
   );
 }
 
 function Cell({
   label,
+  a11yLabel,
   value,
   sub,
   highlight,
 }: {
   label: string;
+  a11yLabel: string;
   value: string;
   sub: string | null;
   highlight?: boolean;
 }) {
+  const visibleSub = sub ? `${sub.replace('from ', '')}` : null;
   return (
     <View
       style={[styles.cell, highlight && styles.cellHighlight]}
       accessible
-      accessibilityLabel={`${label}, ${value}${sub ? `, ${sub}` : ''}`}
+      accessibilityLabel={`${a11yLabel}, ${value}${sub ? `, ${sub}` : ''}`}
     >
       <Text style={styles.label}>{label.toUpperCase()}</Text>
       <Text style={[styles.value, highlight && styles.valueHighlight]}>{value}</Text>
-      {sub ? <Text style={styles.sub}>{sub}</Text> : null}
+      {visibleSub ? <Text style={styles.sub}>{visibleSub}</Text> : null}
     </View>
   );
 }

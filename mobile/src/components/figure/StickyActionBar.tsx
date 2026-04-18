@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
   bar: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 56,
+    minHeight: 56,
     gap: spacing.xs,
   },
   collectionGroup: {
@@ -133,7 +133,8 @@ const styles = StyleSheet.create({
   },
   pill: {
     flex: 1,
-    height: 44,
+    minHeight: 44,
+    paddingVertical: 6,
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.border,
@@ -154,7 +155,8 @@ const styles = StyleSheet.create({
   },
   primary: {
     flex: 1,
-    height: 44,
+    minHeight: 44,
+    paddingVertical: 6,
     borderRadius: radii.md,
     backgroundColor: colors.danger,
     alignItems: 'center',

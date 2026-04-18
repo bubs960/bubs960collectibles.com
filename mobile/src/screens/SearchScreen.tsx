@@ -47,7 +47,12 @@ export function SearchScreen() {
           autoFocus
         />
         {query.length > 0 && (
-          <Pressable onPress={() => setQuery('')} hitSlop={12} accessibilityLabel="Clear search">
+          <Pressable
+            onPress={() => setQuery('')}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Clear search"
+          >
             <Text style={styles.clear}>×</Text>
           </Pressable>
         )}
@@ -126,7 +131,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     margin: spacing.md,
     paddingHorizontal: spacing.md,
-    height: 48,
+    minHeight: 48,
+    paddingVertical: 4,
     borderRadius: radii.md,
     backgroundColor: colors.surface0,
     borderWidth: 1,

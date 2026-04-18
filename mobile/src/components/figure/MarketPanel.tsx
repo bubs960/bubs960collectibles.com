@@ -40,7 +40,12 @@ export function MarketPanel({ price, ebayUrl, isPro }: Props) {
       )}
 
       {capped && (
-        <Pressable style={styles.unlock} accessibilityRole="button">
+        <Pressable
+          style={styles.unlock}
+          accessibilityRole="button"
+          accessibilityLabel={`Unlock full price history. ${history.length} sales available with Pro.`}
+          hitSlop={8}
+        >
           <Text style={styles.unlockText}>Unlock full history →</Text>
         </Pressable>
       )}
@@ -49,7 +54,6 @@ export function MarketPanel({ price, ebayUrl, isPro }: Props) {
 }
 
 function ChartPath({ history }: { history: ApiSoldComp[] }) {
-  // Sort chronologically ascending for the path.
   const sorted = [...history].sort((a, b) => {
     const ta = new Date(a.sold_date).getTime();
     const tb = new Date(b.sold_date).getTime();
@@ -68,10 +72,23 @@ function ChartPath({ history }: { history: ApiSoldComp[] }) {
       return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
     })
     .join(' ');
+
+  // Per spec §10: "90-day price chart. Current $X, down Y percent from 90 days ago."
+  const first = prices[0];
+  const last = prices[prices.length - 1];
+  const pct = first === 0 ? 0 : ((last - first) / first) * 100;
+  const direction = pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat';
+  const label =
+    direction === 'flat'
+      ? `Price trend chart. Latest sale $${last.toFixed(0)} across ${prices.length} sales. Price flat.`
+      : `Price trend chart. Latest sale $${last.toFixed(0)}, ${direction} ${Math.abs(pct).toFixed(1)} percent from the earliest of ${prices.length} tracked sales.`;
+
   return (
-    <Svg width={CHART_W} height={CHART_H}>
-      <Path d={d} stroke={colors.accent} strokeWidth={2} fill="none" />
-    </Svg>
+    <View accessible accessibilityRole="image" accessibilityLabel={label}>
+      <Svg width={CHART_W} height={CHART_H}>
+        <Path d={d} stroke={colors.accent} strokeWidth={2} fill="none" />
+      </Svg>
+    </View>
   );
 }
 
@@ -89,7 +106,7 @@ function CompRow({ comp, ebayUrl }: { comp: ApiSoldComp; ebayUrl: string | null 
       disabled={!onPress}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${comp.title}, ${formatPriceDollars(comp.price)}, ${comp.condition}, ${formatShortDate(comp.sold_date)}`}
+      accessibilityLabel={`${comp.title}. Sold for ${formatPriceDollars(comp.price)} on ${formatShortDate(comp.sold_date)}, condition ${comp.condition}${auction ? ', auction' : ''}.`}
       style={({ pressed }) => [styles.compRow, pressed && styles.pressed]}
     >
       <View style={styles.compLeft}>
@@ -131,6 +148,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: spacing.sm,
+    minHeight: 48,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.sm,
     backgroundColor: colors.surface0,
@@ -173,7 +191,10 @@ const styles = StyleSheet.create({
   },
   unlock: {
     alignSelf: 'center',
-    paddingVertical: spacing.xs,
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
   },
   unlockText: {
     ...type.meta,
