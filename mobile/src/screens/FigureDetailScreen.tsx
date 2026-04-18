@@ -4,6 +4,7 @@ import {
   Animated,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Pressable,
   StyleSheet,
   Text,
   View,
@@ -166,6 +167,20 @@ export function FigureDetailScreen() {
         </SafeAreaView>
       </Animated.View>
 
+      {/* Always-visible search affordance (sits above the hero glow before scroll,
+          blends into the sticky header after scroll). */}
+      <SafeAreaView edges={['top']} style={styles.floatingNav} pointerEvents="box-none">
+        <Pressable
+          onPress={() => navigation.navigate('Search')}
+          accessibilityRole="button"
+          accessibilityLabel="Search figures"
+          hitSlop={12}
+          style={({ pressed }) => [styles.searchBtn, pressed && { opacity: 0.7 }]}
+        >
+          <Text style={styles.searchBtnText}>Search</Text>
+        </Pressable>
+      </SafeAreaView>
+
       <Animated.ScrollView
         onScroll={handleScroll}
         scrollEventThrottle={16}
@@ -302,6 +317,26 @@ const styles = StyleSheet.create({
     ...type.heroPrice,
     fontSize: 20,
     color: colors.accent,
+  },
+  floatingNav: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    zIndex: 11,
+  },
+  searchBtn: {
+    marginTop: spacing.xs,
+    marginRight: spacing.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: 'rgba(10, 13, 28, 0.6)',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  searchBtnText: {
+    ...type.eyebrow,
+    color: colors.text,
   },
 });
 

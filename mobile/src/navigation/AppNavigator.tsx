@@ -2,6 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { FigureDetailScreen } from '@/screens/FigureDetailScreen';
+import { SearchScreen } from '@/screens/SearchScreen';
 import { SignInScreen } from '@/screens/SignInScreen';
 import { colors } from '@/theme/tokens';
 import { linking } from './linking';
@@ -41,6 +42,11 @@ export function AppNavigator({ initialFigureId }: { initialFigureId?: string }) 
           name="FigureDetail"
           component={FigureDetailScreen}
           initialParams={{ figureId: initialFigureId ?? 'mattel-elite-11-rey-mysterio' }}
+        />
+        <Stack.Screen
+          name="Search"
+          component={SearchScreen}
+          options={{ presentation: 'modal' }}
         />
         <Stack.Screen
           name="SignIn"

@@ -4,11 +4,13 @@
 
 import type { ApiFigureV1 } from '@/shared/types';
 
-// Same Worker as figureApi.ts — NOT the marketing site at figurepinner.com.
-const DEFAULT_BASE = 'https://figurepinner-api.bubs960.workers.dev';
+// Collection endpoints live on the Next site (figurepinner.com), NOT the
+// workers.dev API — they require @clerk/nextjs/server auth() which depends on
+// the Next server context. Override via EXPO_PUBLIC_FIGUREPINNER_SITE.
+const DEFAULT_SITE = 'https://figurepinner.com';
 
-function apiBase(): string {
-  return process.env.EXPO_PUBLIC_FIGUREPINNER_API ?? DEFAULT_BASE;
+function siteBase(): string {
+  return process.env.EXPO_PUBLIC_FIGUREPINNER_SITE ?? DEFAULT_SITE;
 }
 
 export class CollectionApiError extends Error {
@@ -33,7 +35,7 @@ export async function addToVault(
   token: string,
   opts: AddVaultOptions = {},
 ): Promise<{ id: string }> {
-  return postJson(`${apiBase()}/api/vault`, token, {
+  return postJson(`${siteBase()}/api/vault`, token, {
     figure_id: figure.figure_id,
     name: figure.name,
     brand: figure.brand,
@@ -50,7 +52,7 @@ export async function addToWantlist(
   token: string,
   opts: AddWantlistOptions = {},
 ): Promise<{ id: string }> {
-  return postJson(`${apiBase()}/api/wantlist`, token, {
+  return postJson(`${siteBase()}/api/wantlist`, token, {
     figure_id: figure.figure_id,
     name: figure.name,
     brand: figure.brand,

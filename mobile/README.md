@@ -49,12 +49,17 @@ npm run typecheck
 
 ## Environment variables (Expo)
 
-Set in `.env` or via EAS build secrets:
+Set in `.env` or via EAS build secrets. The app talks to TWO backends — a public
+read-only Cloudflare Worker and the Next site where authenticated routes live:
 
-- `EXPO_PUBLIC_FIGUREPINNER_API` — Cloudflare Worker base URL.
+- `EXPO_PUBLIC_FIGUREPINNER_API` — Cloudflare Worker base URL for public cached
+  reads (`/api/v1/figure/:id`, `/api/v1/figure-price`).
   Defaults to `https://figurepinner-api.bubs960.workers.dev`.
-  **Important**: `figurepinner.com` is the marketing site (HTML only) — it does
-  NOT proxy to the API. Never point this at the bare domain.
+- `EXPO_PUBLIC_FIGUREPINNER_SITE` — Next site base URL for routes that require
+  Clerk auth or full KB data (`/api/wantlist`, `/api/vault`, `/api/v1/search`).
+  The Worker's public search intentionally omits `figure_id` + `image` as an
+  anti-scraping pattern, so mobile must hit the Next route for search.
+  Defaults to `https://figurepinner.com`.
 - `EXPO_PUBLIC_EBAY_CAMPAIGN_ID` — eBay Partner Network campaign ID.
   Defaults to `5339147406` (the live Bubs960 EPN campaign).
 - `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` — Clerk publishable key for mobile auth.

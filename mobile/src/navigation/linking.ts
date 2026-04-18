@@ -15,6 +15,7 @@ export const linking: LinkingOptions<RootStackParamList> = {
   config: {
     screens: {
       FigureDetail: 'figure/:figureId',
+      Search: 'search',
       SignIn: 'sign-in',
     },
   },
