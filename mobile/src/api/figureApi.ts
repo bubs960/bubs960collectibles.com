@@ -80,11 +80,13 @@ export class FigureFetchError extends Error {
 // eBay affiliate URL builder. Matches the template used by the Chrome extension
 // (affiliate-config.js) — not the web figure page, which omits LH_BIN and
 // customid. mkrid=711-53200-19255-0 is the US rotator (do not change).
-// customid=figurepinner tags mobile-sourced clicks so EPN can segment revenue
-// by surface. Campaign ID comes from EXPO_PUBLIC_EBAY_CAMPAIGN_ID; falls back
-// to the live Bubs960 EPN ID so builds without env config still attribute.
+// customid is segmented per surface so EPN reports can break out mobile vs.
+// extension revenue: extension uses 'figurepinner', mobile uses
+// 'figurepinner-mobile' (matches mobile/src/js/lib/affiliate.js:5-9 in the
+// Figure Pinner Dev workspace). Campaign ID comes from
+// EXPO_PUBLIC_EBAY_CAMPAIGN_ID; falls back to the live Bubs960 EPN ID.
 const DEFAULT_EBAY_CAMPAIGN_ID = '5339147406';
-const EBAY_CUSTOM_ID = 'figurepinner';
+const EBAY_CUSTOM_ID = 'figurepinner-mobile';
 
 export function buildEbayUrl(figure: ApiFigureV1): string {
   const campaignId = process.env.EXPO_PUBLIC_EBAY_CAMPAIGN_ID || DEFAULT_EBAY_CAMPAIGN_ID;

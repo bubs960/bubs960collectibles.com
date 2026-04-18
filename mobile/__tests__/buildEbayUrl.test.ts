@@ -50,8 +50,11 @@ describe('buildEbayUrl', () => {
     expect(buildEbayUrl(figure())).toContain('campid=9999999999');
   });
 
-  it('tags mobile-sourced clicks with customid=figurepinner', () => {
-    expect(buildEbayUrl(figure())).toContain('customid=figurepinner');
+  it('tags mobile-sourced clicks with customid=figurepinner-mobile', () => {
+    // Extension uses customid=figurepinner (affiliate-config.js:18); mobile
+    // MUST use the -mobile suffix so EPN reporting can segment revenue.
+    const url = buildEbayUrl(figure());
+    expect(url).toContain('customid=figurepinner-mobile');
   });
 
   it('points at the US ebay.com sch endpoint', () => {

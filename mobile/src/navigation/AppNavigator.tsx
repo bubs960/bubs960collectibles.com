@@ -4,6 +4,12 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { FigureDetailScreen } from '@/screens/FigureDetailScreen';
 import { SearchScreen } from '@/screens/SearchScreen';
 import { SignInScreen } from '@/screens/SignInScreen';
+import {
+  VaultScreen,
+  WantlistScreen,
+  SetsScreen,
+  WaitlistScreen,
+} from '@/screens/StubScreen';
 import { colors } from '@/theme/tokens';
 import { linking } from './linking';
 import type { RootStackParamList } from './types';
@@ -43,16 +49,12 @@ export function AppNavigator({ initialFigureId }: { initialFigureId?: string }) 
           component={FigureDetailScreen}
           initialParams={{ figureId: initialFigureId ?? 'mattel-elite-11-rey-mysterio' }}
         />
-        <Stack.Screen
-          name="Search"
-          component={SearchScreen}
-          options={{ presentation: 'modal' }}
-        />
-        <Stack.Screen
-          name="SignIn"
-          component={SignInScreen}
-          options={{ presentation: 'modal' }}
-        />
+        <Stack.Screen name="Search" component={SearchScreen} options={{ presentation: 'modal' }} />
+        <Stack.Screen name="Vault" component={VaultScreen} />
+        <Stack.Screen name="Wantlist" component={WantlistScreen} />
+        <Stack.Screen name="Sets" component={SetsScreen} />
+        <Stack.Screen name="Waitlist" component={WaitlistScreen} options={{ presentation: 'modal' }} />
+        <Stack.Screen name="SignIn" component={SignInScreen} options={{ presentation: 'modal' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

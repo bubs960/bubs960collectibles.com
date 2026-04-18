@@ -264,7 +264,12 @@ export function FigureDetailScreen() {
 
         {price && (
           <View style={styles.section}>
-            <MarketPanel price={price} ebayUrl={ebayUrl} isPro={false} />
+            <MarketPanel
+              price={price}
+              ebayUrl={ebayUrl}
+              isPro={false}
+              onUnlockTap={() => navigation.navigate('Waitlist')}
+            />
           </View>
         )}
 

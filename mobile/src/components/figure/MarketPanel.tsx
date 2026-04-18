@@ -11,13 +11,20 @@ interface Props {
   price: ApiPriceV1;
   ebayUrl: string | null;
   isPro: boolean;
+  /**
+   * Called when the user taps the Pro gate. Pro doesn't exist yet (the
+   * extension has no tier; see freemium-gate.js), so mobile surfaces a
+   * waitlist CTA here — the caller navigates to the Waitlist screen. Remove
+   * this gate entirely once the Pro SKU is actually spec'd and wired.
+   */
+  onUnlockTap?: () => void;
 }
 
 const CHART_W = 320;
 const CHART_H = 100;
 const FREE_COMP_LIMIT = 3;
 
-export function MarketPanel({ price, ebayUrl, isPro }: Props) {
+export function MarketPanel({ price, ebayUrl, isPro, onUnlockTap }: Props) {
   const history = price.soldHistory ?? [];
   const visible = isPro ? history : history.slice(0, FREE_COMP_LIMIT);
   const capped = !isPro && history.length > FREE_COMP_LIMIT;
@@ -42,11 +49,12 @@ export function MarketPanel({ price, ebayUrl, isPro }: Props) {
       {capped && (
         <Pressable
           style={styles.unlock}
+          onPress={onUnlockTap}
           accessibilityRole="button"
-          accessibilityLabel={`Unlock full price history. ${history.length} sales available with Pro.`}
+          accessibilityLabel={`Join the Pro waitlist. Full price history with ${history.length} sales unlocks when Pro ships.`}
           hitSlop={8}
         >
-          <Text style={styles.unlockText}>Unlock full history →</Text>
+          <Text style={styles.unlockText}>Join Pro waitlist for full history →</Text>
         </Pressable>
       )}
     </View>
