@@ -13,10 +13,12 @@
   --red-glow: rgba(230, 36, 41, 0.55);
   --primary-blue: #1c3b70;
   --accent-yellow: #f1c40f;
+  --accent-gold: #d4a017;
   --accent-cyan: #00e0ff;
   --bg-dark: #05070d;
   --bg-panel: #101827;
   --bg-panel-2: #0a1120;
+  --metal-light: #2a3142;
   --text-light: #f4f4f4;
   --text-muted: #9aa3b2;
 }
@@ -227,6 +229,25 @@ a { color: inherit; text-decoration: none; }
 }
 .back-link:hover { color: var(--primary-red); }
 
+/* Rope divider */
+.rope {
+  position: relative; height: 26px;
+  background:
+    linear-gradient(var(--primary-red), var(--primary-red)) center 2px / 100% 4px no-repeat,
+    linear-gradient(var(--accent-yellow), var(--accent-yellow)) center 12px / 100% 4px no-repeat,
+    linear-gradient(var(--primary-blue), var(--primary-blue)) center 22px / 100% 4px no-repeat,
+    var(--bg-dark);
+  margin: 0 -2rem;
+}
+.rope::before, .rope::after {
+  content: ''; position: absolute; top: -6px;
+  width: 12px; height: 38px;
+  background: linear-gradient(#7a7f8a, #2a2f38 60%, #0f1118);
+  border: 1px solid #000; border-radius: 3px;
+}
+.rope::before { left: 10px; }
+.rope::after  { right: 10px; }
+
 /* Catalog page */
 .catalog-header { text-align: center; margin-bottom: 3rem; }
 .catalog-title {
@@ -240,43 +261,110 @@ a { color: inherit; text-decoration: none; }
 .catalog-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.75rem;
+  gap: 2rem;
 }
+
+/* Action-figure cardback style */
 .card {
-  background: var(--bg-panel);
-  border: 2px solid #1a2233;
+  position: relative;
+  background: linear-gradient(180deg, var(--metal-light), var(--bg-panel) 60%);
+  border: 3px solid #000;
   border-radius: 14px;
   overflow: hidden;
   display: flex; flex-direction: column;
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.25s ease, border-color 0.2s ease, box-shadow 0.25s ease;
+  box-shadow:
+    inset 0 0 0 2px var(--accent-yellow),
+    0 6px 0 #000;
 }
 .card:hover {
-  transform: translateY(-4px);
-  border-color: var(--primary-red);
-  box-shadow: 0 12px 30px var(--red-glow);
+  transform: translateY(-6px) rotate(-0.5deg);
+  box-shadow:
+    inset 0 0 0 2px var(--accent-yellow),
+    0 12px 0 #000,
+    0 16px 30px var(--red-glow);
+}
+.card-banner {
+  background: linear-gradient(90deg, var(--primary-red), #a01519);
+  color: white;
+  font-family: 'Bangers', cursive;
+  letter-spacing: 2px;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  border-bottom: 3px solid var(--accent-yellow);
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+  display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;
+}
+.card-banner .wave {
+  background: var(--accent-yellow); color: #111;
+  font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 3px;
+  letter-spacing: 1px;
+}
+.card-img-wrap {
+  background:
+    radial-gradient(ellipse at 50% 35%, rgba(255,255,255,0.08), transparent 60%),
+    linear-gradient(180deg, #0d1220, var(--bg-dark));
+  aspect-ratio: 4 / 3;
+  position: relative;
+  overflow: hidden;
 }
 .card-img {
-  aspect-ratio: 4 / 3;
-  width: 100%;
+  width: 100%; height: 100%;
   object-fit: cover;
-  background: radial-gradient(circle at 30% 30%, var(--primary-blue), var(--bg-dark) 70%);
   display: block;
 }
 .card-img-placeholder {
-  aspect-ratio: 4 / 3;
+  width: 100%; height: 100%;
   display: flex; align-items: center; justify-content: center;
-  background: radial-gradient(circle at 30% 30%, var(--primary-blue), var(--bg-dark) 70%);
   font-family: 'Bangers', cursive;
   color: var(--accent-yellow);
   font-size: 2.5rem;
   letter-spacing: 3px;
   text-shadow: 3px 3px 0 var(--primary-red);
 }
-.card-body { padding: 1.25rem; display: flex; flex-direction: column; gap: 0.5rem; flex-grow: 1; }
-.card-collection { font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--accent-yellow); font-weight: 800; }
-.card-title { font-family: 'Bangers', cursive; font-size: 1.5rem; color: var(--text-light); line-height: 1.1; letter-spacing: 1px; }
-.card-foot { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 0.75rem; }
+.card-body { padding: 1.1rem 1.25rem 1.25rem; display: flex; flex-direction: column; gap: 0.5rem; flex-grow: 1; }
+.card-title { font-family: 'Bangers', cursive; font-size: 1.45rem; color: var(--text-light); line-height: 1.1; letter-spacing: 1px; }
+.card-foot { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 0.75rem; border-top: 1px dashed #2a3142; }
 .card-price { font-family: 'Bangers', cursive; color: var(--accent-yellow); font-size: 1.5rem; }
+.card-ribbon {
+  position: absolute;
+  top: 12px; right: -36px;
+  background: var(--accent-yellow); color: #111;
+  font-family: 'Bangers', cursive;
+  padding: 0.3rem 3rem;
+  font-size: 0.9rem;
+  letter-spacing: 2px;
+  transform: rotate(35deg);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  z-index: 2;
+  text-transform: uppercase;
+}
+
+/* HOT DEAL stamp for product page */
+.hot-stamp {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 110px; height: 110px;
+  border: 4px double var(--accent-yellow);
+  border-radius: 50%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  font-family: 'Bangers', cursive;
+  color: var(--accent-yellow);
+  font-size: 0.85rem; line-height: 1;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transform: rotate(-14deg);
+  text-shadow: 1px 1px 0 var(--primary-red);
+  box-shadow: 0 0 24px rgba(241,196,15,0.3);
+  background: radial-gradient(circle, rgba(230,36,41,0.15), transparent 70%);
+  pointer-events: none;
+  z-index: 3;
+}
+.hot-stamp .big { font-size: 1.25rem; letter-spacing: 2px; }
+.info { position: relative; }
 
 footer { text-align: center; padding: 2.5rem 1rem; color: #777; border-top: 1px solid #1a2233; margin-top: 3rem; }
 
@@ -312,6 +400,7 @@ footer { text-align: center; padding: 2.5rem 1rem; color: #777; border-top: 1px 
 <div class="product">
   <div><div class="gallery placeholder"><div class="placeholder-logo">BUBS960</div></div></div>
   <div class="info">
+    <div class="hot-stamp"><span>Hot</span><span class="big">Deal</span></div>
     <div class="info-collection">Pop Culture &amp; Exclusives</div>
     <h1 class="info-title">SDCC Exclusive Funko Pop Chase</h1>
     <p class="info-subtitle">Con Exclusive — Limited Run</p>
