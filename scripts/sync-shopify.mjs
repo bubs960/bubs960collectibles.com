@@ -3,10 +3,12 @@
 // Required env: SHOPIFY_STORE (e.g. bubs960.myshopify.com), SHOPIFY_ADMIN_TOKEN.
 // Missing secrets -> logs and exits 0 so CI doesn't fail before Shopify is set up.
 
-import { loadProducts } from './products.mjs';
+import { loadProducts, resolveImages } from './products.mjs';
 
 const API_VERSION = '2024-01';
 const { SHOPIFY_STORE, SHOPIFY_ADMIN_TOKEN } = process.env;
+const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL ?? 'https://www.bubs960collectibles.com').replace(/\/$/, '');
+const LOCAL_IMG_PREFIX = `${PUBLIC_BASE_URL}/products/images/`;
 
 if (!SHOPIFY_STORE || !SHOPIFY_ADMIN_TOKEN) {
   console.log('[sync-shopify] SHOPIFY_STORE or SHOPIFY_ADMIN_TOKEN not set — skipping sync.');
@@ -59,7 +61,7 @@ function toShopifyProduct(p, existing) {
     tags: (p.tags ?? []).join(', '),
     status: (p.status ?? 'draft').toLowerCase(),
     variants: [variant],
-    images: (p.images ?? []).map((src) => ({ src })),
+    images: resolveImages(p, LOCAL_IMG_PREFIX).map((src) => ({ src })),
   };
 }
 

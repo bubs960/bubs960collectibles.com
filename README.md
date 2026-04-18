@@ -6,9 +6,15 @@ generated high-resolution product pages.
 ## Adding a product
 
 1. Copy `products/_template.json` to `products/<your-handle>.json`.
-2. Fill in the fields (`handle`, `title`, `price`, `images`, etc.). See the
-   template for the full schema.
-3. Commit and push to `main`.
+2. Fill in the fields (`handle`, `title`, `price`, etc.).
+3. Drop photos into `products/images/` with filenames starting with the
+   product handle (e.g. `wwe-elite-legends-irs-1.jpg`,
+   `wwe-elite-legends-irs-2.jpg`). They're auto-discovered and added to
+   the gallery in sorted order — no need to edit the JSON's `images` array.
+4. Commit and push to `main`.
+
+The `images` array in the JSON still works for external URLs if you'd
+rather host photos elsewhere; local files and URLs combine.
 
 On push, GitHub Actions will:
 

@@ -6,7 +6,9 @@
 
 import { mkdir, writeFile, readdir, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
-import { loadProducts, SHOP_DIR, escapeHtml } from './products.mjs';
+import { loadProducts, resolveImages, SHOP_DIR, escapeHtml } from './products.mjs';
+
+const LOCAL_IMG_PREFIX = '/products/images/';
 
 const SITE_BRAND = 'Bubs960 Collectibles';
 
@@ -495,10 +497,11 @@ function productPage(p) {
   const hotStamp = p.compareAtPrice != null
     ? `<div class="hot-stamp"><span>Hot</span><span class="big">Deal</span></div>`
     : '';
+  const images = resolveImages(p, LOCAL_IMG_PREFIX);
   return `${HEAD(p.title, meta)}
 <a class="back-link" href="/shop/index.html">&lsaquo; Back to Shop</a>
 <div class="product">
-  <div>${imageGallery(p.images, p.title)}</div>
+  <div>${imageGallery(images, p.title)}</div>
   <div class="info">
     ${hotStamp}
     ${p.collection ? `<div class="info-collection">${escapeHtml(p.collection)}</div>` : ''}
@@ -519,8 +522,9 @@ ${FOOT}`;
 
 function catalogPage(products) {
   const cards = products.map((p) => {
-    const img = p.images?.[0]
-      ? `<img class="card-img" src="${escapeHtml(p.images[0])}" alt="${escapeHtml(p.title)}">`
+    const imgs = resolveImages(p, LOCAL_IMG_PREFIX);
+    const img = imgs[0]
+      ? `<img class="card-img" src="${escapeHtml(imgs[0])}" alt="${escapeHtml(p.title)}">`
       : `<div class="card-img-placeholder">BUBS960</div>`;
     const ribbon = p.featured
       ? `<div class="card-ribbon">Grail</div>`

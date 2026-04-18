@@ -4,11 +4,27 @@ import { dirname, join } from 'node:path';
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const PRODUCTS_DIR = join(here, '..', 'products');
+export const IMAGES_DIR = join(PRODUCTS_DIR, 'images');
 export const SHOP_DIR = join(here, '..', 'shop');
 
+const IMG_EXT = /\.(jpe?g|png|webp|gif)$/i;
+
+async function listLocalImages() {
+  try {
+    return (await readdir(IMAGES_DIR)).filter((f) => IMG_EXT.test(f)).sort();
+  } catch {
+    return [];
+  }
+}
+
+// Merges the shell's declared images (URLs) with any local files in
+// products/images/ whose filename starts with the product handle.
+// Local filenames resolve to a repo path or full URL at render time.
 export async function loadProducts() {
   const files = (await readdir(PRODUCTS_DIR))
     .filter((f) => f.endsWith('.json') && !f.startsWith('_'));
+
+  const localImages = await listLocalImages();
 
   const products = [];
   for (const file of files) {
@@ -16,9 +32,24 @@ export async function loadProducts() {
     const data = JSON.parse(raw);
     if (!data.handle) throw new Error(`${file}: missing "handle"`);
     if (!data.title) throw new Error(`${file}: missing "title"`);
+    const auto = localImages.filter((f) => f.toLowerCase().startsWith(data.handle.toLowerCase()));
+    data._localImages = auto;
     products.push({ _file: file, ...data });
   }
   return products;
+}
+
+// Resolves a mixed image list (URLs + bare filenames) into renderable strings.
+// - Absolute URLs pass through unchanged.
+// - Bare filenames get the caller-supplied prefix (e.g. "/products/images/").
+export function resolveImages(product, pathPrefix) {
+  const declared = Array.isArray(product.images) ? product.images : [];
+  const locals = (product._localImages ?? []).map((f) => f);
+  const combined = [...locals, ...declared];
+  const seen = new Set();
+  return combined
+    .filter((src) => src && (seen.has(src) ? false : seen.add(src)))
+    .map((src) => /^https?:\/\//i.test(src) ? src : `${pathPrefix}${src}`);
 }
 
 export function escapeHtml(str = '') {
