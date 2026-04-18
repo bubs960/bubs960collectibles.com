@@ -463,7 +463,8 @@ const NAV_HTML = `
   <a href="/index.html" class="nav-brand">BUBS960</a>
   <ul class="nav-links">
     <li><a href="/shop/index.html">Shop</a></li>
-    <li><a href="/index.html#collections">Collections</a></li>
+    <li><a href="/live.html">Live</a></li>
+    <li><a href="/about.html">About</a></li>
     <li><a href="/index.html#contact">Contact</a></li>
   </ul>
 </nav>

@@ -301,6 +301,16 @@
 
         input:focus, textarea:focus { border-color: var(--primary-red); }
 
+        .form-status {
+            min-height: 1.25rem;
+            font-size: 0.9rem;
+            font-weight: 700;
+            padding-top: 0.25rem;
+        }
+        .form-status.ok  { color: #62d98a; }
+        .form-status.err { color: #ff6b6b; }
+        form.js-remote-form[data-submitting="true"] button[type="submit"] { opacity: 0.6; cursor: wait; }
+
         /* Section shell */
         .section {
             padding: 5rem 2rem;
@@ -591,8 +601,9 @@
         <a href="#top" class="nav-brand">BUBS960</a>
         <ul class="nav-links">
             <li><a href="/shop/index.html">Shop</a></li>
+            <li><a href="/live.html">Live</a></li>
+            <li><a href="/about.html">About</a></li>
             <li><a href="#collections">Collections</a></li>
-            <li><a href="#shop">Distribution</a></li>
             <li><a href="#contact">Contact</a></li>
             <li><a href="#vip">VIP List</a></li>
         </ul>
@@ -749,12 +760,15 @@
                 </ul>
             </div>
 
-            <form class="contact" action="mailto:Bubs960toys@gmail.com" method="POST" enctype="text/plain">
+            <!-- Paste your Formspree form ID (e.g. mwkjyzab) into data-formspree below. Setup: README.md -->
+            <form class="contact js-remote-form" data-formspree="YOUR_CONTACT_FORM_ID" action="mailto:Bubs960toys@gmail.com" method="POST" enctype="text/plain">
                 <input type="text" name="name" placeholder="Your name" required>
                 <input type="email" name="email" placeholder="Your email" required>
                 <input type="text" name="subject" placeholder="What are you looking for?" required>
                 <textarea name="message" placeholder="Tell me about the piece or want list..." required></textarea>
+                <input type="hidden" name="_subject" value="Bubs960 — Contact form">
                 <button type="submit" class="btn btn-primary">Send Message</button>
+                <div class="form-status" aria-live="polite"></div>
             </form>
         </div>
     </section>
@@ -766,9 +780,13 @@
             <h3>Get Ringside Access</h3>
             <p style="margin-bottom: 1rem; font-size: 0.95rem; color: var(--text-muted);">Join the VIP list to get a massive discount code the moment the Shopify store goes live.</p>
 
-            <form class="signup" action="mailto:Bubs960toys@gmail.com" method="POST" enctype="text/plain">
+            <!-- Paste your Formspree form ID into data-formspree below. Setup: README.md -->
+            <form class="signup js-remote-form" data-formspree="YOUR_VIP_FORM_ID" action="mailto:Bubs960toys@gmail.com" method="POST" enctype="text/plain">
                 <input type="email" name="email" placeholder="Enter your email address" required>
+                <input type="hidden" name="_subject" value="Bubs960 — New VIP signup">
+                <input type="hidden" name="list" value="vip-launch">
                 <button type="submit" class="btn btn-primary">GIMME THE DEALS! WOO!</button>
+                <div class="form-status" aria-live="polite"></div>
             </form>
         </div>
     </section>
@@ -776,6 +794,43 @@
     <footer>
         <p>&copy; 2026 Bubs960 Collectibles. All rights reserved.</p>
     </footer>
+
+    <script>
+    document.querySelectorAll('form.js-remote-form').forEach((form) => {
+        const id = form.dataset.formspree;
+        const status = form.querySelector('.form-status');
+        const configured = id && !id.startsWith('YOUR_');
+
+        form.addEventListener('submit', async (event) => {
+            if (!configured) return; // Let it fall back to mailto action.
+            event.preventDefault();
+            form.dataset.submitting = 'true';
+            status.textContent = 'Sending…';
+            status.className = 'form-status';
+            try {
+                const res = await fetch(`https://formspree.io/f/${id}`, {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json' },
+                    body: new FormData(form),
+                });
+                if (res.ok) {
+                    status.textContent = 'Got it. Talk soon. 🤘';
+                    status.className = 'form-status ok';
+                    form.reset();
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    status.textContent = data?.errors?.[0]?.message ?? 'Something broke. Try again?';
+                    status.className = 'form-status err';
+                }
+            } catch (err) {
+                status.textContent = 'Network error. Try again?';
+                status.className = 'form-status err';
+            } finally {
+                form.dataset.submitting = 'false';
+            }
+        });
+    });
+    </script>
 
 </body>
 </html>

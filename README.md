@@ -29,6 +29,23 @@ node scripts/build-pages.mjs   # regenerate shop/ HTML pages
 node scripts/sync-shopify.mjs  # manual sync to Shopify (requires env vars)
 ```
 
+## One-time Formspree setup (contact + VIP forms)
+
+The contact form and VIP signup form on the homepage use Formspree for
+real submission capture. Until Formspree IDs are pasted in, both forms
+gracefully fall back to `mailto:Bubs960toys@gmail.com`.
+
+1. Create a free account at https://formspree.io.
+2. Create **two forms** in the dashboard:
+   - `Bubs960 Contact` (the reach-out form)
+   - `Bubs960 VIP` (the email signup)
+   You can also use one form for both if you prefer.
+3. Each form has a short ID in its endpoint, e.g. `mwkjyzab`.
+4. In `index.html`, find the two `data-formspree="YOUR_..._FORM_ID"`
+   attributes and paste the IDs in.
+5. Commit — the AJAX handler automatically switches from `mailto:` to
+   Formspree POSTs once a real ID is detected.
+
 ## One-time Shopify setup
 
 1. In Shopify admin: **Settings -> Apps and sales channels -> Develop apps ->

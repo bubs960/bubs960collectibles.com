@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live on Whatnot | Bubs960 Collectibles</title>
+    <meta name="description" content="Catch Bubs960 live on Whatnot — weekly shows, ringside prices, exclusive drops, and real-time collector banter.">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Luckiest+Guy&family=Montserrat:ital,wght@0,400;0,700;0,800;1,800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-red: #e62429;
+            --primary-blue: #1c3b70;
+            --accent-yellow: #f1c40f;
+            --whatnot-yellow: #FFF53D;
+            --bg-dark: #0a0e17;
+            --bg-panel: #111826;
+            --text-light: #f4f4f4;
+            --text-muted: #9aa3b2;
+            --metal-light: #2a3142;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            background: var(--bg-dark);
+            color: var(--text-light);
+            font-family: 'Montserrat', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        a { color: inherit; text-decoration: none; }
+
+        .marquee {
+            background: var(--primary-red); color: white;
+            font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
+            font-size: 0.8rem;
+            border-bottom: 3px solid var(--accent-yellow);
+            overflow: hidden; white-space: nowrap; padding: 0.45rem 0;
+        }
+        .marquee-track { display: inline-block; padding-left: 100%; animation: marquee 30s linear infinite; }
+        .marquee-track span { margin-right: 3rem; }
+        .marquee-track span::before { content: '🔴 '; }
+        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+
+        .nav {
+            position: sticky; top: 0; z-index: 50;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 1rem 2rem;
+            background: rgba(10,14,23,0.92);
+            backdrop-filter: blur(8px);
+            border-bottom: 2px solid var(--primary-red);
+        }
+        .nav-brand {
+            font-family: 'Bangers', cursive;
+            font-size: 1.75rem;
+            color: var(--accent-yellow);
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 0 var(--primary-red);
+        }
+        .nav-links {
+            display: flex; gap: 1.5rem; list-style: none;
+            font-weight: 700; text-transform: uppercase;
+            font-size: 0.9rem; letter-spacing: 1px;
+        }
+        .nav-links a:hover { color: var(--accent-yellow); }
+
+        .rope {
+            position: relative; height: 26px;
+            background:
+                linear-gradient(var(--primary-red), var(--primary-red)) center 2px / 100% 4px no-repeat,
+                linear-gradient(var(--accent-yellow), var(--accent-yellow)) center 12px / 100% 4px no-repeat,
+                linear-gradient(var(--primary-blue), var(--primary-blue)) center 22px / 100% 4px no-repeat,
+                var(--bg-dark);
+        }
+        .rope::before, .rope::after {
+            content: ''; position: absolute; top: -6px;
+            width: 12px; height: 38px;
+            background: linear-gradient(#7a7f8a, #2a2f38 60%, #0f1118);
+            border: 1px solid #000; border-radius: 3px;
+        }
+        .rope::before { left: 10px; } .rope::after  { right: 10px; }
+
+        /* Hero — jumbotron */
+        .live-hero {
+            position: relative;
+            padding: 5rem 2rem 4rem;
+            text-align: center;
+            background:
+                radial-gradient(ellipse at center, rgba(230,36,41,0.3) 0%, transparent 60%),
+                radial-gradient(circle at center, #1c3b70 0%, #0a0e17 70%);
+            overflow: hidden;
+        }
+        .live-hero::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(241,196,15,0.06) 0deg 6deg, transparent 6deg 18deg);
+            animation: spin 60s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .live-hero-inner { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; }
+
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: var(--primary-red);
+            color: white;
+            padding: 0.5rem 1.25rem;
+            border-radius: 999px;
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 3px;
+            border: 2px solid var(--accent-yellow);
+            margin-bottom: 1.25rem;
+            box-shadow: 0 0 30px rgba(230,36,41,0.5);
+        }
+        .live-badge .dot {
+            width: 10px; height: 10px;
+            background: var(--accent-yellow);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent-yellow);
+            animation: pulse 1.2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%,100% { opacity: 1; transform: scale(1); }
+            50%     { opacity: 0.35; transform: scale(0.7); }
+        }
+
+        .live-title {
+            font-family: 'Bangers', cursive;
+            font-size: 5.5rem;
+            color: var(--accent-yellow);
+            text-shadow: 4px 4px 0 var(--primary-red), 0 0 40px rgba(241,196,15,0.4);
+            letter-spacing: 3px;
+            line-height: 0.95;
+            text-transform: uppercase;
+        }
+        .live-lead {
+            font-size: 1.3rem;
+            max-width: 720px;
+            margin: 1.5rem auto 2rem;
+            line-height: 1.5;
+            color: #dfe3ec;
+        }
+        .live-lead strong { color: var(--accent-yellow); }
+
+        .cta-row {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+        .btn {
+            display: inline-block;
+            font-family: 'Bangers', cursive;
+            font-size: 1.35rem;
+            padding: 1rem 1.9rem;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: transform 0.2s ease;
+            cursor: pointer;
+        }
+        .btn-whatnot {
+            background: var(--whatnot-yellow);
+            color: #000;
+            box-shadow: 0 6px 0 #8a8400, 0 8px 18px rgba(255,245,61,0.35);
+        }
+        .btn-whatnot:hover { transform: translateY(-3px) scale(1.04); }
+        .btn-ghost {
+            background: transparent;
+            color: var(--accent-yellow);
+            border-color: var(--accent-yellow);
+            box-shadow: 0 6px 0 rgba(212,160,23,0.7);
+        }
+        .btn-ghost:hover { background: var(--accent-yellow); color: #111; transform: translateY(-3px) scale(1.04); }
+
+        /* Section shell */
+        .section {
+            padding: 5rem 2rem;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .section-title {
+            font-family: 'Bangers', cursive;
+            font-size: 2.75rem;
+            letter-spacing: 2px;
+            color: var(--accent-yellow);
+            text-shadow: 2px 2px 0 var(--primary-red);
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+        .section-kicker {
+            text-align: center;
+            color: var(--text-muted);
+            font-style: italic;
+            margin-bottom: 2.5rem;
+        }
+
+        /* Schedule */
+        .schedule {
+            max-width: 760px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .show-card {
+            position: relative;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 1.5rem;
+            align-items: center;
+            background: linear-gradient(180deg, var(--metal-light), var(--bg-panel) 60%);
+            border: 3px solid #000;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: inset 0 0 0 2px var(--accent-yellow), 0 6px 0 #000;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .show-card.featured {
+            box-shadow: inset 0 0 0 2px var(--primary-red), 0 6px 0 #000, 0 0 30px rgba(230,36,41,0.3);
+        }
+        .show-card:hover {
+            transform: translateY(-3px) rotate(-0.3deg);
+        }
+        .show-day {
+            text-align: center;
+            padding: 0.75rem 1.25rem;
+            background: var(--primary-red);
+            border-radius: 8px;
+            border: 2px solid var(--accent-yellow);
+            min-width: 100px;
+        }
+        .show-day .day-name {
+            font-family: 'Bangers', cursive;
+            font-size: 1.5rem;
+            color: white;
+            letter-spacing: 1.5px;
+            line-height: 1;
+        }
+        .show-day .day-time {
+            font-size: 0.75rem;
+            color: var(--accent-yellow);
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            margin-top: 0.25rem;
+            text-transform: uppercase;
+        }
+        .show-body h3 {
+            font-family: 'Bangers', cursive;
+            font-size: 1.5rem;
+            color: var(--accent-yellow);
+            letter-spacing: 1px;
+            margin-bottom: 0.25rem;
+        }
+        .show-body p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        .show-tag {
+            align-self: start;
+            background: var(--accent-yellow);
+            color: #111;
+            font-size: 0.7rem;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            padding: 0.3rem 0.7rem;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+        .show-tag.red { background: var(--primary-red); color: white; }
+        @media (max-width: 640px) {
+            .show-card { grid-template-columns: 1fr; text-align: center; }
+            .show-day { margin: 0 auto; }
+            .show-tag { justify-self: center; }
+        }
+
+        /* What goes down */
+        .bullets-band {
+            background:
+                repeating-linear-gradient(45deg, transparent 0 14px, rgba(255,255,255,0.02) 14px 15px),
+                radial-gradient(ellipse at top, rgba(230,36,41,0.18), transparent 60%),
+                var(--bg-panel);
+            padding: 4rem 2rem;
+            border-top: 3px solid var(--primary-red);
+            border-bottom: 3px solid var(--primary-red);
+        }
+        .bullets-grid {
+            max-width: 1000px; margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+        }
+        .bullet {
+            text-align: center;
+            padding: 1.5rem 1rem;
+        }
+        .bullet .emoji { font-size: 2.75rem; display: block; margin-bottom: 0.5rem; }
+        .bullet h4 {
+            font-family: 'Bangers', cursive;
+            font-size: 1.4rem;
+            color: var(--accent-yellow);
+            letter-spacing: 1px;
+            margin-bottom: 0.4rem;
+        }
+        .bullet p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        /* Follow steps */
+        .steps {
+            max-width: 700px;
+            margin: 0 auto;
+            counter-reset: stepcount;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .step {
+            display: flex;
+            gap: 1.25rem;
+            align-items: flex-start;
+            background: var(--bg-panel);
+            padding: 1.25rem 1.5rem;
+            border-radius: 10px;
+            border-left: 4px solid var(--accent-yellow);
+        }
+        .step::before {
+            counter-increment: stepcount;
+            content: counter(stepcount);
+            font-family: 'Bangers', cursive;
+            font-size: 2.25rem;
+            color: var(--primary-red);
+            line-height: 1;
+            min-width: 2.5rem;
+        }
+        .step-body h4 {
+            font-family: 'Bangers', cursive;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            color: var(--text-light);
+            margin-bottom: 0.25rem;
+        }
+        .step-body p {
+            color: var(--text-muted);
+            line-height: 1.55;
+            font-size: 0.95rem;
+        }
+
+        /* Final CTA */
+        .final-cta {
+            text-align: center;
+            padding: 5rem 2rem;
+            background: radial-gradient(circle at center, rgba(28,59,112,0.35) 0%, transparent 70%);
+        }
+        .final-cta h2 {
+            font-family: 'Bangers', cursive;
+            font-size: 3rem;
+            letter-spacing: 2px;
+            color: var(--accent-yellow);
+            text-shadow: 3px 3px 0 var(--primary-red);
+            margin-bottom: 1rem;
+        }
+        .final-cta p {
+            color: var(--text-muted);
+            max-width: 500px;
+            margin: 0 auto 2rem;
+            font-size: 1.05rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            color: #777;
+            border-top: 1px solid #1a2233;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 700px) {
+            .live-title { font-size: 3.2rem; }
+            .live-lead { font-size: 1.05rem; }
+            .section-title { font-size: 2.2rem; }
+            .nav { padding: 0.75rem 1rem; }
+            .nav-links { gap: 1rem; font-size: 0.8rem; }
+            .section { padding: 3.5rem 1.25rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="marquee" aria-hidden="true">
+        <div class="marquee-track">
+            <span>Live every Thursday 8pm ET</span>
+            <span>Giveaways every stream</span>
+            <span>Exclusive ringside pricing during the live</span>
+            <span>Follow for show alerts</span>
+            <span>Live every Thursday 8pm ET</span>
+            <span>Giveaways every stream</span>
+            <span>Exclusive ringside pricing during the live</span>
+            <span>Follow for show alerts</span>
+        </div>
+    </div>
+
+    <nav class="nav">
+        <a href="/index.html" class="nav-brand">BUBS960</a>
+        <ul class="nav-links">
+            <li><a href="/shop/index.html">Shop</a></li>
+            <li><a href="/live.html">Live</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="/index.html#contact">Contact</a></li>
+        </ul>
+    </nav>
+
+    <section class="live-hero">
+        <div class="live-hero-inner">
+            <div class="live-badge"><span class="dot" aria-hidden="true"></span>Live on Whatnot</div>
+            <h1 class="live-title">Catch The Show</h1>
+            <p class="live-lead">
+                Weekly live shows on Whatnot — figures, grails, giveaways, trash-talk, and <strong>ringside pricing you only get during the stream</strong>. If you're watching, you're saving.
+            </p>
+            <div class="cta-row">
+                <a href="https://www.whatnot.com/user/bubs960" target="_blank" rel="noopener" class="btn btn-whatnot">Follow on Whatnot →</a>
+                <a href="#schedule" class="btn btn-ghost">See Showtimes</a>
+            </div>
+        </div>
+    </section>
+
+    <div class="rope" aria-hidden="true"></div>
+
+    <section class="section" id="schedule">
+        <h2 class="section-title">The Showtimes</h2>
+        <p class="section-kicker">Recurring schedule — all times Eastern. Specials drop in the VIP list.</p>
+
+        <div class="schedule">
+            <div class="show-card featured">
+                <div class="show-day">
+                    <div class="day-name">Thu</div>
+                    <div class="day-time">8:00 PM</div>
+                </div>
+                <div class="show-body">
+                    <h3>Main Event Thursdays</h3>
+                    <p>The flagship weekly. Elite figures, grails, sealed pieces — priced for the stream. Giveaways every show.</p>
+                </div>
+                <span class="show-tag red">Weekly</span>
+            </div>
+
+            <div class="show-card">
+                <div class="show-day">
+                    <div class="day-name">Sun</div>
+                    <div class="day-time">2:00 PM</div>
+                </div>
+                <div class="show-body">
+                    <h3>Vault Pulls Sunday</h3>
+                    <p>Rotating category deep-dives: vintage, sealed cases, pop culture exclusives. You pick the vault, I pull the figures.</p>
+                </div>
+                <span class="show-tag">Bi-Weekly</span>
+            </div>
+
+            <div class="show-card">
+                <div class="show-day">
+                    <div class="day-name">TBA</div>
+                    <div class="day-time">Specials</div>
+                </div>
+                <div class="show-body">
+                    <h3>Grail Drops &amp; Takeovers</h3>
+                    <p>Surprise drops, holiday shows, collab streams, and the occasional "I-found-this-in-a-storage-locker" special. VIP list gets the alert first.</p>
+                </div>
+                <span class="show-tag">Special</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="bullets-band">
+        <div class="bullets-grid">
+            <div class="bullet">
+                <span class="emoji" aria-hidden="true">🎟️</span>
+                <h4>Ringside Pricing</h4>
+                <p>Live-only discounts you won't see on the shop or eBay. Watch to save.</p>
+            </div>
+            <div class="bullet">
+                <span class="emoji" aria-hidden="true">🎁</span>
+                <h4>Giveaways</h4>
+                <p>At least one free piece every stream. Show up, chat, get entered.</p>
+            </div>
+            <div class="bullet">
+                <span class="emoji" aria-hidden="true">📦</span>
+                <h4>Grail Breaks</h4>
+                <p>Sealed case cracks, mystery box breaks, and spot-style pulls.</p>
+            </div>
+            <div class="bullet">
+                <span class="emoji" aria-hidden="true">🎤</span>
+                <h4>Collector Hangout</h4>
+                <p>Q&amp;A, want-list shoutouts, and real-time trash talk. The chat makes the show.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <h2 class="section-title">Don't Miss It</h2>
+        <p class="section-kicker">Three seconds. Never miss a show.</p>
+
+        <div class="steps">
+            <div class="step">
+                <div class="step-body">
+                    <h4>Install the Whatnot app.</h4>
+                    <p>iOS or Android. The live experience is built for mobile — chat, bid, checkout, all in one tap.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-body">
+                    <h4>Follow @bubs960.</h4>
+                    <p>Tap follow on the channel so you get a push the second the stream goes live.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-body">
+                    <h4>Turn on show alerts.</h4>
+                    <p>In-app notifications for "Bubs960 is live" — the only alert you'll actually want at 7:59pm Thursday.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="final-cta">
+        <h2>See You At The Bell</h2>
+        <p>Tap follow, set the alert, and roll in hot at showtime. Ringside's always open.</p>
+        <div class="cta-row">
+            <a href="https://www.whatnot.com/user/bubs960" target="_blank" rel="noopener" class="btn btn-whatnot">Follow on Whatnot →</a>
+            <a href="/index.html#vip" class="btn btn-ghost">Join VIP List</a>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 Bubs960 Collectibles. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>
