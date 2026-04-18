@@ -114,6 +114,12 @@ export function FigureDetailScreen() {
       onPress: () => navigation.navigate('Wantlist'),
     },
     {
+      id: 'alerts',
+      title: 'Price alerts',
+      subtitle: 'Get pinged on drops',
+      onPress: () => navigation.navigate('Alerts'),
+    },
+    {
       id: 'share',
       title: 'Share this figure',
       subtitle: 'Send a link to a friend',
@@ -123,6 +129,12 @@ export function FigureDetailScreen() {
           track('figure_share_tapped', { figure_id: figureId, share_destination: 'system' });
         }
       },
+    },
+    {
+      id: 'settings',
+      title: 'Settings',
+      subtitle: 'Account, privacy, data',
+      onPress: () => navigation.navigate('Settings'),
     },
     {
       id: 'report',

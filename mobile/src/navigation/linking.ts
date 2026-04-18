@@ -35,6 +35,8 @@ export const linking: LinkingOptions<RootStackParamList> = {
       Sets: 'sets',
       Waitlist: 'waitlist',
       SignIn: 'sign-in',
+      Settings: 'settings',
+      Alerts: 'alerts',
     },
   },
 };

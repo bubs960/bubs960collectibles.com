@@ -87,6 +87,51 @@ export async function deleteWantlistItem(itemId: string, token: string): Promise
   await del(`${apiBase()}/api/v1/wantlist/item/${encodeURIComponent(itemId)}`, token);
 }
 
+/**
+ * Server-side list item shape returned by the (planned) GET endpoints.
+ * Adjust when backend ships the real contract — this mirrors the POST body
+ * plus the server-assigned id + status.
+ */
+export interface ServerCollectionItem {
+  id: string;
+  figure_id: string;
+  name: string;
+  brand?: string | null;
+  line?: string | null;
+  genre?: string | null;
+  canonical_image_url?: string | null;
+  series?: string | null;
+  added_at?: number;
+  paid?: number;
+  condition?: string;
+  target_price?: number;
+  /** Soft-delete flag. Filter out anything with status='removed' client-side. */
+  status?: 'active' | 'removed';
+}
+
+/** GET /api/v1/vault — full list for the signed-in user. */
+export async function fetchVault(token: string): Promise<ServerCollectionItem[]> {
+  return getJsonList(`${apiBase()}/api/v1/vault`, token);
+}
+
+/** GET /api/v1/wantlist — full list for the signed-in user. */
+export async function fetchWantlist(token: string): Promise<ServerCollectionItem[]> {
+  return getJsonList(`${apiBase()}/api/v1/wantlist`, token);
+}
+
+async function getJsonList(url: string, token: string): Promise<ServerCollectionItem[]> {
+  const res = await fetch(url, {
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+      'X-Client': 'figurepinner-mobile/0.1',
+    },
+  });
+  if (!res.ok) throw new CollectionApiError(res.status, await res.text().catch(() => ''));
+  const body = (await res.json()) as { items?: ServerCollectionItem[] };
+  return (body.items ?? []).filter((i) => i.status !== 'removed');
+}
+
 async function postJson(url: string, token: string, body: unknown): Promise<{ id: string }> {
   const res = await fetch(url, {
     method: 'POST',

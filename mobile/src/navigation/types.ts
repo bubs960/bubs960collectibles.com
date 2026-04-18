@@ -11,4 +11,6 @@ export type RootStackParamList = {
   Sets: undefined;
   Waitlist: undefined;
   SignIn: undefined;
+  Settings: undefined;
+  Alerts: undefined;
 };

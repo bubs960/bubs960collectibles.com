@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { colors, radii, spacing } from '@/theme/tokens';
 import { type } from '@/theme/typography';
 import type { SeriesSibling } from '@/shared/types';
@@ -58,7 +59,7 @@ function SiblingCard({ item, onPress }: { item: SeriesSibling; onPress: () => vo
       ]}
     >
       {item.image_url ? (
-        <Image source={{ uri: item.image_url }} style={styles.img} resizeMode="contain" />
+        <Image source={{ uri: item.image_url }} style={styles.img} contentFit="contain" />
       ) : (
         <View style={[styles.img, styles.imgEmpty]} />
       )}

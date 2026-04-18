@@ -2,12 +2,12 @@ import React from 'react';
 import {
   Alert,
   FlatList,
-  Image,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -96,7 +96,7 @@ export function Row({
       style={({ pressed }) => [styles.row, pressed && { opacity: 0.85 }]}
     >
       {item.image_url ? (
-        <Image source={{ uri: item.image_url }} style={styles.thumb} resizeMode="contain" />
+        <Image source={{ uri: item.image_url }} style={styles.thumb} contentFit="contain" />
       ) : (
         <View style={[styles.thumb, styles.thumbEmpty]} />
       )}

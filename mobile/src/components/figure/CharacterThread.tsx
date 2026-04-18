@@ -1,5 +1,6 @@
 import React from 'react';
-import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { colors, radii, spacing } from '@/theme/tokens';
 import { type } from '@/theme/typography';
 import type { CharacterThreadEntry } from '@/shared/types';
@@ -32,7 +33,7 @@ export function CharacterThread({ entries, onSelect }: Props) {
             style={({ pressed }) => [styles.card, pressed && styles.pressed]}
           >
             {item.image_url ? (
-              <Image source={{ uri: item.image_url }} style={styles.img} resizeMode="contain" />
+              <Image source={{ uri: item.image_url }} style={styles.img} contentFit="contain" />
             ) : (
               <View style={[styles.img, styles.imgEmpty]} />
             )}

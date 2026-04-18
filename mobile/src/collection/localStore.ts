@@ -131,6 +131,11 @@ class CollectionStore {
     return removed;
   }
 
+  /** Overwrite a whole list — used by pull-sync reconciliation. */
+  async replaceList(kind: ListKind, next: CollectionItem[]): Promise<void> {
+    this.write(kind, next);
+  }
+
   private upsert(kind: ListKind, next: CollectionItem): CollectionItem {
     const list = this.get(kind);
     const existing = list.find((i) => i.figure_id === next.figure_id);

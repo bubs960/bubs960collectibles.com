@@ -8,6 +8,8 @@ import { SignInScreen } from '@/screens/SignInScreen';
 import { VaultScreen } from '@/screens/VaultScreen';
 import { WantlistScreen } from '@/screens/WantlistScreen';
 import { OnboardingScreen } from '@/screens/OnboardingScreen';
+import { SettingsScreen } from '@/screens/SettingsScreen';
+import { AlertsScreen } from '@/screens/AlertsScreen';
 import { SetsScreen, WaitlistScreen } from '@/screens/StubScreen';
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 import { colors } from '@/theme/tokens';
@@ -73,6 +75,8 @@ export function AppNavigator({ initialFigureId }: { initialFigureId?: string }) 
         <Stack.Screen name="Vault" component={VaultScreen} />
         <Stack.Screen name="Wantlist" component={WantlistScreen} />
         <Stack.Screen name="Sets" component={SetsScreen} />
+        <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="Alerts" component={AlertsScreen} />
         <Stack.Screen name="Waitlist" component={WaitlistScreen} options={{ presentation: 'modal' }} />
         <Stack.Screen name="SignIn" component={SignInScreen} options={{ presentation: 'modal' }} />
       </Stack.Navigator>

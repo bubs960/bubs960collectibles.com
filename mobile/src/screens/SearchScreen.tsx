@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  Image,
   Keyboard,
   Pressable,
   StyleSheet,
@@ -10,6 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -105,7 +105,7 @@ function ResultRow({ item, onPress }: { item: SearchResult; onPress: () => void 
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
     >
       {item.image ? (
-        <Image source={{ uri: item.image }} style={styles.thumb} resizeMode="contain" />
+        <Image source={{ uri: item.image }} style={styles.thumb} contentFit="contain" />
       ) : (
         <View style={[styles.thumb, styles.thumbEmpty]} />
       )}
