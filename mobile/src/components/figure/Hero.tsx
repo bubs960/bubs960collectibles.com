@@ -1,20 +1,26 @@
 import React from 'react';
-import { Dimensions, Image, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import { colors, radii, spacing } from '@/theme/tokens';
 import { type } from '@/theme/typography';
 import { cleanFigureName } from '@/shared/cleanFigureName';
 import type { ApiFigureV1, RarityTier } from '@/shared/types';
 import { RarityBadge } from './RarityBadge';
+import { ZoomableImage } from './ZoomableImage';
 
 interface Props {
   figure: ApiFigureV1;
   rarity?: RarityTier;
+  /** Fires whenever the hero image enters / leaves its zoomed state. Parent
+   *  uses this to disable the outer ScrollView while zoomed (spec §14). */
+  onZoomChange?: (zoomed: boolean) => void;
+  /** Fires at the end of a zoom gesture with the peak scale reached. */
+  onZoomed?: (scale: number) => void;
 }
 
 const WIDTH = Dimensions.get('window').width;
-const HEIGHT = Math.round((WIDTH * 5) / 4); // 4:5 aspect per spec §8.2
+const HEIGHT = Math.round((WIDTH * 5) / 4); // 4:5 per spec §8.2
 
-export function Hero({ figure, rarity = null }: Props) {
+export function Hero({ figure, rarity = null, onZoomChange, onZoomed }: Props) {
   const name = cleanFigureName(figure.name);
   const subtitleParts = [figure.line, figure.series ? `Series ${figure.series}` : null, figure.year]
     .filter(Boolean)
@@ -22,31 +28,37 @@ export function Hero({ figure, rarity = null }: Props) {
   const subtitle = subtitleParts.join(' · ');
   const chips = [figure.brand, prettifyGenre(figure.genre)].filter(Boolean) as string[];
 
+  const label = `Photo of ${name} ${figure.line} Series ${figure.series} action figure`;
+
+  const rarityOverlay =
+    rarity && rarity !== 'common' ? (
+      <View style={styles.rarity} pointerEvents="none">
+        <RarityBadge tier={rarity} />
+      </View>
+    ) : null;
+  const glow = <View style={styles.glow} pointerEvents="none" />;
+
   return (
     <View>
-      <View
-        style={styles.imageWrap}
-        accessible
-        accessibilityLabel={`Photo of ${name} ${figure.line} Series ${figure.series} action figure`}
-      >
-        <View style={styles.glow} />
-        {figure.canonical_image_url ? (
-          <Image
-            source={{ uri: figure.canonical_image_url }}
-            style={styles.image}
-            resizeMode="contain"
-          />
-        ) : (
-          <View style={[styles.image, styles.placeholder]}>
-            <Text style={styles.placeholderText}>No image</Text>
-          </View>
-        )}
-        {rarity && rarity !== 'common' ? (
-          <View style={styles.rarity}>
-            <RarityBadge tier={rarity} />
-          </View>
-        ) : null}
-      </View>
+      {figure.canonical_image_url ? (
+        <ZoomableImage
+          uri={figure.canonical_image_url}
+          width={WIDTH}
+          height={HEIGHT}
+          accessibilityLabel={label}
+          underlay={glow}
+          overlay={rarityOverlay}
+          wrapStyle={styles.imageWrap}
+          onZoomChange={onZoomChange}
+          onZoomed={onZoomed}
+        />
+      ) : (
+        <View style={[styles.imageWrap, { width: WIDTH, height: HEIGHT }]}>
+          {glow}
+          <Text style={styles.placeholderText}>No image</Text>
+          {rarityOverlay}
+        </View>
+      )}
 
       <View style={styles.meta}>
         {chips.length > 0 && (
@@ -68,19 +80,14 @@ export function Hero({ figure, rarity = null }: Props) {
 }
 
 function prettifyGenre(genre: string): string {
-  return genre
-    .replace(/-/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return genre.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 const styles = StyleSheet.create({
   imageWrap: {
-    width: WIDTH,
-    height: HEIGHT,
     backgroundColor: colors.surface0,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
   },
   glow: {
     position: 'absolute',
@@ -91,14 +98,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     opacity: 0.18,
     borderRadius: 9999,
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-  placeholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   placeholderText: {
     ...type.eyebrow,

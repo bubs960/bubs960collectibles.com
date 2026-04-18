@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -60,6 +60,17 @@ export function FigureDetailScreen() {
 
   const lore = useMemo(() => (data ? renderLoreBand(data) : null), [data]);
   const collection = useCollection(() => data?.figure ?? null);
+  const [heroZoomed, setHeroZoomed] = useState(false);
+
+  const onHeroZoomChange = useCallback((zoomed: boolean) => {
+    setHeroZoomed(zoomed);
+  }, []);
+  const onHeroZoomed = useCallback(
+    (zoomScale: number) => {
+      track('figure_image_zoomed', { figure_id: figureId, max_zoom_level: zoomScale });
+    },
+    [figureId],
+  );
 
   useEffect(() => {
     if (data) track('figure_viewed', { figure_id: figureId });
@@ -207,6 +218,7 @@ export function FigureDetailScreen() {
       <Animated.ScrollView
         onScroll={handleScroll}
         scrollEventThrottle={16}
+        scrollEnabled={!heroZoomed}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: 120 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -219,7 +231,12 @@ export function FigureDetailScreen() {
           />
         }
       >
-        <Hero figure={figure} rarity={rarity_tier} />
+        <Hero
+          figure={figure}
+          rarity={rarity_tier}
+          onZoomChange={onHeroZoomChange}
+          onZoomed={onHeroZoomed}
+        />
 
         {isStale && (
           <View style={styles.stalePill}>
