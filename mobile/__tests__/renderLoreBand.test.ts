@@ -1,20 +1,30 @@
 import { renderLoreBand } from '../src/shared/renderLoreBand';
-import type { FigureDetailResponse } from '../src/shared/types';
+import type { ApiFigureV1, FigureDetail } from '../src/shared/types';
 
-function base(overrides: Partial<FigureDetailResponse> = {}): FigureDetailResponse {
+function apiFig(overrides: Partial<ApiFigureV1> = {}): ApiFigureV1 {
   return {
     figure_id: 'f1',
-    slug: 'spider-man',
     name: 'Spider-Man',
-    character_slug: 'spider-man',
     brand: 'Hasbro',
-    series: 'Marvel Legends',
-    release_year: 2021,
-    rarity_tier: 'common',
-    image_url: null,
+    line: 'Marvel Legends',
+    series: '11',
+    genre: 'marvel',
+    year: 2021,
+    canonical_image_url: null,
+    exclusive_to: null,
+    pack_size: 1,
+    scale: null,
+    ...overrides,
+  };
+}
+
+function detail(overrides: Partial<FigureDetail> = {}): FigureDetail {
+  return {
+    figure: apiFig(),
+    price: null,
+    rarity_tier: null,
     line_attributes: null,
     character_notes: null,
-    pricing: null,
     collection: null,
     social: null,
     series_siblings: null,
@@ -25,14 +35,14 @@ function base(overrides: Partial<FigureDetailResponse> = {}): FigureDetailRespon
 
 describe('renderLoreBand — null matrix', () => {
   it('hides zone when line_attributes + character_notes are both null', () => {
-    const r = renderLoreBand(base());
+    const r = renderLoreBand(detail());
     expect(r.visible).toBe(false);
     expect(r.segments).toEqual([]);
   });
 
   it('renders line + era sentence when line_attributes has both', () => {
     const r = renderLoreBand(
-      base({
+      detail({
         line_attributes: { line_name: 'Retro Collection', era: '2020s', years: null },
       }),
     );
@@ -43,7 +53,7 @@ describe('renderLoreBand — null matrix', () => {
 
   it('renders line-only sentence when era missing', () => {
     const r = renderLoreBand(
-      base({ line_attributes: { line_name: 'Hasbro Pulse', era: null, years: null } }),
+      detail({ line_attributes: { line_name: 'Hasbro Pulse', era: null, years: null } }),
     );
     expect(r.visible).toBe(true);
     expect(r.segments.map((s) => s.value).join('')).toContain('part of');
@@ -51,7 +61,7 @@ describe('renderLoreBand — null matrix', () => {
 
   it('renders era-only sentence when line missing', () => {
     const r = renderLoreBand(
-      base({ line_attributes: { line_name: null, era: '1990s', years: null } }),
+      detail({ line_attributes: { line_name: null, era: '1990s', years: null } }),
     );
     expect(r.visible).toBe(true);
     expect(r.segments.map((s) => s.value).join('')).toContain('1990s');
@@ -60,7 +70,7 @@ describe('renderLoreBand — null matrix', () => {
   it('appends character_notes trimmed to two sentences', () => {
     const notes = 'A wall-crawler. With a dry wit. And too many variants to count.';
     const r = renderLoreBand(
-      base({
+      detail({
         line_attributes: { line_name: 'Retro', era: null, years: null },
         character_notes: notes,
       }),
@@ -71,20 +81,19 @@ describe('renderLoreBand — null matrix', () => {
     expect(combined).not.toContain('too many variants');
   });
 
-  it('falls back to slug-prettified name when name is null', () => {
-    const r = renderLoreBand(
-      base({
-        name: null,
-        slug: 'ghost-rider',
-        line_attributes: { line_name: 'Retro', era: null, years: null },
-      }),
-    );
-    expect(r.segments.map((s) => s.value).join('')).toContain('Ghost Rider');
-  });
-
   it('is visible with only character_notes present', () => {
-    const r = renderLoreBand(base({ character_notes: 'A notable release.' }));
+    const r = renderLoreBand(detail({ character_notes: 'A notable release.' }));
     expect(r.visible).toBe(true);
     expect(r.segments.map((s) => s.value).join('')).toContain('A notable release.');
+  });
+
+  it('defensively cleans literal (None) from name when using in lore', () => {
+    const r = renderLoreBand(
+      detail({
+        figure: apiFig({ name: 'Rey Mysterio (None) (Elite Series 11)' }),
+        line_attributes: { line_name: 'Elite', era: null, years: null },
+      }),
+    );
+    expect(r.segments.map((s) => s.value).join('')).toContain('Rey Mysterio (Elite Series 11)');
   });
 });

@@ -28,6 +28,14 @@ describe('cleanFigureName', () => {
   it('falls back to prettified slug when name is only nullish parens', () => {
     expect(cleanFigureName('(None)', 'silver-surfer')).toBe('Silver Surfer');
   });
+
+  it('handles the known ((None)) double-paren case from deriveName', () => {
+    // deriveName builds `(variant)` around character_variant; if variant is the
+    // string "None" we get "Rey Mysterio (None) (Elite Series 11)".
+    expect(cleanFigureName('Rey Mysterio (None) (Elite Series 11)')).toBe(
+      'Rey Mysterio (Elite Series 11)',
+    );
+  });
 });
 
 describe('prettifySlug', () => {

@@ -3,44 +3,47 @@ import { Dimensions, Image, StyleSheet, Text, View } from 'react-native';
 import { colors, radii, spacing } from '@/theme/tokens';
 import { type } from '@/theme/typography';
 import { cleanFigureName } from '@/shared/cleanFigureName';
-import { formatYearRange } from '@/shared/formatters';
-import type { FigureDetailResponse } from '@/shared/types';
+import type { ApiFigureV1, RarityTier } from '@/shared/types';
 import { RarityBadge } from './RarityBadge';
 
 interface Props {
-  figure: FigureDetailResponse;
+  figure: ApiFigureV1;
+  rarity?: RarityTier;
 }
 
 const WIDTH = Dimensions.get('window').width;
-const HEIGHT = Math.round((WIDTH * 5) / 4); // 4:5 aspect per §8.2
+const HEIGHT = Math.round((WIDTH * 5) / 4); // 4:5 aspect per spec §8.2
 
-export function Hero({ figure }: Props) {
-  const name = cleanFigureName(figure.name, figure.slug);
-  const year =
-    figure.release_year ??
-    formatYearRange(figure.line_attributes?.years?.start, figure.line_attributes?.years?.end);
-  const eraChip = figure.line_attributes?.era;
-  const chips = [figure.brand, eraChip].filter(Boolean) as string[];
-  const subtitle = [figure.line_attributes?.line_name, year].filter(Boolean).join(' · ');
+export function Hero({ figure, rarity = null }: Props) {
+  const name = cleanFigureName(figure.name);
+  const subtitleParts = [figure.line, figure.series ? `Series ${figure.series}` : null, figure.year]
+    .filter(Boolean)
+    .map((v) => String(v));
+  const subtitle = subtitleParts.join(' · ');
+  const chips = [figure.brand, prettifyGenre(figure.genre)].filter(Boolean) as string[];
 
   return (
     <View>
       <View
         style={styles.imageWrap}
         accessible
-        accessibilityLabel={`Photo of ${name} ${figure.line_attributes?.line_name ?? ''} ${figure.series ?? ''} action figure`.replace(/\s+/g, ' ').trim()}
+        accessibilityLabel={`Photo of ${name} ${figure.line} Series ${figure.series} action figure`}
       >
         <View style={styles.glow} />
-        {figure.image_url ? (
-          <Image source={{ uri: figure.image_url }} style={styles.image} resizeMode="contain" />
+        {figure.canonical_image_url ? (
+          <Image
+            source={{ uri: figure.canonical_image_url }}
+            style={styles.image}
+            resizeMode="contain"
+          />
         ) : (
           <View style={[styles.image, styles.placeholder]}>
             <Text style={styles.placeholderText}>No image</Text>
           </View>
         )}
-        {figure.rarity_tier ? (
+        {rarity && rarity !== 'common' ? (
           <View style={styles.rarity}>
-            <RarityBadge tier={figure.rarity_tier} />
+            <RarityBadge tier={rarity} />
           </View>
         ) : null}
       </View>
@@ -56,12 +59,18 @@ export function Hero({ figure }: Props) {
           </View>
         )}
         <Text style={styles.name} accessibilityRole="header">
-          {name}
+          {name.toUpperCase()}
         </Text>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
     </View>
   );
+}
+
+function prettifyGenre(genre: string): string {
+  return genre
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 const styles = StyleSheet.create({
@@ -125,6 +134,7 @@ const styles = StyleSheet.create({
   name: {
     ...type.h1,
     color: colors.text,
+    letterSpacing: 1.2,
   },
   subtitle: {
     ...type.meta,

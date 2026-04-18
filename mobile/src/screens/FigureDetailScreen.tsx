@@ -13,7 +13,8 @@ import { type } from '@/theme/typography';
 import { useFigureDetail } from '@/hooks/useFigureDetail';
 import { renderLoreBand } from '@/shared/renderLoreBand';
 import { cleanFigureName } from '@/shared/cleanFigureName';
-import { formatPrice } from '@/shared/formatters';
+import { formatPriceDollars } from '@/shared/formatters';
+import { buildEbayUrl } from '@/api/figureApi';
 import { Hero } from '@/components/figure/Hero';
 import { ValueStrip } from '@/components/figure/ValueStrip';
 import { LoreBand } from '@/components/figure/LoreBand';
@@ -22,6 +23,7 @@ import { CollectionPanel } from '@/components/figure/CollectionPanel';
 import { SeriesContext } from '@/components/figure/SeriesContext';
 import { CharacterThread } from '@/components/figure/CharacterThread';
 import { CtaCardList, CtaItem } from '@/components/figure/CtaCardList';
+import { DetailsCard } from '@/components/figure/DetailsCard';
 import { StickyActionBar } from '@/components/figure/StickyActionBar';
 
 interface Props {
@@ -31,7 +33,12 @@ interface Props {
   onRequireAuth: () => void;
 }
 
-export function FigureDetailScreen({ figureId, isPro = false, onNavigateFigure, onRequireAuth }: Props) {
+export function FigureDetailScreen({
+  figureId,
+  isPro = false,
+  onNavigateFigure,
+  onRequireAuth,
+}: Props) {
   const { data, loading, error } = useFigureDetail(figureId);
   const [scrollY] = useState(new Animated.Value(0));
   const dims = useWindowDimensions();
@@ -54,14 +61,16 @@ export function FigureDetailScreen({ figureId, isPro = false, onNavigateFigure, 
     );
   }
 
-  const name = cleanFigureName(data.name, data.slug);
-  const ebayUrl = buildEbayUrl(data);
-  const signedIn = data.collection !== null;
-  const showSeries = (data.series_siblings?.length ?? 0) > 0;
-  const showThread = (data.character_thread?.length ?? 0) > 0;
+  const { figure, price, collection, social, series_siblings, character_thread, rarity_tier } =
+    data;
+  const name = cleanFigureName(figure.name);
+  const ebayUrl = buildEbayUrl(figure);
+  const signedIn = collection !== null;
+
+  const showSeries = (series_siblings?.length ?? 0) > 0;
+  const showThread = (character_thread?.length ?? 0) > 0;
   const showCollection =
-    (data.collection?.series_completion && data.collection.series_completion.total > 0) ||
-    !!data.social;
+    !!(collection?.series_completion && collection.series_completion.total > 0) || !!social;
 
   const ctas: CtaItem[] = [
     {
@@ -86,33 +95,36 @@ export function FigureDetailScreen({ figureId, isPro = false, onNavigateFigure, 
 
   return (
     <View style={styles.root}>
-      {/* Collapsing header overlay */}
       <Animated.View
         pointerEvents="none"
         style={[styles.stickyHeader, { opacity: headerOpacity, width: dims.width }]}
       >
         <SafeAreaView edges={['top']} style={styles.stickyHeaderInner}>
-          <Text numberOfLines={1} style={styles.stickyTitle}>{name}</Text>
-          {data.pricing?.median_cents != null && (
-            <Text style={styles.stickyPrice}>{formatPrice(data.pricing.median_cents)}</Text>
+          <Text numberOfLines={1} style={styles.stickyTitle}>
+            {name}
+          </Text>
+          {price?.avgSold != null && (
+            <Text style={styles.stickyPrice}>{formatPriceDollars(price.avgSold)}</Text>
           )}
         </SafeAreaView>
       </Animated.View>
 
       <Animated.ScrollView
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
-          useNativeDriver: true,
-        })}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true },
+        )}
         scrollEventThrottle={16}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: 120 }]}
         showsVerticalScrollIndicator={false}
       >
-        <Hero figure={data} />
+        {/* Zone 1 */}
+        <Hero figure={figure} rarity={rarity_tier} />
 
-        {/* Zone 2 — value strip. Hide entirely if no pricing. */}
-        {data.pricing ? (
+        {/* Zone 2 — value strip. Hide when no pricing. */}
+        {price ? (
           <View style={styles.section}>
-            <ValueStrip pricing={data.pricing} />
+            <ValueStrip price={price} />
           </View>
         ) : (
           <View style={styles.section}>
@@ -120,7 +132,7 @@ export function FigureDetailScreen({ figureId, isPro = false, onNavigateFigure, 
           </View>
         )}
 
-        {/* Zone 3 — lore band */}
+        {/* Zone 3 — lore band. Hides via null-matrix until content ships. */}
         {lore?.visible && (
           <View style={styles.section}>
             <LoreBand lore={lore} />
@@ -128,34 +140,39 @@ export function FigureDetailScreen({ figureId, isPro = false, onNavigateFigure, 
         )}
 
         {/* Zone 4 — market panel. Only when pricing exists. */}
-        {data.pricing && (
+        {price && (
           <View style={styles.section}>
-            <MarketPanel pricing={data.pricing} isPro={isPro} />
+            <MarketPanel price={price} ebayUrl={ebayUrl} isPro={isPro} />
           </View>
         )}
 
-        {/* Zone 5 — collection + social */}
+        {/* Details card — always visible since KB fields always exist. */}
+        <View style={styles.section}>
+          <DetailsCard figure={figure} />
+        </View>
+
+        {/* Zone 5 */}
         {showCollection && (
           <View style={styles.section}>
-            <CollectionPanel collection={data.collection} social={data.social} />
+            <CollectionPanel collection={collection} social={social} />
           </View>
         )}
 
-        {/* Zone 6 — series context */}
+        {/* Zone 6 */}
         {showSeries && (
           <View style={styles.section}>
-            <SeriesContext siblings={data.series_siblings!} onSelect={onNavigateFigure} />
+            <SeriesContext siblings={series_siblings!} onSelect={onNavigateFigure} />
           </View>
         )}
 
-        {/* Zone 7 — character thread */}
+        {/* Zone 7 */}
         {showThread && (
           <View style={styles.section}>
-            <CharacterThread entries={data.character_thread!} onSelect={onNavigateFigure} />
+            <CharacterThread entries={character_thread!} onSelect={onNavigateFigure} />
           </View>
         )}
 
-        {/* Zone 8 — CTAs */}
+        {/* Zone 8 */}
         <View style={styles.section}>
           <CtaCardList items={ctas} />
         </View>
@@ -163,8 +180,8 @@ export function FigureDetailScreen({ figureId, isPro = false, onNavigateFigure, 
 
       <StickyActionBar
         signedIn={signedIn}
-        owned={data.collection?.owned ?? false}
-        wanted={data.collection?.wanted ?? false}
+        owned={collection?.owned ?? false}
+        wanted={collection?.wanted ?? false}
         ebayUrl={ebayUrl}
         onToggleOwned={() => {}}
         onToggleWanted={() => {}}
@@ -177,23 +194,13 @@ export function FigureDetailScreen({ figureId, isPro = false, onNavigateFigure, 
 function EmptyPricingCard() {
   return (
     <View style={emptyStyles.card}>
-      <Text style={emptyStyles.title}>No market data yet</Text>
+      <Text style={emptyStyles.title}>No price data yet</Text>
       <Text style={emptyStyles.body}>
-        We haven't seen enough recent sales to estimate a price. Check eBay directly below.
+        This figure hasn't been matched to recent eBay listings yet. Tap Find on eBay below to
+        search directly.
       </Text>
     </View>
   );
-}
-
-function buildEbayUrl(d: ReturnType<typeof useFigureDetail>['data']): string | null {
-  if (!d) return null;
-  const q = [cleanFigureName(d.name, d.slug), d.line_attributes?.line_name, d.series]
-    .filter(Boolean)
-    .join(' ');
-  if (!q.trim()) return null;
-  // Affiliate params should be injected by the backend or added here once
-  // EPN campid is configured in app env.
-  return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(q)}&LH_Sold=1&LH_Complete=1`;
 }
 
 const styles = StyleSheet.create({

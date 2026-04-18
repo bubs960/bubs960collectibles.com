@@ -2,45 +2,25 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { colors, radii, spacing } from '@/theme/tokens';
 import { type } from '@/theme/typography';
-import { formatPrice, formatTrendPct } from '@/shared/formatters';
-import type { Pricing } from '@/shared/types';
+import { formatPriceDollars } from '@/shared/formatters';
+import type { ApiPriceV1 } from '@/shared/types';
 
 interface Props {
-  pricing: Pricing;
+  price: ApiPriceV1;
 }
 
-export function ValueStrip({ pricing }: Props) {
-  const trendPositive = (pricing.trend_pct_90d ?? 0) > 0;
-  const trendColor = pricing.trend_pct_90d == null
-    ? colors.muted
-    : trendPositive
-      ? colors.success
-      : colors.danger;
-  const arrow = pricing.trend_pct_90d == null ? '' : trendPositive ? '▲ ' : '▼ ';
-
+export function ValueStrip({ price }: Props) {
   return (
     <View style={styles.grid}>
       <Cell
-        label="Median"
-        value={formatPrice(pricing.median_cents)}
-        sub={pricing.sold_count_90d != null ? `${pricing.sold_count_90d} sold 90d` : null}
+        label="Avg sold"
+        value={formatPriceDollars(price.avgSold)}
+        sub={price.soldCount ? `${price.soldCount} comps` : null}
+        highlight
       />
-      <Cell
-        label="Low"
-        value={formatPrice(pricing.low_cents)}
-        sub={null}
-      />
-      <Cell
-        label="High"
-        value={formatPrice(pricing.high_cents)}
-        sub={null}
-      />
-      <Cell
-        label="Trend 90d"
-        value={`${arrow}${formatTrendPct(pricing.trend_pct_90d)}`}
-        sub={null}
-        valueColor={trendColor}
-      />
+      <Cell label="Median" value={formatPriceDollars(price.medianSold)} sub={null} />
+      <Cell label="Low" value={formatPriceDollars(price.minSold)} sub={null} />
+      <Cell label="High" value={formatPriceDollars(price.maxSold)} sub={null} />
     </View>
   );
 }
@@ -49,21 +29,21 @@ function Cell({
   label,
   value,
   sub,
-  valueColor,
+  highlight,
 }: {
   label: string;
   value: string;
   sub: string | null;
-  valueColor?: string;
+  highlight?: boolean;
 }) {
   return (
     <View
-      style={styles.cell}
+      style={[styles.cell, highlight && styles.cellHighlight]}
       accessible
       accessibilityLabel={`${label}, ${value}${sub ? `, ${sub}` : ''}`}
     >
-      <Text style={styles.label}>{label}</Text>
-      <Text style={[styles.value, valueColor ? { color: valueColor } : null]}>{value}</Text>
+      <Text style={styles.label}>{label.toUpperCase()}</Text>
+      <Text style={[styles.value, highlight && styles.valueHighlight]}>{value}</Text>
       {sub ? <Text style={styles.sub}>{sub}</Text> : null}
     </View>
   );
@@ -88,6 +68,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 4,
   },
+  cellHighlight: {
+    borderColor: colors.accent,
+  },
   label: {
     ...type.eyebrow,
     color: colors.dim,
@@ -95,6 +78,9 @@ const styles = StyleSheet.create({
   value: {
     ...type.heroPrice,
     color: colors.text,
+  },
+  valueHighlight: {
+    color: colors.success,
   },
   sub: {
     ...type.meta,

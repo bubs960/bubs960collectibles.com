@@ -1,9 +1,12 @@
-export function formatPrice(cents: number | null | undefined): string {
-  if (cents == null) return '—';
-  const dollars = cents / 100;
-  return dollars >= 1000
-    ? `$${dollars.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
-    : `$${dollars.toFixed(2)}`;
+export function formatPriceDollars(value: number | null | undefined): string {
+  if (value == null) return '—';
+  if (value >= 1000) return `$${value.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+  return `$${value.toFixed(0)}`;
+}
+
+export function formatPriceDollarsFine(value: number | null | undefined): string {
+  if (value == null) return '—';
+  return `$${value.toFixed(2)}`;
 }
 
 export function formatTrendPct(pct: number | null | undefined): string {
@@ -14,6 +17,7 @@ export function formatTrendPct(pct: number | null | undefined): string {
 
 export function formatRelativeDate(iso: string, now: Date = new Date()): string {
   const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return iso;
   const diffMs = now.getTime() - then;
   const sec = Math.round(diffMs / 1000);
   if (sec < 60) return 'just now';
@@ -29,10 +33,8 @@ export function formatRelativeDate(iso: string, now: Date = new Date()): string 
   return `${yr}y ago`;
 }
 
-export function formatYearRange(start: number | null | undefined, end: number | null | undefined): string | null {
-  if (start == null && end == null) return null;
-  if (start == null) return String(end);
-  if (end == null) return String(start);
-  if (start === end) return String(start);
-  return `${start}–${end}`;
+export function formatShortDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }

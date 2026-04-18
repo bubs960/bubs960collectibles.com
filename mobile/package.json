@@ -13,6 +13,8 @@
     "lint": "eslint src __tests__ --ext .ts,.tsx"
   },
   "dependencies": {
+    "@expo-google-fonts/bebas-neue": "~0.2.3",
+    "@expo-google-fonts/inter": "~0.2.3",
     "expo": "~51.0.0",
     "expo-font": "~12.0.0",
     "expo-haptics": "~13.0.0",

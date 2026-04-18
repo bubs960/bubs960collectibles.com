@@ -1,9 +1,9 @@
-// Content template engine for the lore band. Mirror of web renderer — when the
-// web version in figurepinner-dev updates, port the changes (and its test cases)
-// here. Return shape is a list of inline segments so the UI can highlight line
-// names without needing an HTML renderer.
+// Lore band content renderer. The web doesn't ship a renderer yet — per the
+// mobile handoff this content lands near launch. This module keeps the null-
+// matrix contract (zone hides when no signal) and the inline segment shape so
+// the UI layer doesn't need to change when real content arrives.
 
-import type { FigureDetailResponse } from './types';
+import type { FigureDetail, LineAttributes } from './types';
 import { cleanFigureName } from './cleanFigureName';
 
 export type LoreSegment =
@@ -12,24 +12,22 @@ export type LoreSegment =
 
 export interface LoreBandResult {
   segments: LoreSegment[];
-  /** Render nothing if false — the caller should hide zone 3 entirely. */
+  /** Hide zone 3 when false. */
   visible: boolean;
 }
 
-export function renderLoreBand(figure: FigureDetailResponse): LoreBandResult {
-  const name = cleanFigureName(figure.name, figure.slug);
-  const line = figure.line_attributes?.line_name ?? null;
-  const era = figure.line_attributes?.era ?? null;
-  const notes = figure.character_notes?.trim() ?? null;
+export function renderLoreBand(detail: FigureDetail): LoreBandResult {
+  const line: LineAttributes['line_name'] = detail.line_attributes?.line_name ?? null;
+  const era: LineAttributes['era'] = detail.line_attributes?.era ?? null;
+  const notes = detail.character_notes?.trim() ?? null;
 
-  // No lore signal at all — hide zone.
   if (!line && !era && !notes) {
     return { segments: [], visible: false };
   }
 
+  const name = cleanFigureName(detail.figure.name);
   const out: LoreSegment[] = [];
 
-  // Sentence 1: line + era context
   if (line && era) {
     out.push({ type: 'text', value: `${name} was released in ` });
     out.push({ type: 'emphasis', value: line });
@@ -42,7 +40,6 @@ export function renderLoreBand(figure: FigureDetailResponse): LoreBandResult {
     out.push({ type: 'text', value: `${name} dates to ${era}.` });
   }
 
-  // Sentence 2: character notes (trimmed to first two sentences on mobile).
   if (notes) {
     if (out.length) out.push({ type: 'text', value: ' ' });
     out.push({ type: 'text', value: firstTwoSentences(notes) });
