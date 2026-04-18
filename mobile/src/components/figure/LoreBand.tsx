@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { LayoutAnimation, Pressable, StyleSheet, Text, View, Platform, UIManager } from 'react-native';
 import { colors, radii, spacing } from '@/theme/tokens';
 import { type } from '@/theme/typography';
+import { useReduceMotion } from '@/hooks/useReduceMotion';
 import type { LoreBandResult } from '@/shared/renderLoreBand';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -16,6 +17,7 @@ const COLLAPSED_LINES = 6;
 
 export function LoreBand({ lore }: Props) {
   const [expanded, setExpanded] = useState(false);
+  const reduceMotion = useReduceMotion();
 
   if (!lore.visible) return null;
 
@@ -31,7 +33,9 @@ export function LoreBand({ lore }: Props) {
   const approxLong = lore.segments.reduce((n, s) => n + s.value.length, 0) > 220;
 
   const toggle = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    if (!reduceMotion) {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    }
     setExpanded((v) => !v);
   };
 

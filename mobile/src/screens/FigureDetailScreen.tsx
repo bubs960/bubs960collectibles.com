@@ -5,6 +5,7 @@ import {
   NativeScrollEvent,
   NativeSyntheticEvent,
   Pressable,
+  RefreshControl,
   StyleSheet,
   Text,
   View,
@@ -14,13 +15,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '@clerk/clerk-expo';
+import * as Haptics from 'expo-haptics';
 import { colors, heroCollapseThreshold, spacing } from '@/theme/tokens';
 import { type } from '@/theme/typography';
 import { useFigureDetail } from '@/hooks/useFigureDetail';
 import { useCollection } from '@/hooks/useCollection';
+import { useReduceMotion } from '@/hooks/useReduceMotion';
 import { renderLoreBand } from '@/shared/renderLoreBand';
 import { cleanFigureName } from '@/shared/cleanFigureName';
 import { formatPriceDollars } from '@/shared/formatters';
+import { shareFigure } from '@/shared/share';
 import { buildEbayUrl } from '@/api/figureApi';
 import { track } from '@/analytics/dispatch';
 import { Hero } from '@/components/figure/Hero';
@@ -45,8 +49,10 @@ export function FigureDetailScreen() {
   const route = useRoute<RouteP>();
   const { figureId } = route.params;
   const { isSignedIn } = useAuth();
+  const reduceMotion = useReduceMotion();
 
-  const { data, loading, error } = useFigureDetail(figureId);
+  const { data, loading, error, revalidating, isStale, cacheAgeSeconds, refetch } =
+    useFigureDetail(figureId);
   const scrollY = useRef(new Animated.Value(0)).current;
   const maxDepthRef = useRef<number>(0);
   const emittedDepthsRef = useRef<Set<number>>(new Set());
@@ -55,12 +61,11 @@ export function FigureDetailScreen() {
   const lore = useMemo(() => (data ? renderLoreBand(data) : null), [data]);
   const collection = useCollection(() => data?.figure ?? null);
 
-  // Emit figure_viewed once per figure_id per screen mount.
   useEffect(() => {
     if (data) track('figure_viewed', { figure_id: figureId });
   }, [data, figureId]);
 
-  if (loading) {
+  if (loading && !data) {
     return (
       <SafeAreaView style={styles.loading} edges={['top']}>
         <ActivityIndicator color={colors.accent} />
@@ -68,7 +73,7 @@ export function FigureDetailScreen() {
     );
   }
 
-  if (error || !data) {
+  if ((error && !data) || !data) {
     return (
       <SafeAreaView style={styles.loading} edges={['top']}>
         <Text style={styles.errorText}>Couldn't load this figure.</Text>
@@ -82,7 +87,7 @@ export function FigureDetailScreen() {
 
   const showSeries = (series_siblings?.length ?? 0) > 0;
   const showThread = (character_thread?.length ?? 0) > 0;
-  const showCollection = !!social; // series_completion not yet shipped
+  const showCollection = !!social;
 
   const ctas: CtaItem[] = [
     {
@@ -94,21 +99,32 @@ export function FigureDetailScreen() {
     {
       id: 'share',
       title: 'Share this figure',
-      subtitle: 'Send a branded card to a friend',
-      onPress: () => track('figure_share_tapped', { figure_id: figureId, share_destination: 'system' }),
+      subtitle: 'Send a link to a friend',
+      onPress: async () => {
+        const result = await shareFigure(figure).catch(() => 'dismissed' as const);
+        if (result === 'shared') {
+          track('figure_share_tapped', { figure_id: figureId, share_destination: 'system' });
+        }
+      },
     },
   ];
 
-  const headerOpacity = scrollY.interpolate({
-    inputRange: [heroCollapseThreshold - 60, heroCollapseThreshold],
-    outputRange: [0, 1],
-    extrapolate: 'clamp',
-  });
+  // With reduce-motion off, the header crossfades with scroll. With it on,
+  // snap directly based on a threshold so there's no animated interpolation.
+  const headerOpacity = reduceMotion
+    ? scrollY.interpolate({
+        inputRange: [heroCollapseThreshold - 1, heroCollapseThreshold],
+        outputRange: [0, 1],
+        extrapolate: 'clamp',
+      })
+    : scrollY.interpolate({
+        inputRange: [heroCollapseThreshold - 60, heroCollapseThreshold],
+        outputRange: [0, 1],
+        extrapolate: 'clamp',
+      });
 
   const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    // Feed animated value for the collapsing header.
     scrollY.setValue(e.nativeEvent.contentOffset.y);
-    // Scroll-depth emission per spec §12.
     const y = e.nativeEvent.contentOffset.y;
     const h = e.nativeEvent.layoutMeasurement.height;
     const total = e.nativeEvent.contentSize.height;
@@ -122,6 +138,15 @@ export function FigureDetailScreen() {
         track('figure_scroll_depth', { figure_id: figureId, max_depth_pct: mark });
       }
     }
+  };
+
+  const onPullToRefresh = async () => {
+    Haptics.selectionAsync();
+    track('figure_pull_refresh', {
+      figure_id: figureId,
+      cache_age_seconds: cacheAgeSeconds,
+    });
+    await refetch();
   };
 
   const onRequireAuth = (trigger: 'own' | 'want') => {
@@ -167,8 +192,6 @@ export function FigureDetailScreen() {
         </SafeAreaView>
       </Animated.View>
 
-      {/* Always-visible search affordance (sits above the hero glow before scroll,
-          blends into the sticky header after scroll). */}
       <SafeAreaView edges={['top']} style={styles.floatingNav} pointerEvents="box-none">
         <Pressable
           onPress={() => navigation.navigate('Search')}
@@ -186,8 +209,25 @@ export function FigureDetailScreen() {
         scrollEventThrottle={16}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: 120 }]}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={revalidating && !loading}
+            onRefresh={onPullToRefresh}
+            tintColor={colors.accent}
+            progressBackgroundColor={colors.surface0}
+            colors={[colors.accent]}
+          />
+        }
       >
         <Hero figure={figure} rarity={rarity_tier} />
+
+        {isStale && (
+          <View style={styles.stalePill}>
+            <Text style={styles.staleText}>
+              Prices last updated {formatAge(cacheAgeSeconds)} — pull to refresh
+            </Text>
+          </View>
+        )}
 
         {price ? (
           <View style={styles.section}>
@@ -256,6 +296,14 @@ export function FigureDetailScreen() {
       />
     </View>
   );
+}
+
+function formatAge(seconds: number | null): string {
+  if (seconds == null) return '';
+  const hours = seconds / 3600;
+  if (hours < 1) return `${Math.max(1, Math.round(seconds / 60))}m ago`;
+  if (hours < 48) return `${Math.round(hours)}h ago`;
+  return `${Math.round(hours / 24)}d ago`;
 }
 
 function EmptyPricingCard() {
@@ -337,6 +385,19 @@ const styles = StyleSheet.create({
   searchBtnText: {
     ...type.eyebrow,
     color: colors.text,
+  },
+  stalePill: {
+    alignSelf: 'center',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: 'rgba(240, 160, 75, 0.12)',
+    borderWidth: 1,
+    borderColor: colors.accentWarm,
+  },
+  staleText: {
+    ...type.eyebrow,
+    color: colors.accentWarm,
   },
 });
 

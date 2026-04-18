@@ -1,35 +1,28 @@
-import { useEffect, useState } from 'react';
-import { fetchFigureDetail, FigureFetchError } from '@/api/figureApi';
+import { useCallback } from 'react';
+import { fetchFigureDetail } from '@/api/figureApi';
 import type { FigureDetail } from '@/shared/types';
+import { useSWR } from '@/cache/useSWR';
 
-interface State {
-  data: FigureDetail | null;
-  loading: boolean;
-  error: Error | null;
-}
+// Spec §11: figures viewed in the last 30 days should be fully viewable
+// offline from cache. Pricing shows a stale indicator when >24h old — we
+// don't force revalidate below that threshold, but the UI still flags the
+// age so users know.
+const STALE_AFTER_MS = 24 * 60 * 60 * 1000; // 24h
 
-// Thin fetch hook. Swap for React Query / SWR when we wire real caching
-// (§11: stale-while-revalidate, 30-day offline).
-export function useFigureDetail(figureId: string): State {
-  const [state, setState] = useState<State>({ data: null, loading: true, error: null });
+export function useFigureDetail(figureId: string) {
+  const fetcher = useCallback(() => fetchFigureDetail(figureId), [figureId]);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    setState({ data: null, loading: true, error: null });
+  const swr = useSWR<FigureDetail>(`figure:${figureId}`, fetcher, {
+    staleAfterMs: STALE_AFTER_MS,
+  });
 
-    fetchFigureDetail(figureId, { signal: controller.signal })
-      .then((data) => setState({ data, loading: false, error: null }))
-      .catch((err: unknown) => {
-        if ((err as { name?: string })?.name === 'AbortError') return;
-        setState({
-          data: null,
-          loading: false,
-          error: err instanceof FigureFetchError ? err : (err as Error),
-        });
-      });
-
-    return () => controller.abort();
-  }, [figureId]);
-
-  return state;
+  return {
+    data: swr.data,
+    loading: swr.loading,
+    revalidating: swr.revalidating,
+    error: swr.error,
+    cacheAgeSeconds: swr.cacheAgeSeconds,
+    isStale: swr.cacheAgeSeconds != null && swr.cacheAgeSeconds * 1000 > STALE_AFTER_MS,
+    refetch: swr.refetch,
+  };
 }
