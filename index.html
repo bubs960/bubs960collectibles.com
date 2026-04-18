@@ -274,6 +274,88 @@
             font-size: 0.85rem;
         }
 
+        /* Distribution */
+        .distribution-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .platform-card {
+            background: var(--bg-panel);
+            border: 2px solid #1a2233;
+            border-radius: 12px;
+            padding: 1.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .platform-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-yellow);
+            box-shadow: 0 10px 30px rgba(241, 196, 15, 0.2);
+        }
+
+        .platform-card.live { border-color: var(--primary-red); }
+        .platform-card.live:hover { box-shadow: 0 10px 30px rgba(230, 36, 41, 0.3); }
+
+        .platform-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .platform-name {
+            font-family: 'Bangers', cursive;
+            font-size: 1.75rem;
+            color: var(--accent-yellow);
+            letter-spacing: 1px;
+        }
+
+        .platform-status {
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 0.25rem 0.6rem;
+            border-radius: 4px;
+            background: #2a3142;
+            color: var(--text-muted);
+        }
+
+        .platform-status.active { background: var(--primary-red); color: white; }
+
+        .platform-card p {
+            color: var(--text-muted);
+            line-height: 1.5;
+            font-size: 0.95rem;
+            flex-grow: 1;
+        }
+
+        .platform-btn {
+            display: inline-block;
+            margin-top: 0.5rem;
+            padding: 0.75rem 1rem;
+            font-family: 'Bangers', cursive;
+            font-size: 1.1rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            text-align: center;
+            border-radius: 6px;
+            background: var(--primary-red);
+            color: white;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+        .platform-btn:hover { background: #c91d22; transform: scale(1.03); }
+
+        .platform-btn.disabled {
+            background: #2a3142;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
         /* Contact */
         .contact-wrap {
             display: grid;
@@ -351,6 +433,7 @@
         <a href="#top" class="nav-brand">BUBS960</a>
         <ul class="nav-links">
             <li><a href="#collections">Collections</a></li>
+            <li><a href="#shop">Shop Now</a></li>
             <li><a href="#contact">Contact</a></li>
             <li><a href="#vip">VIP List</a></li>
         </ul>
@@ -424,6 +507,49 @@
         </div>
     </section>
 
+    <section class="section" id="shop">
+        <h2 class="section-title">Where To Shop</h2>
+        <p class="section-kicker">Active distribution channels — click through and grab something today.</p>
+
+        <div class="distribution-grid">
+            <article class="platform-card live">
+                <div class="platform-header">
+                    <span class="platform-name">eBay</span>
+                    <span class="platform-status active">Live</span>
+                </div>
+                <p>Fixed-price listings and auctions. Full photos, clean grading notes, fast shipping from the Bubs960 eBay store.</p>
+                <a href="https://www.ebay.com/usr/bubs960" target="_blank" rel="noopener" class="platform-btn">Shop on eBay</a>
+            </article>
+
+            <article class="platform-card live">
+                <div class="platform-header">
+                    <span class="platform-name">Whatnot</span>
+                    <span class="platform-status active">Live Shows</span>
+                </div>
+                <p>Catch live auctions, breaks, and giveaways. Follow the channel for show times and exclusive ringside prices.</p>
+                <a href="https://www.whatnot.com/user/bubs960" target="_blank" rel="noopener" class="platform-btn">Follow on Whatnot</a>
+            </article>
+
+            <article class="platform-card">
+                <div class="platform-header">
+                    <span class="platform-name">Mercari</span>
+                    <span class="platform-status">Coming Soon</span>
+                </div>
+                <p>Secondary distribution for deal-priced pieces and overflow inventory. Storefront launching next.</p>
+                <span class="platform-btn disabled">Launching Soon</span>
+            </article>
+
+            <article class="platform-card">
+                <div class="platform-header">
+                    <span class="platform-name">Shopify Store</span>
+                    <span class="platform-status">Coming Soon</span>
+                </div>
+                <p>The main event — our own storefront with no platform fees. Join the VIP list below for a launch discount code.</p>
+                <a href="#vip" class="platform-btn">Join VIP List</a>
+            </article>
+        </div>
+    </section>
+
     <section class="section" id="contact">
         <h2 class="section-title">Reach Out</h2>
         <p class="section-kicker">Looking for something specific? Hit me up.</p>
@@ -440,7 +566,7 @@
                 <ul class="contact-methods">
                     <li>
                         <span>Email</span>
-                        <a href="mailto:contact@bubs960collectibles.com">contact@bubs960collectibles.com</a>
+                        <a href="mailto:Bubs960toys@gmail.com">Bubs960toys@gmail.com</a>
                     </li>
                     <li>
                         <span>Instagram</span>
@@ -453,7 +579,7 @@
                 </ul>
             </div>
 
-            <form class="contact" action="mailto:contact@bubs960collectibles.com" method="POST" enctype="text/plain">
+            <form class="contact" action="mailto:Bubs960toys@gmail.com" method="POST" enctype="text/plain">
                 <input type="text" name="name" placeholder="Your name" required>
                 <input type="email" name="email" placeholder="Your email" required>
                 <input type="text" name="subject" placeholder="What are you looking for?" required>
@@ -468,7 +594,7 @@
             <h3>Get Ringside Access</h3>
             <p style="margin-bottom: 1rem; font-size: 0.95rem; color: var(--text-muted);">Join the VIP list to get a massive discount code the moment the Shopify store goes live.</p>
 
-            <form class="signup" action="mailto:contact@bubs960collectibles.com" method="POST" enctype="text/plain">
+            <form class="signup" action="mailto:Bubs960toys@gmail.com" method="POST" enctype="text/plain">
                 <input type="email" name="email" placeholder="Enter your email address" required>
                 <button type="submit" class="btn btn-primary">GIMME THE DEALS! WOO!</button>
             </form>
