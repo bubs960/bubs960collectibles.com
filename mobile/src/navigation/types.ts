@@ -3,6 +3,7 @@
 // here or the deep-link resolver will no-op on arrival.
 
 export type RootStackParamList = {
+  Onboarding: undefined;
   FigureDetail: { figureId: string };
   Search: undefined;
   Vault: undefined;
