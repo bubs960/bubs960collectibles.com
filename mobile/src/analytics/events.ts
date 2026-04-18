@@ -11,6 +11,8 @@ export interface EventProps {
   figure_own_toggled: { figure_id: string; next_state: boolean };
   figure_want_toggled: { figure_id: string; next_state: boolean };
   auth_required_shown: { figure_id: string; trigger: 'own' | 'want' };
+  pro_waitlist_tapped: { figure_id: string };
+  app_error: { message: string; component_stack: string };
 }
 
 export type EventName = keyof EventProps;

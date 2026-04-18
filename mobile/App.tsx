@@ -12,6 +12,8 @@ import {
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
 import { AppNavigator } from '@/navigation/AppNavigator';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { track } from '@/analytics/dispatch';
 import { tokenCache } from '@/auth/tokenCache';
 import { colors } from '@/theme/tokens';
 import { type } from '@/theme/typography';
@@ -40,14 +42,23 @@ export default function App() {
   }
 
   return (
-    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
-      <GestureHandlerRootView style={styles.root}>
-        <SafeAreaProvider>
-          <StatusBar style="light" />
-          <AppNavigator />
-        </SafeAreaProvider>
-      </GestureHandlerRootView>
-    </ClerkProvider>
+    <ErrorBoundary
+      onError={(err, info) =>
+        track('app_error', {
+          message: err.message,
+          component_stack: info.componentStack,
+        })
+      }
+    >
+      <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
+        <GestureHandlerRootView style={styles.root}>
+          <SafeAreaProvider>
+            <StatusBar style="light" />
+            <AppNavigator />
+          </SafeAreaProvider>
+        </GestureHandlerRootView>
+      </ClerkProvider>
+    </ErrorBoundary>
   );
 }
 

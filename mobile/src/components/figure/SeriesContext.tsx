@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, radii, spacing } from '@/theme/tokens';
 import { type } from '@/theme/typography';
@@ -11,8 +11,23 @@ interface Props {
 
 const CARD_W = 140;
 const CARD_H = 200;
+const PREFETCH_COUNT = 8;
 
 export function SeriesContext({ siblings, onSelect }: Props) {
+  // Spec §11: prefetch sibling thumbnails eagerly so the carousel paints
+  // fully populated when scrolled into view. Image.prefetch warms the
+  // platform image cache (SDWebImage on iOS, Fresco on Android) without
+  // blocking anything; failures are non-fatal.
+  useEffect(() => {
+    const urls = siblings
+      .slice(0, PREFETCH_COUNT)
+      .map((s) => s.image_url)
+      .filter((u): u is string => !!u);
+    for (const url of urls) {
+      Image.prefetch(url).catch(() => {});
+    }
+  }, [siblings]);
+
   return (
     <View style={styles.wrap}>
       <Text style={styles.header}>Rest of series</Text>
