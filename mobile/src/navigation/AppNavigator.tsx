@@ -4,12 +4,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { FigureDetailScreen } from '@/screens/FigureDetailScreen';
 import { SearchScreen } from '@/screens/SearchScreen';
 import { SignInScreen } from '@/screens/SignInScreen';
-import {
-  VaultScreen,
-  WantlistScreen,
-  SetsScreen,
-  WaitlistScreen,
-} from '@/screens/StubScreen';
+import { VaultScreen } from '@/screens/VaultScreen';
+import { WantlistScreen } from '@/screens/WantlistScreen';
+import { SetsScreen, WaitlistScreen } from '@/screens/StubScreen';
 import { colors } from '@/theme/tokens';
 import { linking } from './linking';
 import type { RootStackParamList } from './types';

@@ -6,13 +6,10 @@ import { type } from '@/theme/typography';
 
 /**
  * Placeholder for screens that exist only to satisfy the Universal Link
- * routing table today (per mobile/native-templates/apple-app-site-association
- * in the Figure Pinner Dev workspace). Tapping a
- * https://figurepinner.com/vault link opens the app directly and lands here
- * until the real screen ships. Without these routes registered, the
- * NavigationContainer throws on deep-link arrival.
+ * routing table today (per mobile/native-templates/apple-app-site-association).
+ * Without these registered, the NavigationContainer throws on deep-link arrival.
  */
-export function StubScreen({ title, body }: { title: string; body: string }) {
+function StubScreen({ title, body }: { title: string; body: string }) {
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <View style={styles.content}>
@@ -23,12 +20,6 @@ export function StubScreen({ title, body }: { title: string; body: string }) {
   );
 }
 
-export const VaultScreen = () => (
-  <StubScreen title="Vault" body="Your owned figures will live here." />
-);
-export const WantlistScreen = () => (
-  <StubScreen title="Wantlist" body="Figures you're hunting for will live here." />
-);
 export const SetsScreen = () => (
   <StubScreen title="Sets" body="Series completion tracking will live here." />
 );

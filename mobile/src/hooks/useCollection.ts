@@ -6,111 +6,114 @@ import {
   deleteVaultItem,
   deleteWantlistItem,
 } from '@/api/collectionApi';
+import { collectionStore } from '@/collection/localStore';
+import { useCollectionList } from '@/hooks/useCollectionList';
 import type { ApiFigureV1 } from '@/shared/types';
 
-interface State {
+interface UseCollectionResult {
   owned: boolean;
   wanted: boolean;
-  /** Server-assigned item IDs, kept so toggle-off can DELETE. */
-  vaultItemId: string | null;
-  wantlistItemId: string | null;
   pending: 'owned' | 'wanted' | null;
   error: Error | null;
+  toggleOwned: () => Promise<void>;
+  toggleWanted: () => Promise<void>;
 }
 
 /**
- * Optimistic collection toggle with DELETE on toggle-off. Rolls back on
- * failure. Uses a figure-getter so the caller doesn't need to pass a stable
- * reference. The server ids returned by POST are held in state and reused
- * when the user un-toggles — the server is expected to soft-delete
- * (status='removed'), see collectionApi comments.
+ * Local-first collection toggle.
+ *
+ * UI state is driven by the local AsyncStorage-backed store — toggles take
+ * effect immediately with no network round trip. When we have an auth token
+ * we also fire a best-effort Worker sync (POST / DELETE); failures are
+ * captured in `error` but don't roll back the local state, matching the
+ * reference mobile client's localStorage contract. Once the Worker exposes
+ * GET for the lists, a pull-sync layer on top will reconcile on auth.
  */
-export function useCollection(getFigure: () => ApiFigureV1 | null) {
+export function useCollection(getFigure: () => ApiFigureV1 | null): UseCollectionResult {
   const getToken = useAuthToken();
-  const [state, setState] = useState<State>({
-    owned: false,
-    wanted: false,
-    vaultItemId: null,
-    wantlistItemId: null,
-    pending: null,
-    error: null,
-  });
+  const vault = useCollectionList('vault');
+  const wantlist = useCollectionList('wantlist');
+
   const getFigureRef = useRef(getFigure);
   getFigureRef.current = getFigure;
 
-  const toggleOwned = useCallback(async (): Promise<void> => {
-    const prev = state.owned;
-    const prevId = state.vaultItemId;
-    setState((s) => ({ ...s, owned: !prev, pending: 'owned', error: null }));
+  const [pending, setPending] = useState<'owned' | 'wanted' | null>(null);
+  const [error, setError] = useState<Error | null>(null);
 
-    const figure = getFigureRef.current();
-    if (!figure) {
-      setState((s) => ({ ...s, owned: prev, pending: null }));
-      return;
-    }
+  const figure = getFigureRef.current();
+  const figureId = figure?.figure_id ?? null;
+  const owned = figureId ? vault.some((i) => i.figure_id === figureId) : false;
+  const wanted = figureId ? wantlist.some((i) => i.figure_id === figureId) : false;
+
+  const toggleOwned = useCallback(async (): Promise<void> => {
+    const fig = getFigureRef.current();
+    if (!fig) return;
+    const wasOwned = collectionStore.has('vault', fig.figure_id);
+    setPending('owned');
+    setError(null);
     try {
-      const token = await getToken();
-      if (!token) throw new Error('not signed in');
-      if (!prev) {
-        const { id } = await addToVault(figure, token);
-        setState((s) => ({ ...s, vaultItemId: id, pending: null }));
-      } else if (prevId) {
-        await deleteVaultItem(prevId, token);
-        setState((s) => ({ ...s, vaultItemId: null, pending: null }));
+      if (wasOwned) {
+        const existing = collectionStore.itemFor('vault', fig.figure_id);
+        await collectionStore.remove('vault', fig.figure_id);
+        await syncDelete('vault', existing?.server_id ?? null, await getToken());
       } else {
-        // No server id — nothing to delete; just clear local state.
-        setState((s) => ({ ...s, pending: null }));
+        await collectionStore.addOwned(fig);
+        const token = await getToken();
+        if (token) {
+          try {
+            const { id } = await addToVault(fig, token);
+            await collectionStore.attachServerId('vault', fig.figure_id, id);
+          } catch (e) {
+            setError(e as Error);
+          }
+        }
       }
-    } catch (err) {
-      setState((s) => ({
-        ...s,
-        owned: prev,
-        vaultItemId: prevId,
-        pending: null,
-        error: err as Error,
-      }));
+    } finally {
+      setPending(null);
     }
-  }, [getToken, state.owned, state.vaultItemId]);
+  }, [getToken]);
 
   const toggleWanted = useCallback(async (): Promise<void> => {
-    const prev = state.wanted;
-    const prevId = state.wantlistItemId;
-    setState((s) => ({ ...s, wanted: !prev, pending: 'wanted', error: null }));
-
-    const figure = getFigureRef.current();
-    if (!figure) {
-      setState((s) => ({ ...s, wanted: prev, pending: null }));
-      return;
-    }
+    const fig = getFigureRef.current();
+    if (!fig) return;
+    const wasWanted = collectionStore.has('wantlist', fig.figure_id);
+    setPending('wanted');
+    setError(null);
     try {
-      const token = await getToken();
-      if (!token) throw new Error('not signed in');
-      if (!prev) {
-        const { id } = await addToWantlist(figure, token);
-        setState((s) => ({ ...s, wantlistItemId: id, pending: null }));
-      } else if (prevId) {
-        await deleteWantlistItem(prevId, token);
-        setState((s) => ({ ...s, wantlistItemId: null, pending: null }));
+      if (wasWanted) {
+        const existing = collectionStore.itemFor('wantlist', fig.figure_id);
+        await collectionStore.remove('wantlist', fig.figure_id);
+        await syncDelete('wantlist', existing?.server_id ?? null, await getToken());
       } else {
-        setState((s) => ({ ...s, pending: null }));
+        await collectionStore.addWanted(fig);
+        const token = await getToken();
+        if (token) {
+          try {
+            const { id } = await addToWantlist(fig, token);
+            await collectionStore.attachServerId('wantlist', fig.figure_id, id);
+          } catch (e) {
+            setError(e as Error);
+          }
+        }
       }
-    } catch (err) {
-      setState((s) => ({
-        ...s,
-        wanted: prev,
-        wantlistItemId: prevId,
-        pending: null,
-        error: err as Error,
-      }));
+    } finally {
+      setPending(null);
     }
-  }, [getToken, state.wanted, state.wantlistItemId]);
+  }, [getToken]);
 
-  return {
-    owned: state.owned,
-    wanted: state.wanted,
-    pending: state.pending,
-    error: state.error,
-    toggleOwned,
-    toggleWanted,
-  };
+  return { owned, wanted, pending, error, toggleOwned, toggleWanted };
+}
+
+async function syncDelete(
+  kind: 'vault' | 'wantlist',
+  serverId: string | null,
+  token: string | null,
+): Promise<void> {
+  if (!token || !serverId) return; // No server record yet — local-only removal.
+  try {
+    if (kind === 'vault') await deleteVaultItem(serverId, token);
+    else await deleteWantlistItem(serverId, token);
+  } catch {
+    // Best-effort; server soft-delete will reconcile on next pull-sync.
+  }
 }

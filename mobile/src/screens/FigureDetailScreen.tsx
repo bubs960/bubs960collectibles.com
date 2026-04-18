@@ -102,10 +102,16 @@ export function FigureDetailScreen() {
 
   const ctas: CtaItem[] = [
     {
-      id: 'report',
-      title: 'Spot something off?',
-      subtitle: 'Flag missing or incorrect data',
-      onPress: () => {},
+      id: 'vault',
+      title: 'Open your vault',
+      subtitle: 'See everything you own',
+      onPress: () => navigation.navigate('Vault'),
+    },
+    {
+      id: 'wantlist',
+      title: 'Open your wantlist',
+      subtitle: "See everything you're hunting",
+      onPress: () => navigation.navigate('Wantlist'),
     },
     {
       id: 'share',
@@ -117,6 +123,12 @@ export function FigureDetailScreen() {
           track('figure_share_tapped', { figure_id: figureId, share_destination: 'system' });
         }
       },
+    },
+    {
+      id: 'report',
+      title: 'Spot something off?',
+      subtitle: 'Flag missing or incorrect data',
+      onPress: () => {},
     },
   ];
 
