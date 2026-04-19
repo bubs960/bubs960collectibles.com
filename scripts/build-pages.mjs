@@ -330,6 +330,127 @@ a { color: inherit; text-decoration: none; }
 .rope::before { left: 10px; }
 .rope::after  { right: 10px; }
 
+/* Empty shop state */
+.empty-state {
+  position: relative;
+  max-width: 700px;
+  margin: 1rem auto 3rem;
+  padding: 3rem 2rem;
+  text-align: center;
+  background: linear-gradient(180deg, var(--metal-light), var(--bg-panel) 60%);
+  border: 3px solid #000;
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 2px var(--accent-yellow), 0 8px 0 #000;
+}
+.empty-state h2 {
+  font-family: 'Bangers', cursive;
+  font-size: 2.5rem;
+  letter-spacing: 2px;
+  color: var(--accent-yellow);
+  text-shadow: 3px 3px 0 var(--primary-red);
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+}
+.empty-state p {
+  color: #dfe3ec;
+  line-height: 1.6;
+  font-size: 1.05rem;
+  max-width: 500px;
+  margin: 0 auto 1.5rem;
+}
+.empty-state p strong { color: var(--accent-yellow); }
+.empty-actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+.empty-stamp {
+  position: absolute;
+  top: -1rem; right: -1rem;
+  width: 110px; height: 110px;
+  border: 4px double var(--accent-yellow);
+  border-radius: 50%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  font-family: 'Bangers', cursive;
+  color: var(--accent-yellow);
+  font-size: 0.8rem; line-height: 1.05;
+  letter-spacing: 1px;
+  transform: rotate(-14deg);
+  text-shadow: 1px 1px 0 var(--primary-red);
+  background: rgba(10,14,23,0.85);
+  pointer-events: none;
+}
+.empty-stamp .big { font-size: 1.45rem; letter-spacing: 2px; margin: 0.1rem 0; }
+@media (max-width: 600px) {
+  .empty-stamp { width: 80px; height: 80px; font-size: 0.65rem; top: -0.5rem; right: -0.5rem; }
+  .empty-stamp .big { font-size: 1.1rem; }
+}
+
+/* Collection chips */
+.collection-chips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--bg-panel);
+  border: 2px solid #1a2233;
+  border-radius: 999px;
+  font-family: 'Bangers', cursive;
+  letter-spacing: 1.5px;
+  font-size: 0.95rem;
+  color: var(--text-light);
+  text-transform: uppercase;
+  transition: border-color 0.2s ease, transform 0.15s ease, color 0.2s ease;
+}
+.chip:hover {
+  border-color: var(--accent-yellow);
+  color: var(--accent-yellow);
+  transform: translateY(-2px);
+}
+.chip-count {
+  background: var(--primary-red);
+  color: white;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  min-width: 22px;
+  text-align: center;
+}
+
+/* Collection sections */
+.collection-section { margin-bottom: 3.5rem; scroll-margin-top: 90px; }
+.collection-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: 'Bangers', cursive;
+  font-size: 2rem;
+  letter-spacing: 2px;
+  color: var(--accent-yellow);
+  text-shadow: 2px 2px 0 var(--primary-red);
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--primary-red);
+  text-transform: uppercase;
+  gap: 1rem;
+}
+.collection-count {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  text-shadow: none;
+  white-space: nowrap;
+}
+
 /* Catalog page */
 .catalog-header { text-align: center; margin-bottom: 3rem; }
 .catalog-title {
@@ -658,8 +779,27 @@ function productPage(p) {
 ${FOOT}`;
 }
 
-function catalogPage(products) {
-  const cards = products.map((p) => {
+function slugify(s) {
+  return (s ?? '').toString()
+    .toLowerCase()
+    .normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function groupByCollection(products) {
+  const map = new Map();
+  for (const p of products) {
+    const key = p.collection || 'Other';
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(p);
+  }
+  return Array.from(map.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]));
+}
+
+function renderCard(p) {
     const isSold = (p.status ?? '').toLowerCase() === 'sold';
     const imgs = resolveImages(p, LOCAL_IMG_PREFIX);
     const img = imgs[0]
@@ -691,18 +831,65 @@ function catalogPage(products) {
         </div>
       </a>
     `;
-  }).join('\n');
+}
 
-  return `${HEAD('Shop', 'Shop Bubs960 Collectibles — hard-to-find figures, vintage grails, and pop culture pieces.', { ogUrl: `${SITE_URL}/shop/` })}
+function renderEmptyState() {
+  return `
+<section class="empty-state">
+  <div class="empty-stamp" aria-hidden="true">
+    <span>Loading</span>
+    <span class="big">Up</span>
+    <span>The Vault</span>
+  </div>
+  <h2>The Shop Is Loading Up</h2>
+  <p>New drops land every week. <strong>VIP list gets first crack</strong> before pieces hit the catalog. In the meantime, plenty live on eBay and Whatnot — and the live show is fire.</p>
+  <div class="empty-actions">
+    <a href="/index.html#vip" class="btn btn-primary">Join VIP List</a>
+    <a href="https://www.ebay.com/usr/bubs960" target="_blank" rel="noopener" class="btn btn-yellow">Shop on eBay</a>
+    <a href="/live.html" class="btn btn-ghost">Catch the Live Show</a>
+  </div>
+</section>
+  `;
+}
+
+function catalogPage(products) {
+  const isEmpty = products.length === 0;
+  const grouped = groupByCollection(products);
+  const showChips = grouped.length > 1;
+
+  const chips = showChips
+    ? `<nav class="collection-chips" aria-label="Filter by collection">
+         ${grouped.map(([name, items]) => (
+           `<a href="#${slugify(name)}" class="chip">
+              <span>${escapeHtml(name)}</span>
+              <span class="chip-count">${items.length}</span>
+            </a>`
+         )).join('')}
+       </nav>`
+    : '';
+
+  const sections = grouped.map(([name, items]) => `
+    <section class="collection-section" id="${slugify(name)}">
+      <h2 class="collection-heading">
+        <span>${escapeHtml(name)}</span>
+        <span class="collection-count">${items.length} piece${items.length === 1 ? '' : 's'}</span>
+      </h2>
+      <div class="catalog-grid">${items.map(renderCard).join('\n')}</div>
+    </section>
+  `).join('\n');
+
+  const subCopy = isEmpty
+    ? 'New drops loading — VIP list gets first crack.'
+    : `${products.length} piece${products.length === 1 ? '' : 's'} across ${grouped.length} collection${grouped.length === 1 ? '' : 's'}.`;
+
+  return `${HEAD('Shop', isEmpty ? 'New drops every week — VIP list gets first crack at every piece.' : 'Shop Bubs960 Collectibles — hard-to-find figures, vintage grails, and pop culture pieces.', { ogUrl: `${SITE_URL}/shop/` })}
 <div class="catalog-header">
   <h1 class="catalog-title">The Shop</h1>
-  <p class="catalog-sub">${products.length} piece${products.length === 1 ? '' : 's'} — click through for full specs and buy links.</p>
+  <p class="catalog-sub">${subCopy}</p>
 </div>
 <div class="rope" aria-hidden="true"></div>
 <div style="height:2rem"></div>
-${products.length > 0
-  ? `<div class="catalog-grid">${cards}</div>`
-  : `<p style="text-align:center;color:var(--text-muted);">No products yet. Add a shell under <code>products/</code> and commit — the build will pick it up.</p>`}
+${isEmpty ? renderEmptyState() : `${chips}${sections}`}
 ${FOOT}`;
 }
 
