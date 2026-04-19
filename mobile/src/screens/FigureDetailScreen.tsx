@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import {
-  ActivityIndicator,
   Animated,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -35,6 +34,7 @@ import { CtaCardList, CtaItem } from '@/components/figure/CtaCardList';
 import { DetailsCard } from '@/components/figure/DetailsCard';
 import { StickyActionBar } from '@/components/figure/StickyActionBar';
 import { CollectionBar } from '@/components/figure/CollectionBar';
+import { FigureDetailSkeleton } from '@/components/figure/FigureDetailSkeleton';
 import { FEATURES } from '@/config/features';
 import type { RootStackParamList } from '@/navigation/types';
 
@@ -64,9 +64,9 @@ export function FigureDetailScreen() {
 
   if (loading && !data) {
     return (
-      <SafeAreaView style={styles.loading} edges={['top']}>
-        <ActivityIndicator color={colors.accent} />
-      </SafeAreaView>
+      <View style={styles.root}>
+        <FigureDetailSkeleton />
+      </View>
     );
   }
 

@@ -30,14 +30,27 @@ export function useCollectionSync() {
     error: null,
   });
   const lastUserRef = useRef<string | null>(null);
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  const safeSet = (updater: (s: SyncState) => SyncState) => {
+    if (!mounted.current) return;
+    setState(updater);
+  };
 
   const sync = useCallback(async (): Promise<void> => {
     if (!isSignedIn) return;
-    setState((s) => ({ ...s, syncing: true, error: null }));
+    safeSet((s) => ({ ...s, syncing: true, error: null }));
     try {
       const token = await getToken();
       if (!token) {
-        setState((s) => ({ ...s, syncing: false }));
+        safeSet((s) => ({ ...s, syncing: false }));
         return;
       }
       const [serverVault, serverWantlist] = await Promise.all([
@@ -46,9 +59,9 @@ export function useCollectionSync() {
       ]);
       await applyMerged('vault', serverVault);
       await applyMerged('wantlist', serverWantlist);
-      setState({ syncing: false, lastSyncAt: Date.now(), error: null });
+      safeSet(() => ({ syncing: false, lastSyncAt: Date.now(), error: null }));
     } catch (err) {
-      setState((s) => ({ ...s, syncing: false, error: err as Error }));
+      safeSet((s) => ({ ...s, syncing: false, error: err as Error }));
     }
   }, [isSignedIn, getToken]);
 

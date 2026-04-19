@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuthToken } from '@/auth/useAuthToken';
 import {
   addToVault,
@@ -37,8 +37,26 @@ export function useCollection(getFigure: () => ApiFigureV1 | null): UseCollectio
   const getFigureRef = useRef(getFigure);
   getFigureRef.current = getFigure;
 
+  // Mount guard — toggleOwned / toggleWanted can run past unmount if the
+  // user navigates during a server round-trip. Gate all setState behind
+  // `mounted` so we don't warn (React 18) or leak (older versions).
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
   const [pending, setPending] = useState<'owned' | 'wanted' | null>(null);
   const [error, setError] = useState<Error | null>(null);
+
+  const safeSetPending = (v: 'owned' | 'wanted' | null) => {
+    if (mounted.current) setPending(v);
+  };
+  const safeSetError = (v: Error | null) => {
+    if (mounted.current) setError(v);
+  };
 
   const figure = getFigureRef.current();
   const figureId = figure?.figure_id ?? null;
@@ -49,8 +67,8 @@ export function useCollection(getFigure: () => ApiFigureV1 | null): UseCollectio
     const fig = getFigureRef.current();
     if (!fig) return;
     const wasOwned = collectionStore.has('vault', fig.figure_id);
-    setPending('owned');
-    setError(null);
+    safeSetPending('owned');
+    safeSetError(null);
     try {
       if (wasOwned) {
         const existing = collectionStore.itemFor('vault', fig.figure_id);
@@ -64,12 +82,12 @@ export function useCollection(getFigure: () => ApiFigureV1 | null): UseCollectio
             const { id } = await addToVault(fig, token);
             await collectionStore.attachServerId('vault', fig.figure_id, id);
           } catch (e) {
-            setError(e as Error);
+            safeSetError(e as Error);
           }
         }
       }
     } finally {
-      setPending(null);
+      safeSetPending(null);
     }
   }, [getToken]);
 
@@ -77,8 +95,8 @@ export function useCollection(getFigure: () => ApiFigureV1 | null): UseCollectio
     const fig = getFigureRef.current();
     if (!fig) return;
     const wasWanted = collectionStore.has('wantlist', fig.figure_id);
-    setPending('wanted');
-    setError(null);
+    safeSetPending('wanted');
+    safeSetError(null);
     try {
       if (wasWanted) {
         const existing = collectionStore.itemFor('wantlist', fig.figure_id);
@@ -92,12 +110,12 @@ export function useCollection(getFigure: () => ApiFigureV1 | null): UseCollectio
             const { id } = await addToWantlist(fig, token);
             await collectionStore.attachServerId('wantlist', fig.figure_id, id);
           } catch (e) {
-            setError(e as Error);
+            safeSetError(e as Error);
           }
         }
       }
     } finally {
-      setPending(null);
+      safeSetPending(null);
     }
   }, [getToken]);
 
