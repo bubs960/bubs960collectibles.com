@@ -9,7 +9,43 @@ diff without guessing.
 
 ---
 
-## Phase 5 — Test hardening (current)
+## Phase 6 — Reviewer corrections (current)
+
+### Changed
+- **`figure_id` drift reframed** — `src/shared/figureId.ts` header
+  documents the three mint patterns (v2 canonical with hash6, v1
+  matcher pipe-separated, legacy fp_) and makes the real fix explicit:
+  the worker must normalize on `/api/v1/figure/:id` 404 with sibling
+  lookup. Pasting `buildFigureId` into mobile is NOT the fix; mobile
+  carries best-effort synthesis with a soft-recovery UX instead.
+- **DELETE path inconsistency normalized** — mobile now hits
+  `/api/v1/wantlist/items/:id` (plural) instead of `/item/:id`
+  (singular). The spec carries an inherited typo; encoding it into
+  code taxes every future dev. Worker should normalize to plural
+  when the endpoints ship.
+
+### Added
+- **404 soft-recovery UX** — `FigureDetailError` on 404 now shows a
+  `"Search for this figure"` CTA instead of `Try again` (retrying the
+  same bad id is pointless). Copy changed to "We might know this
+  figure by another name… may exist under a sibling id" to match the
+  actual failure mode.
+- **Tip-jar in Settings** — `Support FigurePinner` link under a new
+  Support section. Per reviewer: tip-jar over Pro-waitlist theater
+  until Pro has a price / feature set / payment pipe. Revisit Pro
+  as a real product at ~50K MAU.
+- **Soft-delete TTL note** — `src/collection/reconcile.ts` header
+  flags that `status='removed'` rows grow unbounded; plan a 90-day
+  TTL cleanup job on the worker before the numbers matter.
+
+### Removed from blockers
+- `companion.js:307-309` affiliate leak — correctly re-scoped to
+  the extension repo. It's a v1 extension hotfix, not a mobile
+  blocker. Conflated with mobile work earlier.
+
+---
+
+## Phase 5 — Test hardening
 
 ### Added
 - Logic tests: `useCollectionList`, `useSearchHistory` (hook), `useAuthToken`,

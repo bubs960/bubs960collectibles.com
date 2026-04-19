@@ -1,39 +1,48 @@
 // Client-side figure_id synthesizer.
 //
-// Why this exists: the Worker's public search projection strips figure_id as
-// an anti-scrape pattern, so mobile reconstructs the id from the visible
-// {brand, line, series, name} fields to navigate to /figure/:id (or
-// /open/:id) from a search result.
+// REAL STATE OF THE WORLD (per 2026-04-19 audit):
+// There are THREE different figure_id mint patterns live in production:
 //
-// CRITICAL — this is a guess until the canonical mint is shared.
-// The mint logic is NOT in figurepinner-site. Confirmed by audit:
-//   - figurepinner-site/src/data/kb.ts:3-5 says
-//       "figures-reference-v2.js is the source of truth — committed to this
-//        repo, updated by running:
-//          cp <extension-repo>/API/figures-reference-v2.js src/data/"
-//   - The whole figurepinner-site codebase READS figure_id; nothing constructs it.
-//   - The KBFigure type carries both figure_id AND v1_figure_id, which means
-//     the mint algorithm CHANGED at some point. If the v2 algorithm differs
-//     from what mobile guesses here, the mismatch is silent: search shows
-//     results, taps 404. Worth checking the upstream mint script and the
-//     v1→v2 diff before TestFlight.
+//   1. v2 canonical — Fig Pinner Dev - Claude/API/v1-to-v2-rules.cjs:438
+//        fp_{fandom}_{mfr}_{productLine[:24]}_{wave[:16]}_{char[:16]}_{hash6}
+//      This is what's stored in figures-reference-v2.js (the KB).
 //
-// What to do to make this canonical:
-//   1. Find the script in the extension repo (Fig Pinner Dev workspace) that
-//      generates API/figures-reference-v2.js. Look for whatever assembles a
-//      figure_id from the {manufacturer, product_line, release_wave,
-//      character_canonical, character_variant?} natural key.
-//   2. Port that function verbatim into this file, replacing buildFigureId.
-//   3. Add a sanity test that asserts a few real figure_id values from the
-//      committed KB match the function's output.
+//   2. v1 matcher — matcher.js:943
+//        {brand}|{line}|{series}|{name}   (pipe-separated)
+//      This is what's stored in D1 listings today.
 //
-// Working hypothesis (matches the sample id 'mattel-elite-11-rey-mysterio'):
-//   slug(manufacturer) + '-' + slug(product_line) + '-' + release_wave
-//   + '-' + slug(character_canonical)
-//   + (character_variant ? '-' + slug(character_variant) : '')
-// Mobile receives display strings ({brand, line, series, name}) not the raw
-// natural key, so it has to re-slug + try to strip "(Line Series N)" suffixes
-// from the display name. That's another point of drift risk.
+//   3. Legacy fp_ — archive migrate_to_d1.js:76
+//        fp_{fandom}_{mfr}_{...}   (no hash, no length caps)
+//      Still referenced by some old rows.
+//
+// Because the KB mints (1) and D1 mints (2) for the same figure, tapping a
+// search result can silently 404 even when the figure exists under a
+// sibling ID with hundreds of listings. This is the KB↔DB vocabulary
+// drift — 9/12 Stage-4 "missing" figures exist in DB under sibling IDs
+// with 2500+ combined listings.
+//
+// THE REAL FIX IS NOT IN THIS FILE. Pasting buildFigureId() from
+// v1-to-v2-rules.cjs into mobile would just make mobile mint the same
+// (sometimes-wrong) ID as the KB. The fix is worker-side:
+//
+//   - /api/v1/figure/:id returns 404 → fall back to sibling lookup
+//     (character_canonical × product_line × release_wave × brand)
+//     returning { status: 'moved', canonical_id: '...' }.
+//   - Mobile follows the redirect / swaps the id.
+//
+// Until the worker handles normalization at the /figure/:id boundary,
+// mobile's best-effort synthesizer will miss on whatever subset of figures
+// drifted in v1→v2. That surfaces as a 404 on FigureDetailError, which
+// now offers a "Search for this figure" CTA to soft-recover.
+//
+// What this file does today:
+//   - Produces a reasonable-looking id from search-result fields so
+//     navigation has SOMETHING to try. No claim of canonical match.
+//
+// When the upstream normalization lands:
+//   - Delete this file. Mobile search results will carry figure_id directly
+//     (authenticated callers already get them via X-FP-Key), and the
+//     public projection should stop stripping id per SERVER-ENDPOINTS-NEEDED.md.
 
 export interface FigureIdParts {
   brand: string;
@@ -43,6 +52,12 @@ export interface FigureIdParts {
   character_variant?: string | null;
 }
 
+/**
+ * BEST-EFFORT ONLY — see header comment. Intentionally does NOT match any of
+ * the three canonical patterns; it just produces a stable slug so the
+ * navigate-then-fetch flow has a value to carry. When the fetch 404s,
+ * FigureDetailError's "Search for this figure" CTA is the recovery path.
+ */
 export function buildFigureId(parts: FigureIdParts): string {
   const brand = slugify(parts.brand);
   const line = slugify(parts.line);
@@ -52,9 +67,9 @@ export function buildFigureId(parts: FigureIdParts): string {
 }
 
 /**
- * Strip "(Line Series N)" or "(Variant)" suffixes from a display name so the
- * character slug doesn't pick them up. Matches deriveName's reverse.
- *   "Rey Mysterio (Elite Series 11)" → "Rey Mysterio"
+ * Strip "(Line Series N)" tags from a display name so the character slug
+ * doesn't pick them up. Variant tags like "(Masked)" survive.
+ *   "Rey Mysterio (Elite Series 11)"         → "Rey Mysterio"
  *   "Rey Mysterio (Masked) (Elite Series 11)" → "Rey Mysterio (Masked)"
  */
 function stripLineSuffix(name: string): string {

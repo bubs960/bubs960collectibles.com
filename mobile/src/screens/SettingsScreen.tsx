@@ -18,6 +18,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList, 'Settings'>;
 
 const PRIVACY_URL = 'https://figurepinner.com/privacy';
 const TERMS_URL = 'https://figurepinner.com/terms';
+const SUPPORT_URL = 'https://figurepinner.com/support';
 const APP_VERSION = '0.1.0';
 
 /**
@@ -54,6 +55,12 @@ export function SettingsScreen() {
 
         <Section title="App">
           <Row label="Version" value={APP_VERSION} />
+        </Section>
+
+        <Section title="Support">
+          {/* Tip-jar over waitlist theater. Revisit when Pro is an actual
+              product (price, feature set, payment pipe, refund policy). */}
+          <LinkRow label="Support FigurePinner" onPress={() => openExternal(SUPPORT_URL)} />
         </Section>
 
         <Section title="Legal">

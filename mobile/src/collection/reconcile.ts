@@ -14,6 +14,13 @@ import type { CollectionItem } from './localStore';
  *   4. For items present on both sides, local wins for user-annotation
  *      state (paid, condition, target_price) since those can be edited
  *      offline; server wins for server_id and added_at (authoritative).
+ *
+ * Server-side TODO (not in this repo): soft-delete rows grow unbounded.
+ * Add a TTL cleanup job on the worker that hard-deletes rows with
+ * status='removed' older than ~90 days. The UI never shows removed rows;
+ * the only reason to keep them short-term is an "undo remove" affordance
+ * which we haven't built. Plan the TTL now — backfills are cheap at 10k
+ * rows, painful at 10M.
  */
 export function reconcile(
   local: CollectionItem[],

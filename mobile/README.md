@@ -42,28 +42,48 @@ add user-visible surface but the work isn't lost.
 
 ## Open KNOWN risks (read before shipping)
 
-1. **`buildFigureId` is a guess.** The KB's `figure_id` mint algorithm is
-   NOT in `figurepinner-site` — `src/data/kb.ts` says the file is `cp`'d in
-   from an extension repo. Mobile's synthesizer in
-   `src/shared/figureId.ts` matches the sample id `mattel-elite-11-rey-mysterio`
-   but might silently disagree with the canonical mint on edge cases.
-   The `KBFigure.v1_figure_id` field is a smoking gun that the algorithm
-   changed at some point — there may already be drift in production.
-   **Find the upstream mint script and port it verbatim before TestFlight.**
+1. **`figure_id` mint drift is a WORKER problem, not a mobile problem.**
+   Three mint patterns live in production: v2 canonical
+   (`fp_{fandom}_..._{hash6}` in `v1-to-v2-rules.cjs:438`), v1 pipe-
+   separated (`matcher.js:943`), and legacy fp_ without a hash. The KB
+   mints (1) and D1 listings mint (2) for the same figure — which is why
+   Stage-4 reports 9/12 "missing" figures that actually exist under
+   sibling IDs with 2500+ combined listings.
+   Pasting `buildFigureId()` into mobile doesn't fix this. The fix is
+   worker-side: `/api/v1/figure/:id` must fall back to sibling lookup on
+   404 and return a `{ status: 'moved', canonical_id: '…' }` redirect.
+   Mobile's synthesizer (`src/shared/figureId.ts`) is now documented as
+   best-effort only; the soft-recovery is a "Search for this figure" CTA
+   on 404 (see `FigureDetailError`).
+   **Until the worker normalizes IDs, decide which mint pattern is
+   canonical for post-2026-04-19 writes and write it down.** Every new
+   feature that mints a `figure_id` (request-to-add, vault, wantlist)
+   rolls the dice until that decision exists.
 
 2. **AASA file not yet narrowed.** Deep-link config in
    `src/navigation/linking.ts` matches `/open/:figureId`. The matching
    `apple-app-site-association` and `assetlinks.json` files (in the Figure
    Pinner Dev workspace under `mobile/native-templates/`) still declare
    `/figure/*`. Update them to `/open/*` before hosting at
-   `/.well-known/` on figurepinner.com, otherwise the broader pattern
-   hijacks every web-engagement / SEO link to the app on installed devices.
+   `/.well-known/` on figurepinner.com. Two practical landmines:
+   - iOS caches AASA aggressively. A wrong `APP_TEAM_ID` deployed once
+     sticks with existing installs for days. Test with a fresh install
+     on a device that has never had the app.
+   - Android `assetlinks.json` is less forgiving of redirects than AASA.
+     Cloudflare's default `.well-known` behavior has bitten people —
+     `curl -I` before declaring done.
 
-3. **`companion.js:307-309` affiliate leak.** Lives in the extension repo,
-   not here. Every "active listings" click ships unattributed —
-   `activeListingsUrl()` returns a raw `ebay.com/sch/i.html` URL with no
-   EPN params. Wrap in `affiliateWrap()` and ship a hotfix. This is an
-   active revenue leak today, not a future-mobile concern.
+3. **Spec path inconsistency normalized (was a blocker; now fixed).**
+   The spec carries an inherited typo where wantlist delete uses
+   `/item/:id` singular and vault uses `/items/:id` plural. Mobile now
+   posts to `/items/:id` on both. Worker should do the same when the
+   endpoints ship — don't encode the typo.
+
+4. **Soft-delete rows grow unbounded.** `status='removed'` preserves
+   undo UX + delete-then-re-add analytics, but at 10M rows the cleanup
+   gets painful. Plan a worker-side TTL cleanup job (hard-delete rows
+   with `status='removed'` older than ~90 days) before the numbers
+   matter — cheap now, not later.
 
 ## Environment variables (Expo)
 

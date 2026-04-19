@@ -7,14 +7,18 @@
 // expected to verify the Clerk session JWT via JWKS directly — no Next
 // middleware in the path.
 //
-// Paths per specs/screen-02-wantlist.html:1281 and specs/screen-03-vault.html:1186:
-//   POST   /api/v1/wantlist
-//   DELETE /api/v1/wantlist/item/:id    (soft delete → status='removed')
+// Paths (aligned plural — see below). Per reviewer (2026-04-19): the
+// specs carry an inherited typo where wantlist uses `/item/:id` singular
+// while vault uses `/items/:id` plural. Mobile normalizes BOTH to
+// `/items/:id` at the client layer; the worker should do the same when
+// the endpoints are built. "Match the spec verbatim" was the wrong
+// default — encoding a typo wastes every future dev who has to
+// remember which is which.
+//
 //   POST   /api/v1/vault
 //   DELETE /api/v1/vault/items/:id      (soft delete → status='removed')
-//
-// The path-segment inconsistency (item vs. items) matches the specs verbatim;
-// if the Worker implementation normalizes that, swap the constants below.
+//   POST   /api/v1/wantlist
+//   DELETE /api/v1/wantlist/items/:id   (soft delete → status='removed')
 
 import type { ApiFigureV1 } from '@/shared/types';
 
@@ -82,9 +86,9 @@ export async function deleteVaultItem(itemId: string, token: string): Promise<vo
   await del(`${apiBase()}/api/v1/vault/items/${encodeURIComponent(itemId)}`, token);
 }
 
-/** DELETE /api/v1/wantlist/item/:id — same soft-delete semantics. */
+/** DELETE /api/v1/wantlist/items/:id — soft-delete parity with vault. */
 export async function deleteWantlistItem(itemId: string, token: string): Promise<void> {
-  await del(`${apiBase()}/api/v1/wantlist/item/${encodeURIComponent(itemId)}`, token);
+  await del(`${apiBase()}/api/v1/wantlist/items/${encodeURIComponent(itemId)}`, token);
 }
 
 /**

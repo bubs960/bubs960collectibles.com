@@ -2,9 +2,11 @@ import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors, radii, spacing } from '@/theme/tokens';
 import { type } from '@/theme/typography';
 import { FigureFetchError } from '@/api/figureApi';
+import type { RootStackParamList } from '@/navigation/types';
 
 interface Props {
   error: Error | null;
@@ -14,15 +16,16 @@ interface Props {
 
 /**
  * Error fallback for FigureDetailScreen when the first fetch fails and
- * nothing cached is available. Shows a retry button (refetches via SWR)
- * and a back button to escape the screen entirely. The body text adapts
- * to the error: 404 is "we don't have this figure" vs. generic "we
- * couldn't reach the server" vs. offline-ish network errors.
+ * nothing cached is available. Adapts to the error type: 404 (ID drift —
+ * see src/shared/figureId.ts for the three-pattern backstory) gets a
+ * "Search for this figure" soft-recovery CTA that routes to Search;
+ * network / server errors get Try again + Go back.
  */
 export function FigureDetailError({ error, onRetry, retrying }: Props) {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const canGoBack = navigation.canGoBack();
   const { title, body, kind } = messageFor(error);
+  const is404 = kind === 'not_found';
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
@@ -31,23 +34,34 @@ export function FigureDetailError({ error, onRetry, retrying }: Props) {
         <Text style={styles.body}>{body}</Text>
 
         <View style={styles.actions}>
-          <Pressable
-            onPress={onRetry}
-            disabled={retrying}
-            accessibilityRole="button"
-            accessibilityLabel="Try again"
-            style={({ pressed }) => [
-              styles.primary,
-              retrying && { opacity: 0.5 },
-              pressed && { opacity: 0.85 },
-            ]}
-          >
-            {retrying ? (
-              <ActivityIndicator color={colors.text} />
-            ) : (
-              <Text style={styles.primaryText}>Try again</Text>
-            )}
-          </Pressable>
+          {is404 ? (
+            <Pressable
+              onPress={() => navigation.navigate('Search')}
+              accessibilityRole="button"
+              accessibilityLabel="Search for this figure"
+              style={({ pressed }) => [styles.primary, pressed && { opacity: 0.85 }]}
+            >
+              <Text style={styles.primaryText}>Search for it</Text>
+            </Pressable>
+          ) : (
+            <Pressable
+              onPress={onRetry}
+              disabled={retrying}
+              accessibilityRole="button"
+              accessibilityLabel="Try again"
+              style={({ pressed }) => [
+                styles.primary,
+                retrying && { opacity: 0.5 },
+                pressed && { opacity: 0.85 },
+              ]}
+            >
+              {retrying ? (
+                <ActivityIndicator color={colors.text} />
+              ) : (
+                <Text style={styles.primaryText}>Try again</Text>
+              )}
+            </Pressable>
+          )}
 
           {canGoBack && (
             <Pressable
@@ -80,8 +94,9 @@ function messageFor(error: Error | null): { title: string; body: string; kind: E
     if (error.status === 404) {
       return {
         kind: 'not_found',
-        title: "We don't have that figure",
-        body: "This figure isn't in our database yet. It may have been removed or mis-linked.",
+        title: "We might know this figure by another name",
+        body:
+          "We couldn't match that figure id exactly, but it may exist in our database under a sibling id. Tap Search to try with a different query.",
       };
     }
     return {

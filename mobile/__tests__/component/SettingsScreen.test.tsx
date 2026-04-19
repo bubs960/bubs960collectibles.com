@@ -35,6 +35,15 @@ describe('SettingsScreen — v1 defaults (FEATURES.collectionSync=false)', () =>
     expect(getByLabelText('Terms of service')).toBeTruthy();
   });
 
+  it('renders a Support FigurePinner tip-jar link (not a Pro waitlist)', () => {
+    const { getByText, getByLabelText, queryByText } = render(<TestHost />);
+    expect(getByText('SUPPORT')).toBeTruthy();
+    expect(getByLabelText('Support FigurePinner')).toBeTruthy();
+    // No waitlist theater.
+    expect(queryByText(/Pro waitlist/i)).toBeNull();
+    expect(queryByText(/Unlock/i)).toBeNull();
+  });
+
   it('does NOT render the Account section in v1', () => {
     const { queryByText } = render(<TestHost />);
     expect(queryByText('ACCOUNT')).toBeNull();

@@ -102,10 +102,10 @@ describe('collection mutations', () => {
     expect(opts.headers.Authorization).toBe('Bearer tok');
   });
 
-  it('deleteWantlistItem hits /api/v1/wantlist/item/:id (note: "item" singular)', async () => {
+  it('deleteWantlistItem hits /api/v1/wantlist/items/:id (plural, normalized from spec typo)', async () => {
     fetchMock.mockResolvedValueOnce({ ok: true });
     await deleteWantlistItem('w-abc', 'tok');
-    expect(String(fetchMock.mock.calls[0][0])).toBe(`${WORKER}/api/v1/wantlist/item/w-abc`);
+    expect(String(fetchMock.mock.calls[0][0])).toBe(`${WORKER}/api/v1/wantlist/items/w-abc`);
     expect(fetchMock.mock.calls[0][1].method).toBe('DELETE');
   });
 

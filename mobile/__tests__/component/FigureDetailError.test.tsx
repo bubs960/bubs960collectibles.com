@@ -33,13 +33,16 @@ describe('FigureDetailError', () => {
     expect(getByText(/Tap retry/i)).toBeTruthy();
   });
 
-  it('renders the 404 "we don\'t have that figure" message for FigureFetchError 404', () => {
-    const { getByText } = render(
+  it('renders the 404 sibling-id soft-recovery copy with a Search CTA', () => {
+    const { getByText, getByLabelText } = render(
       <TestHost>
         <FigureDetailError error={new FigureFetchError(404, '')} onRetry={jest.fn()} />
       </TestHost>,
     );
-    expect(getByText("We don't have that figure")).toBeTruthy();
+    expect(getByText(/another name/i)).toBeTruthy();
+    expect(getByText(/sibling id/i)).toBeTruthy();
+    // 404 path offers Search, NOT Try again — retrying the same bad id is pointless.
+    expect(getByLabelText('Search for this figure')).toBeTruthy();
   });
 
   it('renders the server-error copy for FigureFetchError 5xx', () => {
