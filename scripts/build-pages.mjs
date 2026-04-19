@@ -556,9 +556,12 @@ const FOOTER_HTML = `
       <ul>
         <li><a href="/shop/index.html">Shop</a></li>
         <li><a href="/we-buy.html">We Buy Collections</a></li>
+        <li><a href="/want-list.html">Want List</a></li>
         <li><a href="/live.html">Live Shows</a></li>
         <li><a href="/about.html">About</a></li>
         <li><a href="/faq.html">FAQ</a></li>
+        <li><a href="/grading.html">Grading Guide</a></li>
+        <li><a href="/testimonials.html">Reviews</a></li>
       </ul>
     </div>
     <div class="footer-col">
@@ -727,7 +730,7 @@ console.log(`[build] shop/index.html (${products.length} products)`);
 
 // Sitemap — regenerated each build so product pages stay indexed.
 const today = new Date().toISOString().slice(0, 10);
-const staticPaths = ['/', '/about.html', '/live.html', '/faq.html', '/we-buy.html', '/shop/'];
+const staticPaths = ['/', '/about.html', '/live.html', '/faq.html', '/we-buy.html', '/want-list.html', '/grading.html', '/testimonials.html', '/shop/'];
 const productPaths = products.map((p) => `/shop/${p.handle}.html`);
 const sitemap = [
   '<?xml version="1.0" encoding="UTF-8"?>',
