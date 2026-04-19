@@ -35,6 +35,7 @@ import { DetailsCard } from '@/components/figure/DetailsCard';
 import { StickyActionBar } from '@/components/figure/StickyActionBar';
 import { CollectionBar } from '@/components/figure/CollectionBar';
 import { FigureDetailSkeleton } from '@/components/figure/FigureDetailSkeleton';
+import { FigureDetailError } from '@/components/figure/FigureDetailError';
 import { FEATURES } from '@/config/features';
 import type { RootStackParamList } from '@/navigation/types';
 
@@ -71,11 +72,7 @@ export function FigureDetailScreen() {
   }
 
   if ((error && !data) || !data) {
-    return (
-      <SafeAreaView style={styles.loading} edges={['top']}>
-        <Text style={styles.errorText}>Couldn't load this figure.</Text>
-      </SafeAreaView>
-    );
+    return <FigureDetailError error={error} onRetry={refetch} retrying={revalidating} />;
   }
 
   const { figure, price, series_siblings, character_thread, rarity_tier } = data;
@@ -312,13 +309,6 @@ function EmptyPricingCard() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
-  loading: {
-    flex: 1,
-    backgroundColor: colors.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  errorText: { ...type.body, color: colors.muted },
   scrollContent: { gap: spacing.md },
   section: { gap: spacing.md },
   stickyHeader: {
