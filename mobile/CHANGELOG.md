@@ -9,7 +9,63 @@ diff without guessing.
 
 ---
 
-## Phase 7 — Engineer contract alignment (current)
+## Phase 8 — Engineer punch-list update (current)
+
+Steve brought updated answers on 2026-04-19. Working the resolved
+items; unblocked items below.
+
+### Changed
+- **No JWT template for v1.** Per engineer: the default session token
+  claims (sub, sid, iss, iat, exp) are enough for v1 auth — the
+  Worker's JWKS middleware verifies those directly. Previously
+  `useAuthToken` defaulted to `{ template: 'mobile' }`; now it calls
+  `getToken()` bare unless `EXPO_PUBLIC_CLERK_JWT_TEMPLATE` is
+  explicitly set. One-line escape hatch for future custom-claim
+  features.
+- **Store category locked at Reference** (NOT Shopping — Shopping
+  implies in-app checkout). Keywords locked at "collectible, action
+  figure, price check, eBay, WWE, Marvel Legends, grail".
+- **Store-asset timeline revised** from "1–2 days if screens final"
+  to "plan a week" per engineer's wall-clock reality check on App
+  Store rejection cycles.
+- **Sentry deferred to post-launch** per engineer. Keeps the dev
+  console sink; wiring block preserved in `DEPLOY.md` for the
+  ~½ day drop-in later.
+
+### Added
+- **401 refresh-and-retry** per engineer Q4. New
+  `src/auth/withAuthRetry.ts` wraps any authed operation: on
+  `CollectionApiError(401)` it force-refreshes the Clerk token via
+  `getToken({ forceRefresh: true })` and retries once. Second failure
+  surfaces to `error`. Non-401 errors propagate without retry.
+- **useAuthToken force-refresh support**. Accepts
+  `{ forceRefresh?: boolean }` → passes `skipCache: true` to Clerk.
+- **withAuthRetry test suite (7 cases)**: happy path, not-signed-in
+  shortcut, one 401 → refreshed success, two 401s → surface original,
+  non-401 CollectionApiError no-retry, non-CollectionApiError
+  (network) no-retry, null-refresh-token no-retry.
+- **`.env.example` now has the confirmed dev Clerk values** inline:
+  `pk_test_Zml0dGluZy1wZW5ndWluLTcwLmNsZXJrLmFjY291bnRzLmRldiQ` +
+  Frontend API `fitting-penguin-70.clerk.accounts.dev`. Prod `pk_live_*`
+  swap-in noted.
+- **`TESTING.md`** — explains the two-tier split (logic sandbox vs.
+  jest-expo component tests), mock conventions, mount-safety pattern,
+  flaky-test triage, "how to add a new hook test" template.
+
+### Tests
+- `useAuthToken.test.ts` gained a case that explicitly asserts
+  `getToken()` is called with NO template argument in v1 default
+  (via the `__getTokenCalls` mock helper) — regression guard against
+  an accidental template re-introduction.
+- `useCollection` now uses `withAuthRetry` internally; existing
+  useCollection tests still pass (the retry wrapper is transparent
+  when mocks return 2xx).
+
+Suite: 30 logic suites / 215 tests / green.
+
+---
+
+## Phase 7 — Engineer contract alignment
 
 Engineer answered the open questions on 2026-04-19. This phase wires the
 mobile client against the decided contracts.

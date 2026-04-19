@@ -47,14 +47,27 @@ interface GetTokenOptions {
   template?: string;
 }
 
-async function defaultGetToken(_opts?: GetTokenOptions): Promise<string | null> {
+const getTokenCalls: GetTokenOptions[] = [];
+
+async function defaultGetToken(opts?: GetTokenOptions): Promise<string | null> {
   return state.token;
 }
 
-function getTokenImpl(_opts?: GetTokenOptions): Promise<string | null> {
+function getTokenImpl(opts?: GetTokenOptions): Promise<string | null> {
+  getTokenCalls.push(opts ?? {});
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const override = (getTokenImpl as any).impl as (() => Promise<string | null>) | null;
-  return override ? override() : defaultGetToken(_opts);
+  return override ? override() : defaultGetToken(opts);
+}
+
+// Expose the call log so tests can assert whether a JWT template was
+// passed. v1 uses default session tokens (no template) per engineer
+// 2026-04-19.
+export function __getTokenCalls(): ReadonlyArray<GetTokenOptions> {
+  return getTokenCalls;
+}
+export function __clearTokenCalls(): void {
+  getTokenCalls.length = 0;
 }
 
 export function useAuth() {

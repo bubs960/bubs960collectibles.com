@@ -77,26 +77,53 @@ breaks mid-launch.
             "env": {
               "EXPO_PUBLIC_V2_COLLECTION_SYNC": "true",
               "EXPO_PUBLIC_V2_ALERTS": "true",
-              "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_…"
+              "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_Zml0dGluZy1wZW5ndWluLTcwLmNsZXJrLmFjY291bnRzLmRldiQ"
             }
           }
         }
       }
       ```
-- [ ] **Apple Developer account** active + team ID captured (24–48h
-      for first-time approval).
-- [ ] **Google Play Console** identity verified.
+      Prod profile swaps in the `pk_live_*` key once Clerk production
+      instance is spun up (still owed per 2026-04-19 update).
+- [ ] **Apple Developer account** active + team ID captured.
+      **Wall-clock reality:** 24–48h typical, up to 7 days if flagged.
+      $99/yr. Start this form TODAY regardless of when launch lands —
+      no downside, avoids a surprise week-long wall during launch week.
+- [ ] **Google Play Console** identity verified. $25 one-time.
 - [ ] **App Store Connect app record** created under the reserved
-      bundle id.
+      bundle id (`com.bubs960.figurepinner`).
 
-## Store-readable assets (~1–2 days if screens are final)
+## Store-readable assets — plan a week, not a day
 
-- [ ] Icon (1024×1024 iOS + adaptive Android).
-- [ ] Screenshots for all required device classes.
-- [ ] Marketing copy (short + long description).
-- [ ] Privacy manifest (iOS 17+ requirement; declare data usage).
-- [ ] Age rating questionnaire answers.
-- [ ] Category + keywords.
+Original "1–2 days" estimate revised. Reality: App Store rejections
+for icon quality, screenshot quality, misleading copy, or missing
+privacy manifest entries → 3–7 day resubmission queue per attempt.
+Budget a full week unless every asset is already signed off.
+
+### Decided (2026-04-19)
+
+- [x] **Category**: Reference (NOT Shopping — Shopping implies in-app
+      checkout; Reference is where users search "action figure price")
+- [x] **Keywords**: `collectible, action figure, price check, eBay,
+      WWE, Marvel Legends, grail`
+- [x] **Age rating**: plan for 4+/Everyone (no user-generated content,
+      no social features in v1)
+
+### Still owed
+
+- [ ] **App icon**: 1024×1024 iOS, adaptive foreground + adaptive
+      background Android
+- [ ] **Screenshots**: 6.7" iPhone + 6.1" iPhone + phone-class Android
+      at minimum. Each screen: hero detail, search with results,
+      onboarding slide 1
+- [ ] **Marketing copy**: 30-char short description + 4000-char long
+      description
+- [ ] **Apple privacy manifest** (iOS 17+): declare every SDK's data
+      usage. Required today: Clerk (auth data), Expo (basic analytics).
+      If Sentry gets added post-launch, manifest MUST be updated and
+      resubmitted — budget half a day.
+- [ ] **Support URL**: `https://figurepinner.com/support` (referenced
+      from Settings tip-jar link). Needs a real page, not a 404.
 
 ## Pre-flight QA (hardware required)
 
@@ -125,8 +152,14 @@ breaks mid-launch.
 
 ## Example: wire Sentry without touching feature code
 
-Per the engineer's recommendation. Requires `@sentry/react-native` as a
-new runtime dep (not yet added — pick a provider first, then add).
+**Status (2026-04-19):** deferred to post-launch. Engineer's call:
+solo-dev at TestFlight scale is covered by server-side `console.log` +
+Cloudflare Worker tail. Revisit when user count crosses ~50.
+
+When we do wire it (~½ day of work): `expo install
+@sentry/react-native`, add DSN to env, paste the block below into
+App.tsx. The privacy manifest will need a resubmission to declare
+Sentry's data usage.
 
 ```tsx
 // App.tsx, at the top of the module (before the React tree mounts)

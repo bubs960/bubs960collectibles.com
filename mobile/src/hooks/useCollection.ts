@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuthToken } from '@/auth/useAuthToken';
+import { withAuthRetry } from '@/auth/withAuthRetry';
 import {
   addToVault,
   addToWantlist,
   deleteVaultItem,
   deleteWantlistItem,
+  CollectionApiError,
 } from '@/api/collectionApi';
 import { collectionStore } from '@/collection/localStore';
 import { useCollectionList } from '@/hooks/useCollectionList';
@@ -23,11 +25,11 @@ interface UseCollectionResult {
  * Local-first collection toggle.
  *
  * UI state is driven by the local AsyncStorage-backed store — toggles take
- * effect immediately with no network round trip. When we have an auth token
- * we also fire a best-effort Worker sync (POST / DELETE); failures are
- * captured in `error` but don't roll back the local state, matching the
- * reference mobile client's localStorage contract. Once the Worker exposes
- * GET for the lists, a pull-sync layer on top will reconcile on auth.
+ * effect immediately with no network round trip. Authed writes run through
+ * `withAuthRetry` so a 401 on the first attempt triggers a one-shot Clerk
+ * token refresh (per engineer Q4 2026-04-19). Second failure surfaces to
+ * `error` but does NOT roll back the local state — matches the reference
+ * client's localStorage contract.
  */
 export function useCollection(getFigure: () => ApiFigureV1 | null): UseCollectionResult {
   const getToken = useAuthToken();
@@ -37,9 +39,6 @@ export function useCollection(getFigure: () => ApiFigureV1 | null): UseCollectio
   const getFigureRef = useRef(getFigure);
   getFigureRef.current = getFigure;
 
-  // Mount guard — toggleOwned / toggleWanted can run past unmount if the
-  // user navigates during a server round-trip. Gate all setState behind
-  // `mounted` so we don't warn (React 18) or leak (older versions).
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
@@ -73,17 +72,14 @@ export function useCollection(getFigure: () => ApiFigureV1 | null): UseCollectio
       if (wasOwned) {
         const existing = collectionStore.itemFor('vault', fig.figure_id);
         await collectionStore.remove('vault', fig.figure_id);
-        await syncDelete('vault', existing?.server_id ?? null, await getToken());
+        await syncDelete('vault', existing?.server_id ?? null, getToken);
       } else {
         await collectionStore.addOwned(fig);
-        const token = await getToken();
-        if (token) {
-          try {
-            const { id } = await addToVault(fig, token);
-            await collectionStore.attachServerId('vault', fig.figure_id, id);
-          } catch (e) {
-            safeSetError(e as Error);
-          }
+        try {
+          const { id } = await withAuthRetry(getToken, (tok) => addToVault(fig, tok));
+          await collectionStore.attachServerId('vault', fig.figure_id, id);
+        } catch (e) {
+          if ((e as Error).message !== 'not signed in') safeSetError(e as Error);
         }
       }
     } finally {
@@ -101,17 +97,14 @@ export function useCollection(getFigure: () => ApiFigureV1 | null): UseCollectio
       if (wasWanted) {
         const existing = collectionStore.itemFor('wantlist', fig.figure_id);
         await collectionStore.remove('wantlist', fig.figure_id);
-        await syncDelete('wantlist', existing?.server_id ?? null, await getToken());
+        await syncDelete('wantlist', existing?.server_id ?? null, getToken);
       } else {
         await collectionStore.addWanted(fig);
-        const token = await getToken();
-        if (token) {
-          try {
-            const { id } = await addToWantlist(fig, token);
-            await collectionStore.attachServerId('wantlist', fig.figure_id, id);
-          } catch (e) {
-            safeSetError(e as Error);
-          }
+        try {
+          const { id } = await withAuthRetry(getToken, (tok) => addToWantlist(fig, tok));
+          await collectionStore.attachServerId('wantlist', fig.figure_id, id);
+        } catch (e) {
+          if ((e as Error).message !== 'not signed in') safeSetError(e as Error);
         }
       }
     } finally {
@@ -125,13 +118,19 @@ export function useCollection(getFigure: () => ApiFigureV1 | null): UseCollectio
 async function syncDelete(
   kind: 'vault' | 'wantlist',
   serverId: string | null,
-  token: string | null,
+  getToken: ReturnType<typeof useAuthToken>,
 ): Promise<void> {
-  if (!token || !serverId) return; // No server record yet — local-only removal.
+  if (!serverId) return;
   try {
-    if (kind === 'vault') await deleteVaultItem(serverId, token);
-    else await deleteWantlistItem(serverId, token);
-  } catch {
-    // Best-effort; server soft-delete will reconcile on next pull-sync.
+    await withAuthRetry(getToken, async (tok) => {
+      if (kind === 'vault') await deleteVaultItem(serverId, tok);
+      else await deleteWantlistItem(serverId, tok);
+    });
+  } catch (e) {
+    // Best-effort; pull-sync reconciles later.
+    if (e instanceof CollectionApiError) return;
+    if ((e as Error).message === 'not signed in') return;
+    // Unknown error — still swallow for best-effort semantics; the
+    // reconcile pass is the source of truth.
   }
 }
