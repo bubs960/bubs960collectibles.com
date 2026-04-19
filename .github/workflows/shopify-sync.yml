@@ -1,4 +1,20 @@
-name: Build & Shopify Sync
+name: Build Site from Shopify
+
+# Shopify is the source of truth. This workflow pulls the live product
+# catalog from the Shopify Admin API, regenerates shop/ HTML pages and
+# sitemap.xml, and commits the result back to main so GitHub Pages picks
+# it up.
+#
+# Triggers:
+#   - push to main touching products/**, scripts/**, or this workflow
+#     (covers manual edits to local JSON shells as a fallback source)
+#   - scheduled: every hour (picks up new products added in Shopify)
+#   - workflow_dispatch: "Run workflow" button for instant rebuild
+#
+# Secrets required for Shopify-sourced builds:
+#   - SHOPIFY_STORE          e.g. bubs960-collectibles.myshopify.com
+#   - SHOPIFY_ADMIN_TOKEN    Admin API token, read_products scope
+# If secrets are missing, the build falls back to local JSON shells.
 
 on:
   push:
@@ -7,13 +23,15 @@ on:
       - 'products/**'
       - 'scripts/**'
       - '.github/workflows/shopify-sync.yml'
+  schedule:
+    - cron: '0 * * * *'
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  build-and-sync:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -27,22 +45,19 @@ jobs:
           node-version: '20'
 
       - name: Build product pages
+        env:
+          SHOPIFY_STORE: ${{ secrets.SHOPIFY_STORE }}
+          SHOPIFY_ADMIN_TOKEN: ${{ secrets.SHOPIFY_ADMIN_TOKEN }}
         run: node scripts/build-pages.mjs
 
       - name: Commit generated pages
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add shop/
+          git add shop/ sitemap.xml
           if git diff --staged --quiet; then
             echo "No page changes to commit."
           else
             git commit -m "chore: auto-build product pages [skip ci]"
             git push
           fi
-
-      - name: Sync to Shopify
-        env:
-          SHOPIFY_STORE: ${{ secrets.SHOPIFY_STORE }}
-          SHOPIFY_ADMIN_TOKEN: ${{ secrets.SHOPIFY_ADMIN_TOKEN }}
-        run: node scripts/sync-shopify.mjs

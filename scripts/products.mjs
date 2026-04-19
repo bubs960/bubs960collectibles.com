@@ -1,6 +1,7 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { fetchShopifyProducts } from './shopify-source.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const PRODUCTS_DIR = join(here, '..', 'products');
@@ -17,10 +18,21 @@ async function listLocalImages() {
   }
 }
 
-// Merges the shell's declared images (URLs) with any local files in
-// products/images/ whose filename starts with the product handle.
-// Local filenames resolve to a repo path or full URL at render time.
+// Shopify-first: fetch from Shopify Admin API when credentials are present.
+// Falls back to local products/*.json shells when Shopify is unreachable
+// (fetch error). An empty array from Shopify is a valid result (new store)
+// and is returned as-is — we do NOT fall back to JSON in that case.
 export async function loadProducts() {
+  const shopifyResult = await fetchShopifyProducts();
+  if (shopifyResult !== null) {
+    console.log(`[products] Source: Shopify (${shopifyResult.length} product${shopifyResult.length === 1 ? '' : 's'}).`);
+    return shopifyResult;
+  }
+  console.log('[products] Source: local JSON shells (Shopify credentials missing or fetch failed).');
+  return loadLocalProducts();
+}
+
+async function loadLocalProducts() {
   const files = (await readdir(PRODUCTS_DIR))
     .filter((f) => f.endsWith('.json') && !f.startsWith('_'));
 
@@ -34,7 +46,7 @@ export async function loadProducts() {
     if (!data.title) throw new Error(`${file}: missing "title"`);
     const auto = localImages.filter((f) => f.toLowerCase().startsWith(data.handle.toLowerCase()));
     data._localImages = auto;
-    products.push({ _file: file, ...data });
+    products.push({ _file: file, _source: 'local', ...data });
   }
   return products;
 }
