@@ -16,6 +16,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { colors, radii, spacing } from '@/theme/tokens';
 import { type } from '@/theme/typography';
 import { useSearch } from '@/hooks/useSearch';
+import { useSearchHistory } from '@/hooks/useSearchHistory';
 import type { SearchResult } from '@/api/searchApi';
 import type { RootStackParamList } from '@/navigation/types';
 
@@ -25,8 +26,15 @@ export function SearchScreen() {
   const navigation = useNavigation<Nav>();
   const [query, setQuery] = useState('');
   const { results, loading, error } = useSearch(query);
+  const history = useSearchHistory();
+  const showHistory = query.trim().length < 2 && history.entries.length > 0;
 
-  const onSelect = (figureId: string) => {
+  const onSelect = (figureId: string, resultName?: string) => {
+    // Record the query the user engaged with (i.e. actually tapped a
+    // result for), not every keystroke. Uses current query OR the
+    // result name as a fallback so entries stay useful.
+    const term = query.trim().length >= 2 ? query.trim() : resultName?.trim();
+    if (term) void history.record(term);
     Keyboard.dismiss();
     navigation.navigate('FigureDetail', { figureId });
   };
@@ -70,7 +78,42 @@ export function SearchScreen() {
         </View>
       )}
 
-      {!loading && !error && query.trim().length < 2 && (
+      {!loading && !error && showHistory && (
+        <View style={styles.historySection}>
+          <View style={styles.historyHeader}>
+            <Text style={styles.historyTitle}>Recent</Text>
+            <Pressable
+              onPress={() => void history.clear()}
+              accessibilityRole="button"
+              accessibilityLabel="Clear recent searches"
+              hitSlop={8}
+            >
+              <Text style={styles.historyClear}>Clear</Text>
+            </Pressable>
+          </View>
+          {history.entries.map((term) => (
+            <Pressable
+              key={term}
+              onPress={() => setQuery(term)}
+              accessibilityRole="button"
+              accessibilityLabel={`Search ${term} again`}
+              style={({ pressed }) => [styles.historyRow, pressed && styles.pressed]}
+            >
+              <Text style={styles.historyTerm}>{term}</Text>
+              <Pressable
+                onPress={() => void history.remove(term)}
+                accessibilityRole="button"
+                accessibilityLabel={`Remove ${term} from recent searches`}
+                hitSlop={12}
+              >
+                <Text style={styles.historyRemove}>×</Text>
+              </Pressable>
+            </Pressable>
+          ))}
+        </View>
+      )}
+
+      {!loading && !error && !showHistory && query.trim().length < 2 && (
         <View style={styles.state}>
           <Text style={styles.stateText}>Type at least two characters to search.</Text>
         </View>
@@ -87,7 +130,9 @@ export function SearchScreen() {
         keyExtractor={(r) => r.figure_id}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.list}
-        renderItem={({ item }) => <ResultRow item={item} onPress={() => onSelect(item.figure_id)} />}
+        renderItem={({ item }) => (
+          <ResultRow item={item} onPress={() => onSelect(item.figure_id, item.name)} />
+        )}
       />
     </SafeAreaView>
   );
@@ -197,5 +242,47 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.8,
+  },
+  historySection: {
+    paddingHorizontal: spacing.md,
+    gap: spacing.xs,
+  },
+  historyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
+  },
+  historyTitle: {
+    ...type.eyebrow,
+    color: colors.dim,
+  },
+  historyClear: {
+    ...type.meta,
+    color: colors.accent,
+    fontSize: 13,
+  },
+  historyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.sm,
+    minHeight: 44,
+    borderRadius: radii.sm,
+    backgroundColor: colors.surface0,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  historyTerm: {
+    ...type.body,
+    color: colors.text,
+    fontSize: 15,
+    flex: 1,
+  },
+  historyRemove: {
+    ...type.h2,
+    color: colors.dim,
+    fontSize: 18,
+    paddingHorizontal: spacing.xs,
   },
 });
