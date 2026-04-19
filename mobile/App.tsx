@@ -3,7 +3,6 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet, Text, View } from 'react-native';
-import { ClerkProvider } from '@clerk/clerk-expo';
 import { useFonts as useBebas, BebasNeue_400Regular } from '@expo-google-fonts/bebas-neue';
 import {
   useFonts as useInter,
@@ -14,15 +13,14 @@ import {
 import { AppNavigator } from '@/navigation/AppNavigator';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { track } from '@/analytics/dispatch';
-import { tokenCache } from '@/auth/tokenCache';
 import { colors } from '@/theme/tokens';
 import { type } from '@/theme/typography';
 
-const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '';
+// v1 scope: no auth UI surface — Clerk wiring lives under src/auth/ ready to
+// re-enable in v2 when vault/wantlist sync ships. ClerkProvider is removed
+// from the tree so no signed-in / signed-out distinction matters here.
 
 export default function App() {
-  // Google-fonts-hosted assets. The PostScript names here must match
-  // src/theme/typography.ts references.
   const [bebasReady] = useBebas({
     'BebasNeue-Regular': BebasNeue_400Regular,
   });
@@ -50,14 +48,12 @@ export default function App() {
         })
       }
     >
-      <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
-        <GestureHandlerRootView style={styles.root}>
-          <SafeAreaProvider>
-            <StatusBar style="light" />
-            <AppNavigator />
-          </SafeAreaProvider>
-        </GestureHandlerRootView>
-      </ClerkProvider>
+      <GestureHandlerRootView style={styles.root}>
+        <SafeAreaProvider>
+          <StatusBar style="light" />
+          <AppNavigator />
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
     </ErrorBoundary>
   );
 }

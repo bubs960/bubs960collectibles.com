@@ -4,13 +4,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { FigureDetailScreen } from '@/screens/FigureDetailScreen';
 import { SearchScreen } from '@/screens/SearchScreen';
-import { SignInScreen } from '@/screens/SignInScreen';
-import { VaultScreen } from '@/screens/VaultScreen';
-import { WantlistScreen } from '@/screens/WantlistScreen';
 import { OnboardingScreen } from '@/screens/OnboardingScreen';
 import { SettingsScreen } from '@/screens/SettingsScreen';
-import { AlertsScreen } from '@/screens/AlertsScreen';
-import { SetsScreen, WaitlistScreen } from '@/screens/StubScreen';
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
 import { colors } from '@/theme/tokens';
 import { linking } from './linking';
@@ -39,9 +34,6 @@ const navTheme = {
 export function AppNavigator({ initialFigureId }: { initialFigureId?: string }) {
   const onboarding = useOnboardingStatus();
 
-  // Hold the navigation tree on a plain loading view until we know whether
-  // to land on Onboarding or FigureDetail — mounting the container with the
-  // wrong initialRouteName then resetting causes a visible flash.
   if (onboarding.loading) {
     return (
       <View style={styles.loading}>
@@ -72,13 +64,7 @@ export function AppNavigator({ initialFigureId }: { initialFigureId?: string }) 
           initialParams={{ figureId: initialFigureId ?? 'mattel-elite-11-rey-mysterio' }}
         />
         <Stack.Screen name="Search" component={SearchScreen} options={{ presentation: 'modal' }} />
-        <Stack.Screen name="Vault" component={VaultScreen} />
-        <Stack.Screen name="Wantlist" component={WantlistScreen} />
-        <Stack.Screen name="Sets" component={SetsScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
-        <Stack.Screen name="Alerts" component={AlertsScreen} />
-        <Stack.Screen name="Waitlist" component={WaitlistScreen} options={{ presentation: 'modal' }} />
-        <Stack.Screen name="SignIn" component={SignInScreen} options={{ presentation: 'modal' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

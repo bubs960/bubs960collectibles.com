@@ -7,38 +7,29 @@ import { colors, radii, spacing } from '@/theme/tokens';
 import { type } from '@/theme/typography';
 
 interface Props {
-  signedIn: boolean;
-  owned: boolean;
-  wanted: boolean;
   ebayUrl: string | null;
-  onToggleOwned: () => void;
-  onToggleWanted: () => void;
-  onRequireAuth: () => void;
   onEbayTapped?: () => void;
 }
 
-export function StickyActionBar(props: Props) {
+/**
+ * v1 scope: read-only. The bottom bar is the eBay CTA.
+ *
+ * Own/Want collection toggles ship in v2 — they require Worker routes
+ * (POST/DELETE /api/v1/vault + /api/v1/wantlist) that don't exist yet, and
+ * shipping local-only collection state for an account-less app trains users
+ * to expect persistence we can't deliver across devices.
+ *
+ * The component is intentionally minimal so v2 can re-add the collection
+ * pills without breaking the eBay CTA's hit-target sizing or haptics.
+ */
+export function StickyActionBar({ ebayUrl, onEbayTapped }: Props) {
   const insets = useSafeAreaInsets();
-  const { signedIn, owned, wanted, ebayUrl } = props;
-  const hasPricingContext = ebayUrl !== null;
-  const showCollectionButtons = hasPricingContext || signedIn;
 
-  const handleToggle = (next: boolean, kind: 'owned' | 'wanted') => {
-    if (!signedIn) {
-      Haptics.selectionAsync();
-      props.onRequireAuth();
-      return;
-    }
-    Haptics.impactAsync(
-      next ? Haptics.ImpactFeedbackStyle.Light : Haptics.ImpactFeedbackStyle.Soft,
-    );
-    if (kind === 'owned') props.onToggleOwned();
-    else props.onToggleWanted();
-  };
+  if (!ebayUrl) return null;
 
   const handleEbay = async () => {
-    if (!ebayUrl) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onEbayTapped?.();
     await WebBrowser.openBrowserAsync(ebayUrl, {
       toolbarColor: colors.bg,
       controlsColor: colors.accent,
@@ -49,62 +40,16 @@ export function StickyActionBar(props: Props) {
   return (
     <View style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, spacing.xs) }]}>
       <View style={styles.bar}>
-        {showCollectionButtons && (
-          <View style={styles.collectionGroup}>
-            <Pill
-              active={owned}
-              label={owned ? 'Owned' : 'Own it'}
-              accessibilityLabel={owned ? 'Owned' : 'Mark as owned'}
-              onPress={() => handleToggle(!owned, 'owned')}
-            />
-            <Pill
-              active={wanted}
-              label={wanted ? 'Wanted' : 'Want it'}
-              accessibilityLabel={wanted ? 'Wanted' : 'Mark as wanted'}
-              onPress={() => handleToggle(!wanted, 'wanted')}
-            />
-          </View>
-        )}
-        {ebayUrl && (
-          <Pressable
-            onPress={handleEbay}
-            accessibilityRole="button"
-            accessibilityLabel="Find on eBay"
-            style={({ pressed }) => [
-              styles.primary,
-              !showCollectionButtons && styles.primaryFull,
-              pressed && styles.pressed,
-            ]}
-          >
-            <Text style={styles.primaryText}>Find on eBay →</Text>
-          </Pressable>
-        )}
+        <Pressable
+          onPress={handleEbay}
+          accessibilityRole="button"
+          accessibilityLabel="Find on eBay"
+          style={({ pressed }) => [styles.primary, pressed && styles.pressed]}
+        >
+          <Text style={styles.primaryText}>Find on eBay →</Text>
+        </Pressable>
       </View>
     </View>
-  );
-}
-
-function Pill({
-  active,
-  label,
-  accessibilityLabel,
-  onPress,
-}: {
-  active: boolean;
-  label: string;
-  accessibilityLabel: string;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
-      accessibilityState={{ selected: active }}
-      style={({ pressed }) => [styles.pill, active && styles.pillActive, pressed && styles.pressed]}
-    >
-      <Text style={[styles.pillText, active && styles.pillTextActive]}>{label}</Text>
-    </Pressable>
   );
 }
 
@@ -124,34 +69,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     minHeight: 56,
-    gap: spacing.xs,
-  },
-  collectionGroup: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-    flex: 1,
-  },
-  pill: {
-    flex: 1,
-    minHeight: 44,
-    paddingVertical: 6,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface0,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pillActive: {
-    borderColor: colors.accent,
-    backgroundColor: colors.surface2,
-  },
-  pillText: {
-    ...type.meta,
-    color: colors.text,
-  },
-  pillTextActive: {
-    color: colors.accent,
   },
   primary: {
     flex: 1,
@@ -162,9 +79,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.md,
-  },
-  primaryFull: {
-    flex: 1,
   },
   primaryText: {
     ...type.h2,

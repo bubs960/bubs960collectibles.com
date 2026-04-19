@@ -26,23 +26,25 @@ interface Slide {
   body: string;
 }
 
-// Keep slide copy short — every sentence the user has to read before the app
-// does anything useful is one more reason they bounce on first launch.
+// v1 scope: read-only browser. Copy doesn't promise vault/wantlist/alerts —
+// those land in v2 once the Worker exposes the sync endpoints. Keep it short:
+// every sentence the user reads before the app does something useful is one
+// more reason they bounce on first launch.
 const SLIDES: Slide[] = [
   {
     title: 'Hunt like a collector',
     body:
-      'Figure Pinner tracks real eBay sold prices so you know exactly what a figure is worth — no guessing, no padded asking prices.',
+      'Figure Pinner shows real eBay sold prices so you know exactly what a figure is worth — no guessing, no padded asking prices.',
   },
   {
-    title: 'Your collection stays yours',
+    title: 'Search anything',
     body:
-      "Mark figures as owned or wanted right from a figure page. Everything lives on this device until you sign in — no account needed to get started.",
+      'Find any figure by character, line, or series. Tap to see recent sales, price trends, and where to buy it.',
   },
   {
     title: "Ready to hunt?",
     body:
-      'Search any figure by character, line, or series. Tap Own it or Want it, and we\'ll keep your list waiting for you. Price alerts land with Pro.',
+      "Tap Find on eBay to jump straight to active listings with the right search already filled in.",
   },
 ];
 

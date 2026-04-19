@@ -10,24 +10,17 @@ import type { ApiPriceV1, ApiSoldComp } from '@/shared/types';
 interface Props {
   price: ApiPriceV1;
   ebayUrl: string | null;
-  isPro: boolean;
-  /**
-   * Called when the user taps the Pro gate. Pro doesn't exist yet (the
-   * extension has no tier; see freemium-gate.js), so mobile surfaces a
-   * waitlist CTA here — the caller navigates to the Waitlist screen. Remove
-   * this gate entirely once the Pro SKU is actually spec'd and wired.
-   */
-  onUnlockTap?: () => void;
 }
 
 const CHART_W = 320;
 const CHART_H = 100;
-const FREE_COMP_LIMIT = 3;
 
-export function MarketPanel({ price, ebayUrl, isPro, onUnlockTap }: Props) {
+// Per the v1 scope decision: no Pro tier exists, so we ship the full price
+// history unlocked rather than manufacturing fake friction with a waitlist
+// CTA. When Pro actually ships (with a price, feature set, and payment
+// pipe), reintroduce a real gate here — not a placeholder.
+export function MarketPanel({ price, ebayUrl }: Props) {
   const history = price.soldHistory ?? [];
-  const visible = isPro ? history : history.slice(0, FREE_COMP_LIMIT);
-  const capped = !isPro && history.length > FREE_COMP_LIMIT;
 
   return (
     <View style={styles.wrap}>
@@ -40,22 +33,10 @@ export function MarketPanel({ price, ebayUrl, isPro, onUnlockTap }: Props) {
 
       <Text style={[styles.eyebrow, styles.compsHeader]}>Recent eBay sales</Text>
 
-      {visible.length === 0 ? (
+      {history.length === 0 ? (
         <Text style={styles.emptyInline}>No recent sales</Text>
       ) : (
-        visible.map((c, i) => <CompRow key={`${c.sold_date}-${i}`} comp={c} ebayUrl={ebayUrl} />)
-      )}
-
-      {capped && (
-        <Pressable
-          style={styles.unlock}
-          onPress={onUnlockTap}
-          accessibilityRole="button"
-          accessibilityLabel={`Join the Pro waitlist. Full price history with ${history.length} sales unlocks when Pro ships.`}
-          hitSlop={8}
-        >
-          <Text style={styles.unlockText}>Join Pro waitlist for full history →</Text>
-        </Pressable>
+        history.map((c, i) => <CompRow key={`${c.sold_date}-${i}`} comp={c} ebayUrl={ebayUrl} />)
       )}
     </View>
   );
@@ -196,17 +177,6 @@ const styles = StyleSheet.create({
     fontFamily: type.heroPrice.fontFamily,
     fontSize: 18,
     color: colors.success,
-  },
-  unlock: {
-    alignSelf: 'center',
-    minHeight: 44,
-    justifyContent: 'center',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-  },
-  unlockText: {
-    ...type.meta,
-    color: colors.accent,
   },
   emptyInline: {
     ...type.meta,

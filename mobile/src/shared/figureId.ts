@@ -1,19 +1,39 @@
 // Client-side figure_id synthesizer.
 //
-// The Worker's public search strips figure_id as an anti-scrape measure
-// (mobile/src/js/lib/api.js:56-58 in the Figure Pinner Dev workspace). Mobile
-// reconstructs the id from {brand, line, series, name} so it can navigate to
-// /figure/:id from a search result.
+// Why this exists: the Worker's public search projection strips figure_id as
+// an anti-scrape pattern, so mobile reconstructs the id from the visible
+// {brand, line, series, name} fields to navigate to /figure/:id (or
+// /open/:id) from a search result.
 //
-// CRITICAL: this algorithm must produce the same id the KB stores, otherwise
-// the detail fetch 404s. The KB ids in the sample data look like:
-//   "mattel-elite-11-rey-mysterio"
-// which matches slug(brand)-slug(line)-series-slug(name).
+// CRITICAL — this is a guess until the canonical mint is shared.
+// The mint logic is NOT in figurepinner-site. Confirmed by audit:
+//   - figurepinner-site/src/data/kb.ts:3-5 says
+//       "figures-reference-v2.js is the source of truth — committed to this
+//        repo, updated by running:
+//          cp <extension-repo>/API/figures-reference-v2.js src/data/"
+//   - The whole figurepinner-site codebase READS figure_id; nothing constructs it.
+//   - The KBFigure type carries both figure_id AND v1_figure_id, which means
+//     the mint algorithm CHANGED at some point. If the v2 algorithm differs
+//     from what mobile guesses here, the mismatch is silent: search shows
+//     results, taps 404. Worth checking the upstream mint script and the
+//     v1→v2 diff before TestFlight.
 //
-// This implementation is a best-effort mirror; when the canonical JS version
-// in figurepinner-extension/mobile/src/js/lib/api.js is shared, port it
-// verbatim and replace this file. Until then, any id mismatch shows up as a
-// 404 on figure tap from search — flag that in QA.
+// What to do to make this canonical:
+//   1. Find the script in the extension repo (Fig Pinner Dev workspace) that
+//      generates API/figures-reference-v2.js. Look for whatever assembles a
+//      figure_id from the {manufacturer, product_line, release_wave,
+//      character_canonical, character_variant?} natural key.
+//   2. Port that function verbatim into this file, replacing buildFigureId.
+//   3. Add a sanity test that asserts a few real figure_id values from the
+//      committed KB match the function's output.
+//
+// Working hypothesis (matches the sample id 'mattel-elite-11-rey-mysterio'):
+//   slug(manufacturer) + '-' + slug(product_line) + '-' + release_wave
+//   + '-' + slug(character_canonical)
+//   + (character_variant ? '-' + slug(character_variant) : '')
+// Mobile receives display strings ({brand, line, series, name}) not the raw
+// natural key, so it has to re-slug + try to strip "(Line Series N)" suffixes
+// from the display name. That's another point of drift risk.
 
 export interface FigureIdParts {
   brand: string;
@@ -38,8 +58,6 @@ export function buildFigureId(parts: FigureIdParts): string {
  *   "Rey Mysterio (Masked) (Elite Series 11)" → "Rey Mysterio (Masked)"
  */
 function stripLineSuffix(name: string): string {
-  // Drop the trailing parenthesised group only if it looks like a line+series
-  // tag, not a character variant.
   return name.replace(/\s*\(([^)]*\s+series\s+\d+[^)]*)\)\s*$/i, '').trim();
 }
 

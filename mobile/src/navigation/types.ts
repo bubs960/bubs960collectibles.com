@@ -1,16 +1,11 @@
-// Route params. Keep in sync with linking.ts and mobile/native-templates/
-// apple-app-site-association — every path declared in AASA must have a route
-// here or the deep-link resolver will no-op on arrival.
+// v1 scope: read-only browser. The vault/wantlist/alerts/auth surfaces ship
+// in v2 once the Worker exposes the corresponding endpoints. Their screens
+// + hooks live under src/screens, src/hooks, src/collection, src/auth, and
+// src/notifications — they're just unreferenced here.
 
 export type RootStackParamList = {
   Onboarding: undefined;
   FigureDetail: { figureId: string };
   Search: undefined;
-  Vault: undefined;
-  Wantlist: undefined;
-  Sets: undefined;
-  Waitlist: undefined;
-  SignIn: undefined;
   Settings: undefined;
-  Alerts: undefined;
 };

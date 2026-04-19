@@ -1,129 +1,102 @@
 # FigurePinner Mobile
 
-Phase 1 scaffold of the FigurePinner mobile app.
+## v1 scope: read-only browser
+
+Mobile v1 ships **without** vault, wantlist, alerts, or sign-in. The Worker
+endpoints those features depend on (`POST/DELETE /api/v1/vault`,
+`POST/DELETE /api/v1/wantlist`, `POST /api/v1/devices`, etc.) don't exist
+yet — shipping local-only sync would train users to expect persistence we
+can't deliver across devices, and shipping a waitlist CTA for a Pro tier
+that hasn't been spec'd is fake friction.
+
+What v1 ships:
+
+- Universal-Link arrival (`/open/:figure_id` — narrowed from `/figure/*` to
+  preserve web SEO + affiliate engagement)
+- Onboarding (3-slide welcome, skippable)
+- Figure detail screen (hero with pinch-zoom, value strip, lore band when
+  content lands, market panel **with full price history**, details card,
+  series + character carousels when data lands)
+- Search (Worker-backed, client-side `figure_id` synthesis)
+- Settings (Privacy, Terms, version, dev-only onboarding reset)
+- Pull-to-refresh, offline cache (24h SWR), reduce-motion support
+
+What's preserved-but-not-shipped (lives in `src/` for v2 re-enable):
+
+- `src/auth/` — Clerk token cache + JWT-template hook
+- `src/collection/` — local store + sync reconciliation
+- `src/notifications/` — Expo push token registration
+- `src/screens/{VaultScreen,WantlistScreen,AlertsScreen,SignInScreen,StubScreen}.tsx`
+- `src/hooks/{useCollection,useCollectionSync,useCollectionList}.ts`
+- `src/api/collectionApi.ts`
+
+These are all unreferenced from `AppNavigator` + `linking.ts`, so they don't
+add user-visible surface but the work isn't lost.
 
 ## Stack
 
 - Expo (React Native) + TypeScript
 - Dark-mode only
-- Fonts via `@expo-google-fonts` (no local font files needed)
-- Backend: Cloudflare Worker (`figurepinner-api.bubs960.workers.dev`)
+- Fonts via `@expo-google-fonts`
+- Backend: Cloudflare Worker (`figurepinner-api.bubs960.workers.dev`) — read-only
 
-## Backend model
+## Open KNOWN risks (read before shipping)
 
-Mobile talks to ONE backend — the Cloudflare Worker. The Next site at
-`figurepinner.com` is marketing HTML only; it does not proxy to any API.
+1. **`buildFigureId` is a guess.** The KB's `figure_id` mint algorithm is
+   NOT in `figurepinner-site` — `src/data/kb.ts` says the file is `cp`'d in
+   from an extension repo. Mobile's synthesizer in
+   `src/shared/figureId.ts` matches the sample id `mattel-elite-11-rey-mysterio`
+   but might silently disagree with the canonical mint on edge cases.
+   The `KBFigure.v1_figure_id` field is a smoking gun that the algorithm
+   changed at some point — there may already be drift in production.
+   **Find the upstream mint script and port it verbatim before TestFlight.**
 
-Endpoints the mobile app hits (all on the Worker):
+2. **AASA file not yet narrowed.** Deep-link config in
+   `src/navigation/linking.ts` matches `/open/:figureId`. The matching
+   `apple-app-site-association` and `assetlinks.json` files (in the Figure
+   Pinner Dev workspace under `mobile/native-templates/`) still declare
+   `/figure/*`. Update them to `/open/*` before hosting at
+   `/.well-known/` on figurepinner.com, otherwise the broader pattern
+   hijacks every web-engagement / SEO link to the app on installed devices.
 
-- `GET  /api/v1/figure/:id` — figure metadata
-- `GET  /api/v1/figure-price?figureId=` — best-effort pricing
-- `GET  /api/v1/search?q=&limit=` — search; public projection omits
-  `figure_id` + `image` as anti-scrape (mobile synthesizes `figure_id`
-  client-side via `src/shared/figureId.ts`; authed callers sending
-  `X-FP-Key` get the full projection).
-- `POST /api/v1/vault`, `DELETE /api/v1/vault/items/:id` — owned list
-- `POST /api/v1/wantlist`, `DELETE /api/v1/wantlist/item/:id` — wantlist
-  (both soft-delete → `status='removed'`, not hard delete)
-
-The wantlist/vault routes are **planned, not yet shipped** in the reference
-mobile client (`mobile/src/js/lib/storage.js` in the Figure Pinner Dev
-workspace is localStorage-only, with a comment saying these will swap to
-authed POST/DELETE once auth lands).
-
-## Auth
-
-Clerk via `@clerk/clerk-expo`. The Worker is expected to verify the JWT
-directly via Clerk's JWKS — so mobile calls
-`getToken({ template: 'mobile' })` and sends `Authorization: Bearer <jwt>`.
-
-The JWT template name must be configured in the Clerk dashboard — override
-via `EXPO_PUBLIC_CLERK_JWT_TEMPLATE` if you name it differently. On the
-server, use `authenticateRequest()` with an explicit template allowlist —
-not bare `auth()`, which was built for cookie verification.
-
-## Shared logic
-
-Ported from the Figure Pinner Dev reference:
-
-- `src/shared/kb.ts` — `KBFigure` + `deriveName`
-- `src/api/figureApi.ts#buildEbayUrl` — affiliate URL (`customid=figurepinner-mobile`
-  for EPN segmentation vs. extension's `figurepinner`)
-- `src/shared/figureId.ts` — client-side figure_id synthesizer (best-effort
-  mirror; when the canonical JS version from `mobile/src/js/lib/api.js` is
-  shared, port it verbatim)
-
-Mobile-only:
-
-- `src/shared/cleanFigureName.ts` — defensive `(None)` / `(null)` stripper
-- `src/shared/renderLoreBand.ts` — lore content renderer (stub until
-  content files land)
-
-## Structure
-
-```
-src/
-  theme/        design tokens
-  shared/       types, kb, figureId, cleanFigureName, renderLoreBand, formatters, share
-  api/          figureApi, collectionApi, searchApi
-  auth/         Clerk token cache + JWT-template hook
-  cache/        AsyncStorage + SWR
-  hooks/        useFigureDetail, useCollection, useReduceMotion, useSearch
-  analytics/    typed event registry + swap-able sink
-  navigation/   stack + deep-link config
-  screens/      FigureDetail, Search, SignIn, Stub/Waitlist
-  components/   zone components
-__tests__/      9 suites, 70+ tests (see below)
-```
-
-## Running
-
-```
-cd mobile
-npm install
-npm run ios        # or: npm run android
-npm test
-npm run typecheck
-```
+3. **`companion.js:307-309` affiliate leak.** Lives in the extension repo,
+   not here. Every "active listings" click ships unattributed —
+   `activeListingsUrl()` returns a raw `ebay.com/sch/i.html` URL with no
+   EPN params. Wrap in `affiliateWrap()` and ship a hotfix. This is an
+   active revenue leak today, not a future-mobile concern.
 
 ## Environment variables (Expo)
 
 - `EXPO_PUBLIC_FIGUREPINNER_API` — Cloudflare Worker base URL.
   Defaults to `https://figurepinner-api.bubs960.workers.dev`.
 - `EXPO_PUBLIC_EBAY_CAMPAIGN_ID` — eBay Partner Network campaign ID.
-  Defaults to `5339147406` (live Bubs960 EPN campaign).
-- `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` — Clerk publishable key.
-- `EXPO_PUBLIC_CLERK_JWT_TEMPLATE` — name of the Clerk JWT template the
-  Worker accepts. Defaults to `mobile`.
+  Defaults to `5339147406`.
 
-## Open business / product decisions
+(No Clerk or notification env vars in v1 — those re-enable in v2.)
 
-- **Pro tier** doesn't exist in the extension (`freemium-gate.js` explicitly
-  has no subscription tier). Mobile ships the 3-free-comps gate per the
-  design handoff; the "Unlock" CTA currently routes to a `Waitlist` stub
-  screen. Choose one before shipping publicly: (a) waitlist CTA only,
-  (b) remove the gate + ship Market Panel unlocked, (c) actually spec Pro
-  (price, features, payment, refunds) and wire it. Option (a) is the
-  current default — change by editing `MarketPanel.tsx` + the
-  `Waitlist` screen in `StubScreen.tsx`.
-- **Universal Links** require `.well-known/apple-app-site-association`
-  and `assetlinks.json` hosted on figurepinner.com by the site worker.
-  Staged placeholders live at `mobile/native-templates/` in the reference
-  workspace; APP_TEAM_ID and release SHA-256 fingerprint need filling.
-  AASA currently routes `/figure/*` — once live, every figurepinner.com
-  figure link opens the app (not the browser) when installed; if any web
-  flow needs to stay in-browser, narrow AASA to `/open/*` instead.
+## Running
 
-## Test suites (9 suites, 70+ tests)
+```
+cd mobile
+npm install
+npm run ios      # or: npm run android
+npm test
+npm run typecheck
+```
 
-Logic-layer coverage. Run with `npm test` (jest-expo preset) or via the
-sandbox ts-jest harness documented in PRs.
+## Tests
 
-- `cleanFigureName`, `deriveName`, `renderLoreBand`, `formatters` — shared logic
-- `buildFigureId` — client-side figure_id synthesis (must match KB)
-- `buildEbayUrl` — affiliate template + `customid=figurepinner-mobile`
-- `searchApi` — Worker URL, X-FP-Key header, figure_id synthesis fallback
-- `collectionApi` — POST + DELETE, exact spec paths (`/vault/items/:id`
-  vs. `/wantlist/item/:id`), Bearer auth, error wrapping
-- `persist`, `useSWR` — AsyncStorage cache + stale-while-revalidate;
-  fetch-failure does NOT clobber cached data (§11 offline guarantee)
+13 logic suites + 5 component suites. Logic suites run under both jest-expo
+and the sandbox ts-jest harness; component suites require jest-expo's RN
+runtime. See `__tests__/component/README.md`.
+
+## What's deferred to v2 (and why each is blocked today)
+
+| Feature | Blocker |
+|---|---|
+| Vault / Wantlist sync | Worker `POST/DELETE /api/v1/{vault,wantlist}` not built |
+| Pull-sync GET endpoints | Same |
+| Sign-in (Clerk) | No surface to sign into until vault/wantlist are real |
+| Push price alerts | Worker `POST /api/v1/devices` + APNs/FCM pipe + send loop |
+| Pro tier UI | Pro doesn't have a price, feature set, or payment pipe yet |
+| Account deletion | Returns with sign-in (Apple delete-parity required) |

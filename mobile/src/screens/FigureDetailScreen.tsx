@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -14,12 +14,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useAuth } from '@clerk/clerk-expo';
 import * as Haptics from 'expo-haptics';
 import { colors, heroCollapseThreshold, spacing } from '@/theme/tokens';
 import { type } from '@/theme/typography';
 import { useFigureDetail } from '@/hooks/useFigureDetail';
-import { useCollection } from '@/hooks/useCollection';
 import { useReduceMotion } from '@/hooks/useReduceMotion';
 import { renderLoreBand } from '@/shared/renderLoreBand';
 import { cleanFigureName } from '@/shared/cleanFigureName';
@@ -31,7 +29,6 @@ import { Hero } from '@/components/figure/Hero';
 import { ValueStrip } from '@/components/figure/ValueStrip';
 import { LoreBand } from '@/components/figure/LoreBand';
 import { MarketPanel } from '@/components/figure/MarketPanel';
-import { CollectionPanel } from '@/components/figure/CollectionPanel';
 import { SeriesContext } from '@/components/figure/SeriesContext';
 import { CharacterThread } from '@/components/figure/CharacterThread';
 import { CtaCardList, CtaItem } from '@/components/figure/CtaCardList';
@@ -48,7 +45,6 @@ export function FigureDetailScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<RouteP>();
   const { figureId } = route.params;
-  const { isSignedIn } = useAuth();
   const reduceMotion = useReduceMotion();
 
   const { data, loading, error, revalidating, isStale, cacheAgeSeconds, refetch } =
@@ -59,18 +55,6 @@ export function FigureDetailScreen() {
   const dims = useWindowDimensions();
 
   const lore = useMemo(() => (data ? renderLoreBand(data) : null), [data]);
-  const collection = useCollection(() => data?.figure ?? null);
-  const [heroZoomed, setHeroZoomed] = useState(false);
-
-  const onHeroZoomChange = useCallback((zoomed: boolean) => {
-    setHeroZoomed(zoomed);
-  }, []);
-  const onHeroZoomed = useCallback(
-    (zoomScale: number) => {
-      track('figure_image_zoomed', { figure_id: figureId, max_zoom_level: zoomScale });
-    },
-    [figureId],
-  );
 
   useEffect(() => {
     if (data) track('figure_viewed', { figure_id: figureId });
@@ -92,33 +76,14 @@ export function FigureDetailScreen() {
     );
   }
 
-  const { figure, price, social, series_siblings, character_thread, rarity_tier } = data;
+  const { figure, price, series_siblings, character_thread, rarity_tier } = data;
   const name = cleanFigureName(figure.name);
   const ebayUrl = buildEbayUrl(figure);
 
   const showSeries = (series_siblings?.length ?? 0) > 0;
   const showThread = (character_thread?.length ?? 0) > 0;
-  const showCollection = !!social;
 
   const ctas: CtaItem[] = [
-    {
-      id: 'vault',
-      title: 'Open your vault',
-      subtitle: 'See everything you own',
-      onPress: () => navigation.navigate('Vault'),
-    },
-    {
-      id: 'wantlist',
-      title: 'Open your wantlist',
-      subtitle: "See everything you're hunting",
-      onPress: () => navigation.navigate('Wantlist'),
-    },
-    {
-      id: 'alerts',
-      title: 'Price alerts',
-      subtitle: 'Get pinged on drops',
-      onPress: () => navigation.navigate('Alerts'),
-    },
     {
       id: 'share',
       title: 'Share this figure',
@@ -133,7 +98,7 @@ export function FigureDetailScreen() {
     {
       id: 'settings',
       title: 'Settings',
-      subtitle: 'Account, privacy, data',
+      subtitle: 'Privacy, terms, version',
       onPress: () => navigation.navigate('Settings'),
     },
     {
@@ -144,8 +109,6 @@ export function FigureDetailScreen() {
     },
   ];
 
-  // With reduce-motion off, the header crossfades with scroll. With it on,
-  // snap directly based on a threshold so there's no animated interpolation.
   const headerOpacity = reduceMotion
     ? scrollY.interpolate({
         inputRange: [heroCollapseThreshold - 1, heroCollapseThreshold],
@@ -184,29 +147,6 @@ export function FigureDetailScreen() {
     await refetch();
   };
 
-  const onRequireAuth = (trigger: 'own' | 'want') => {
-    track('auth_required_shown', { figure_id: figureId, trigger });
-    navigation.navigate('SignIn');
-  };
-
-  const onToggleOwned = () => {
-    if (!isSignedIn) {
-      onRequireAuth('own');
-      return;
-    }
-    track('figure_own_toggled', { figure_id: figureId, next_state: !collection.owned });
-    void collection.toggleOwned();
-  };
-
-  const onToggleWanted = () => {
-    if (!isSignedIn) {
-      onRequireAuth('want');
-      return;
-    }
-    track('figure_want_toggled', { figure_id: figureId, next_state: !collection.wanted });
-    void collection.toggleWanted();
-  };
-
   const onEbayTapped = () => {
     track('figure_ebay_tapped', { figure_id: figureId });
   };
@@ -242,7 +182,6 @@ export function FigureDetailScreen() {
       <Animated.ScrollView
         onScroll={handleScroll}
         scrollEventThrottle={16}
-        scrollEnabled={!heroZoomed}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: 120 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -255,12 +194,7 @@ export function FigureDetailScreen() {
           />
         }
       >
-        <Hero
-          figure={figure}
-          rarity={rarity_tier}
-          onZoomChange={onHeroZoomChange}
-          onZoomed={onHeroZoomed}
-        />
+        <Hero figure={figure} rarity={rarity_tier} />
 
         {isStale && (
           <View style={styles.stalePill}>
@@ -288,24 +222,13 @@ export function FigureDetailScreen() {
 
         {price && (
           <View style={styles.section}>
-            <MarketPanel
-              price={price}
-              ebayUrl={ebayUrl}
-              isPro={false}
-              onUnlockTap={() => navigation.navigate('Waitlist')}
-            />
+            <MarketPanel price={price} ebayUrl={ebayUrl} />
           </View>
         )}
 
         <View style={styles.section}>
           <DetailsCard figure={figure} />
         </View>
-
-        {showCollection && (
-          <View style={styles.section}>
-            <CollectionPanel collection={null} social={social} />
-          </View>
-        )}
 
         {showSeries && (
           <View style={styles.section}>
@@ -330,16 +253,7 @@ export function FigureDetailScreen() {
         </View>
       </Animated.ScrollView>
 
-      <StickyActionBar
-        signedIn={!!isSignedIn}
-        owned={collection.owned}
-        wanted={collection.wanted}
-        ebayUrl={ebayUrl}
-        onToggleOwned={onToggleOwned}
-        onToggleWanted={onToggleWanted}
-        onRequireAuth={() => onRequireAuth('own')}
-        onEbayTapped={onEbayTapped}
-      />
+      <StickyActionBar ebayUrl={ebayUrl} onEbayTapped={onEbayTapped} />
     </View>
   );
 }
@@ -365,26 +279,16 @@ function EmptyPricingCard() {
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
+  root: { flex: 1, backgroundColor: colors.bg },
   loading: {
     flex: 1,
     backgroundColor: colors.bg,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  errorText: {
-    ...type.body,
-    color: colors.muted,
-  },
-  scrollContent: {
-    gap: spacing.md,
-  },
-  section: {
-    gap: spacing.md,
-  },
+  errorText: { ...type.body, color: colors.muted },
+  scrollContent: { gap: spacing.md },
+  section: { gap: spacing.md },
   stickyHeader: {
     position: 'absolute',
     top: 0,
@@ -460,12 +364,6 @@ const emptyStyles = StyleSheet.create({
     borderColor: colors.border,
     gap: 4,
   },
-  title: {
-    ...type.h2,
-    color: colors.text,
-  },
-  body: {
-    ...type.body,
-    color: colors.muted,
-  },
+  title: { ...type.h2, color: colors.text },
+  body: { ...type.body, color: colors.muted },
 });
