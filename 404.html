@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>You Got Pinned | Bubs960 Collectibles</title>
+    <meta name="description" content="This page ate the three-count. Head back to the main event.">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="You Got Pinned | Bubs960 Collectibles">
+    <meta property="og:description" content="This page ate the three-count. Head back to the main event.">
+    <meta property="og:image" content="https://www.bubs960collectibles.com/bubs-logo.jpg">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-red: #e62429;
+            --primary-blue: #1c3b70;
+            --accent-yellow: #f1c40f;
+            --bg-dark: #0a0e17;
+            --text-light: #f4f4f4;
+            --text-muted: #9aa3b2;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg-dark);
+            color: var(--text-light);
+            font-family: 'Montserrat', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+            background-image: radial-gradient(circle at center, #1c3b70 0%, #0a0e17 70%);
+            overflow: hidden;
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(241,196,15,0.05) 0deg 8deg, transparent 8deg 24deg);
+            animation: spin 60s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .count {
+            position: relative; z-index: 1;
+            font-family: 'Bangers', cursive;
+            font-size: 12rem;
+            letter-spacing: 8px;
+            color: var(--accent-yellow);
+            text-shadow: 6px 6px 0 var(--primary-red), 0 0 60px rgba(241,196,15,0.3);
+            line-height: 0.9;
+        }
+        .title {
+            position: relative; z-index: 1;
+            font-family: 'Bangers', cursive;
+            font-size: 3rem;
+            letter-spacing: 3px;
+            color: var(--text-light);
+            text-shadow: 3px 3px 0 var(--primary-red);
+            margin: 0.5rem 0 1rem;
+            text-transform: uppercase;
+        }
+        .msg {
+            position: relative; z-index: 1;
+            max-width: 500px;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+        .actions {
+            position: relative; z-index: 1;
+            display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;
+        }
+        .btn {
+            font-family: 'Bangers', cursive;
+            font-size: 1.25rem;
+            padding: 0.9rem 1.75rem;
+            border: 2px solid transparent;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: transform 0.2s ease;
+        }
+        .btn-primary {
+            background: linear-gradient(180deg, #ff3940 0%, var(--primary-red) 50%, #b01b1f 100%);
+            color: white;
+            box-shadow: 0 4px 0 #7a1216;
+            text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+        }
+        .btn-primary:hover { transform: translateY(-2px) scale(1.03); }
+        .btn-ghost {
+            background: transparent;
+            color: var(--accent-yellow);
+            border-color: var(--accent-yellow);
+            box-shadow: 0 4px 0 rgba(212,160,23,0.7);
+        }
+        .btn-ghost:hover { background: var(--accent-yellow); color: #111; transform: translateY(-2px) scale(1.03); }
+        a { text-decoration: none; color: inherit; }
+
+        @media (max-width: 600px) {
+            .count { font-size: 7rem; }
+            .title { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="count">1 — 2 — 3</div>
+    <h1 class="title">You Got Pinned</h1>
+    <p class="msg">This page ate the three-count — the URL you tried doesn't exist on the Bubs960 roster. Head back to the main event before the ref counts you out.</p>
+    <div class="actions">
+        <a href="/index.html" class="btn btn-primary">Back to Home</a>
+        <a href="/shop/index.html" class="btn btn-ghost">Hit the Shop</a>
+    </div>
+</body>
+</html>

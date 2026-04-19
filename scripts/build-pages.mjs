@@ -11,6 +11,8 @@ import { loadProducts, resolveImages, SHOP_DIR, escapeHtml } from './products.mj
 const LOCAL_IMG_PREFIX = '/products/images/';
 
 const SITE_BRAND = 'Bubs960 Collectibles';
+const SITE_URL = 'https://www.bubs960collectibles.com';
+const DEFAULT_OG_IMAGE = `${SITE_URL}/bubs-logo.jpg`;
 
 function fmtPrice(p) {
   if (p == null || p === '') return '';
@@ -26,6 +28,10 @@ function statusBadge(status) {
 }
 
 function buyButtons(p) {
+  if ((p.status ?? '').toLowerCase() === 'sold') {
+    return `<span class="btn btn-sold" aria-disabled="true">Sold — Thanks!</span>
+<a class="btn btn-ghost" href="/index.html#contact">Looking for One?</a>`;
+  }
   const links = p.buyLinks ?? {};
   const out = [];
   if (links.shopify) {
@@ -226,6 +232,7 @@ a { color: inherit; text-decoration: none; }
   color: var(--text-muted);
   text-decoration: line-through;
 }
+.price.struck { text-decoration: line-through; color: var(--text-muted); }
 .badge {
   font-size: 0.75rem;
   font-weight: 800;
@@ -416,6 +423,61 @@ a { color: inherit; text-decoration: none; }
   text-transform: uppercase;
 }
 
+/* SOLD stamp */
+.sold-stamp {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) rotate(-18deg);
+  font-family: 'Bangers', cursive;
+  font-size: 4.5rem;
+  letter-spacing: 8px;
+  color: var(--primary-red);
+  border: 6px solid var(--primary-red);
+  padding: 0.4rem 1.5rem;
+  border-radius: 10px;
+  background: rgba(10, 14, 23, 0.85);
+  text-shadow: 2px 2px 0 #000;
+  box-shadow: 0 0 30px rgba(230, 36, 41, 0.6);
+  pointer-events: none;
+  z-index: 5;
+  text-transform: uppercase;
+  opacity: 0.95;
+}
+.card.is-sold .card-img-wrap { opacity: 0.55; filter: grayscale(0.3); }
+
+.sold-banner {
+  background: var(--primary-red);
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 10px;
+  font-family: 'Bangers', cursive;
+  font-size: 1.75rem;
+  letter-spacing: 3px;
+  text-align: center;
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+  border: 3px solid var(--accent-yellow);
+  box-shadow: 0 0 24px rgba(230, 36, 41, 0.45);
+}
+.sold-banner .small {
+  display: block;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--accent-yellow);
+  margin-top: 0.25rem;
+  text-transform: none;
+}
+
+.btn-sold {
+  background: #333;
+  color: var(--text-muted);
+  font-family: 'Bangers', cursive;
+  cursor: not-allowed;
+  box-shadow: 0 4px 0 #111;
+}
+
 /* HOT DEAL stamp for product page */
 .hot-stamp {
   position: absolute;
@@ -441,7 +503,17 @@ a { color: inherit; text-decoration: none; }
 .hot-stamp .big { font-size: 1.25rem; letter-spacing: 2px; }
 .info { position: relative; }
 
-footer { text-align: center; padding: 2.5rem 1rem; color: #777; border-top: 1px solid #1a2233; margin-top: 3rem; }
+.site-footer { border-top: 3px solid var(--primary-red); background: var(--bg-panel); padding: 3rem 2rem 1.5rem; margin-top: 3rem; }
+.footer-grid { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1.5fr repeat(3, 1fr); gap: 2rem; }
+.footer-col h4 { font-family: 'Bangers', cursive; font-size: 1.2rem; color: var(--accent-yellow); letter-spacing: 2px; margin-bottom: 0.75rem; text-transform: uppercase; }
+.footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+.footer-col a { color: var(--text-muted); font-size: 0.9rem; font-weight: 700; transition: color 0.15s ease; }
+.footer-col a:hover { color: var(--accent-yellow); }
+.footer-brand { font-family: 'Bangers', cursive; font-size: 2rem; color: var(--accent-yellow); letter-spacing: 2px; text-shadow: 2px 2px 0 var(--primary-red); margin-bottom: 0.5rem; }
+.footer-tagline { color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; }
+.footer-bottom { max-width: 1100px; margin: 2rem auto 0; padding-top: 1.5rem; border-top: 1px solid #1a2233; color: #555; font-size: 0.85rem; text-align: center; }
+@media (max-width: 760px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 500px) { .footer-grid { grid-template-columns: 1fr; } }
 
 @media (max-width: 900px) {
   .product { grid-template-columns: 1fr; }
@@ -465,19 +537,70 @@ const NAV_HTML = `
     <li><a href="/shop/index.html">Shop</a></li>
     <li><a href="/live.html">Live</a></li>
     <li><a href="/about.html">About</a></li>
+    <li><a href="/faq.html">FAQ</a></li>
     <li><a href="/index.html#contact">Contact</a></li>
   </ul>
 </nav>
 `;
 
-const HEAD = (title, description) => `
+const FOOTER_HTML = `
+<footer class="site-footer">
+  <div class="footer-grid">
+    <div class="footer-col">
+      <div class="footer-brand">BUBS960</div>
+      <p class="footer-tagline">By collectors, for collectors. No middleman, no platform tax.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Explore</h4>
+      <ul>
+        <li><a href="/shop/index.html">Shop</a></li>
+        <li><a href="/live.html">Live Shows</a></li>
+        <li><a href="/about.html">About</a></li>
+        <li><a href="/faq.html">FAQ</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Buy From</h4>
+      <ul>
+        <li><a href="https://www.ebay.com/usr/bubs960" target="_blank" rel="noopener">eBay Store</a></li>
+        <li><a href="https://www.whatnot.com/user/bubs960" target="_blank" rel="noopener">Whatnot Live</a></li>
+        <li><a href="/index.html#contact">Direct Inquiry</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Connect</h4>
+      <ul>
+        <li><a href="mailto:Bubs960toys@gmail.com">Bubs960toys@gmail.com</a></li>
+        <li><a href="/index.html#vip">Join VIP List</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">&copy; 2026 Bubs960 Collectibles. All rights reserved.</div>
+</footer>
+`;
+
+const HEAD = (title, description, options = {}) => {
+  const ogImage = options.ogImage ?? DEFAULT_OG_IMAGE;
+  const ogUrl = options.ogUrl ?? SITE_URL;
+  const fullTitle = `${title} | ${SITE_BRAND}`;
+  return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${escapeHtml(title)} | ${SITE_BRAND}</title>
+  <title>${escapeHtml(fullTitle)}</title>
   <meta name="description" content="${escapeHtml(description ?? '')}">
+  <meta property="og:type" content="${options.ogType ?? 'website'}">
+  <meta property="og:site_name" content="${escapeHtml(SITE_BRAND)}">
+  <meta property="og:title" content="${escapeHtml(fullTitle)}">
+  <meta property="og:description" content="${escapeHtml(description ?? '')}">
+  <meta property="og:image" content="${escapeHtml(ogImage)}">
+  <meta property="og:url" content="${escapeHtml(ogUrl)}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${escapeHtml(fullTitle)}">
+  <meta name="twitter:description" content="${escapeHtml(description ?? '')}">
+  <meta name="twitter:image" content="${escapeHtml(ogImage)}">
   <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
   <style>${PAGE_CSS}</style>
 </head>
@@ -485,21 +608,29 @@ const HEAD = (title, description) => `
 ${NAV_HTML}
 <main class="page-wrap">
 `;
+};
 
 const FOOT = `
 </main>
-<footer>&copy; 2026 ${SITE_BRAND}. All rights reserved.</footer>
+${FOOTER_HTML}
 </body>
 </html>
 `;
 
 function productPage(p) {
   const meta = (p.description ?? '').replace(/<[^>]*>/g, '').slice(0, 160);
-  const hotStamp = p.compareAtPrice != null
+  const isSold = (p.status ?? '').toLowerCase() === 'sold';
+  const hotStamp = !isSold && p.compareAtPrice != null
     ? `<div class="hot-stamp"><span>Hot</span><span class="big">Deal</span></div>`
     : '';
+  const soldBanner = isSold
+    ? `<div class="sold-banner">Sold <span class="small">This one found a new shelf. Tell me what you're hunting — I'll watch for one.</span></div>`
+    : '';
   const images = resolveImages(p, LOCAL_IMG_PREFIX);
-  return `${HEAD(p.title, meta)}
+  const shopifyImages = resolveImages(p, `${SITE_URL}/products/images/`);
+  const ogImage = shopifyImages[0] ?? DEFAULT_OG_IMAGE;
+  const ogUrl = `${SITE_URL}/shop/${p.handle}.html`;
+  return `${HEAD(p.title, meta, { ogImage, ogUrl, ogType: 'product' })}
 <a class="back-link" href="/shop/index.html">&lsaquo; Back to Shop</a>
 <div class="product">
   <div>${imageGallery(images, p.title)}</div>
@@ -508,9 +639,10 @@ function productPage(p) {
     ${p.collection ? `<div class="info-collection">${escapeHtml(p.collection)}</div>` : ''}
     <h1 class="info-title">${escapeHtml(p.title)}</h1>
     ${p.subtitle ? `<p class="info-subtitle">${escapeHtml(p.subtitle)}</p>` : ''}
+    ${soldBanner}
     <div class="price-row">
-      ${p.price != null ? `<span class="price">${fmtPrice(p.price)}</span>` : ''}
-      ${p.compareAtPrice != null ? `<span class="compare-price">${fmtPrice(p.compareAtPrice)}</span>` : ''}
+      ${p.price != null ? `<span class="price${isSold ? ' struck' : ''}">${fmtPrice(p.price)}</span>` : ''}
+      ${!isSold && p.compareAtPrice != null ? `<span class="compare-price">${fmtPrice(p.compareAtPrice)}</span>` : ''}
       ${statusBadge(p.status)}
     </div>
     <div class="description">${p.description ?? '<p>Details coming soon — reach out for photos and condition notes.</p>'}</div>
@@ -523,21 +655,28 @@ ${FOOT}`;
 
 function catalogPage(products) {
   const cards = products.map((p) => {
+    const isSold = (p.status ?? '').toLowerCase() === 'sold';
     const imgs = resolveImages(p, LOCAL_IMG_PREFIX);
     const img = imgs[0]
       ? `<img class="card-img" src="${escapeHtml(imgs[0])}" alt="${escapeHtml(p.title)}">`
       : `<div class="card-img-placeholder">BUBS960</div>`;
-    const ribbon = p.featured
-      ? `<div class="card-ribbon">Grail</div>`
-      : (p.compareAtPrice ? `<div class="card-ribbon">Deal</div>` : '');
+    const ribbon = isSold
+      ? ''
+      : p.featured
+        ? `<div class="card-ribbon">Grail</div>`
+        : (p.compareAtPrice ? `<div class="card-ribbon">Deal</div>` : '');
+    const soldStamp = isSold ? `<div class="sold-stamp">Sold</div>` : '';
     return `
-      <a class="card" href="/shop/${escapeHtml(p.handle)}.html">
+      <a class="card ${isSold ? 'is-sold' : ''}" href="/shop/${escapeHtml(p.handle)}.html">
         ${ribbon}
         <div class="card-banner">
           <span>${escapeHtml(p.collection ?? 'Collectible')}</span>
           ${p.year ? `<span class="wave">${escapeHtml(p.year)}</span>` : ''}
         </div>
-        <div class="card-img-wrap">${img}</div>
+        <div class="card-img-wrap">
+          ${img}
+          ${soldStamp}
+        </div>
         <div class="card-body">
           <div class="card-title">${escapeHtml(p.title)}</div>
           <div class="card-foot">
@@ -549,7 +688,7 @@ function catalogPage(products) {
     `;
   }).join('\n');
 
-  return `${HEAD('Shop', 'Shop Bubs960 Collectibles — hard-to-find figures, vintage grails, and pop culture pieces.')}
+  return `${HEAD('Shop', 'Shop Bubs960 Collectibles — hard-to-find figures, vintage grails, and pop culture pieces.', { ogUrl: `${SITE_URL}/shop/` })}
 <div class="catalog-header">
   <h1 class="catalog-title">The Shop</h1>
   <p class="catalog-sub">${products.length} piece${products.length === 1 ? '' : 's'} — click through for full specs and buy links.</p>
@@ -583,3 +722,18 @@ for (const p of products) {
   console.log(`[build] shop/${p.handle}.html`);
 }
 console.log(`[build] shop/index.html (${products.length} products)`);
+
+// Sitemap — regenerated each build so product pages stay indexed.
+const today = new Date().toISOString().slice(0, 10);
+const staticPaths = ['/', '/about.html', '/live.html', '/faq.html', '/shop/'];
+const productPaths = products.map((p) => `/shop/${p.handle}.html`);
+const sitemap = [
+  '<?xml version="1.0" encoding="UTF-8"?>',
+  '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+  ...[...staticPaths, ...productPaths].map((path) => (
+    `  <url><loc>${SITE_URL}${path}</loc><lastmod>${today}</lastmod></url>`
+  )),
+  '</urlset>',
+].join('\n');
+await writeFile(new URL('../sitemap.xml', import.meta.url), sitemap);
+console.log(`[build] sitemap.xml (${staticPaths.length + productPaths.length} URLs)`);

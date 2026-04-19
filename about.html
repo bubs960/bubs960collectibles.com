@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About | Bubs960 Collectibles</title>
     <meta name="description" content="Meet Bubs960 — the collector behind the deals. No middleman, no auction-platform tax, just great pieces at honest prices.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Bubs960 Collectibles">
+    <meta property="og:title" content="About | Bubs960 Collectibles">
+    <meta property="og:description" content="Meet Bubs960 — the collector behind the deals. No middleman, just great pieces at honest prices.">
+    <meta property="og:image" content="https://www.bubs960collectibles.com/bubs-logo.jpg">
+    <meta property="og:url" content="https://www.bubs960collectibles.com/about.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="About | Bubs960 Collectibles">
+    <meta name="twitter:description" content="Meet Bubs960 — the collector behind the deals.">
+    <meta name="twitter:image" content="https://www.bubs960collectibles.com/bubs-logo.jpg">
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Luckiest+Guy&family=Montserrat:ital,wght@0,400;0,700;0,800;1,800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -338,13 +348,17 @@
         }
         .btn-ghost:hover { background: var(--accent-yellow); color: #111; transform: translateY(-2px) scale(1.03); }
 
-        footer {
-            text-align: center;
-            padding: 2.5rem 1rem;
-            color: #777;
-            border-top: 1px solid #1a2233;
-            font-size: 0.9rem;
-        }
+        .site-footer { border-top: 3px solid var(--primary-red); background: var(--bg-panel); padding: 3rem 2rem 1.5rem; margin-top: 2rem; }
+        .footer-grid { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1.5fr repeat(3, 1fr); gap: 2rem; }
+        .footer-col h4 { font-family: 'Bangers', cursive; font-size: 1.2rem; color: var(--accent-yellow); letter-spacing: 2px; margin-bottom: 0.75rem; text-transform: uppercase; }
+        .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+        .footer-col a { color: var(--text-muted); font-size: 0.9rem; font-weight: 700; transition: color 0.15s ease; }
+        .footer-col a:hover { color: var(--accent-yellow); }
+        .footer-brand { font-family: 'Bangers', cursive; font-size: 2rem; color: var(--accent-yellow); letter-spacing: 2px; text-shadow: 2px 2px 0 var(--primary-red); margin-bottom: 0.5rem; }
+        .footer-tagline { color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; }
+        .footer-bottom { max-width: 1100px; margin: 2rem auto 0; padding-top: 1.5rem; border-top: 1px solid #1a2233; color: #555; font-size: 0.85rem; text-align: center; }
+        @media (max-width: 760px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 500px) { .footer-grid { grid-template-columns: 1fr; } }
 
         @media (max-width: 700px) {
             .about-title { font-size: 3rem; }
@@ -376,8 +390,9 @@
         <a href="/index.html" class="nav-brand">BUBS960</a>
         <ul class="nav-links">
             <li><a href="/shop/index.html">Shop</a></li>
-            <li><a href="/index.html#collections">Collections</a></li>
+            <li><a href="/live.html">Live</a></li>
             <li><a href="/about.html">About</a></li>
+            <li><a href="/faq.html">FAQ</a></li>
             <li><a href="/index.html#contact">Contact</a></li>
         </ul>
     </nav>
@@ -498,8 +513,38 @@
         <a href="/index.html#contact" class="btn btn-ghost">Reach Out</a>
     </section>
 
-    <footer>
-        <p>&copy; 2026 Bubs960 Collectibles. All rights reserved.</p>
+    <footer class="site-footer">
+        <div class="footer-grid">
+            <div class="footer-col">
+                <div class="footer-brand">BUBS960</div>
+                <p class="footer-tagline">By collectors, for collectors. No middleman, no platform tax.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Explore</h4>
+                <ul>
+                    <li><a href="/shop/index.html">Shop</a></li>
+                    <li><a href="/live.html">Live Shows</a></li>
+                    <li><a href="/about.html">About</a></li>
+                    <li><a href="/faq.html">FAQ</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Buy From</h4>
+                <ul>
+                    <li><a href="https://www.ebay.com/usr/bubs960" target="_blank" rel="noopener">eBay Store</a></li>
+                    <li><a href="https://www.whatnot.com/user/bubs960" target="_blank" rel="noopener">Whatnot Live</a></li>
+                    <li><a href="/index.html#contact">Direct Inquiry</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Connect</h4>
+                <ul>
+                    <li><a href="mailto:Bubs960toys@gmail.com">Bubs960toys@gmail.com</a></li>
+                    <li><a href="/index.html#vip">Join VIP List</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">&copy; 2026 Bubs960 Collectibles. All rights reserved.</div>
     </footer>
 
 </body>
