@@ -67,12 +67,50 @@ add user-visible surface but the work isn't lost.
 
 ## Environment variables (Expo)
 
+### Always read
+
 - `EXPO_PUBLIC_FIGUREPINNER_API` — Cloudflare Worker base URL.
   Defaults to `https://figurepinner-api.bubs960.workers.dev`.
 - `EXPO_PUBLIC_EBAY_CAMPAIGN_ID` — eBay Partner Network campaign ID.
   Defaults to `5339147406`.
 
-(No Clerk or notification env vars in v1 — those re-enable in v2.)
+### Feature flags (v2 unlock)
+
+Flags are captured at module load; set them on EAS Build profiles to ship a
+v2 binary off this same branch without merging anything.
+
+- `EXPO_PUBLIC_V2_COLLECTION_SYNC` — `"true"` enables Clerk auth surface,
+  Own/Want pills, vault + wantlist screens, and the pull-sync driver that
+  reconciles local state with the Worker on sign-in. Default off.
+- `EXPO_PUBLIC_V2_ALERTS` — `"true"` enables the alerts screen, the
+  price-alert CTA on figure detail, and Expo push token registration.
+  Usually pairs with `V2_COLLECTION_SYNC=true`. Default off.
+
+### Read only when the matching flag is on
+
+- `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` — Clerk publishable key.
+  Required when `V2_COLLECTION_SYNC=true`.
+- `EXPO_PUBLIC_CLERK_JWT_TEMPLATE` — Clerk JWT template name the Worker
+  accepts. Defaults to `mobile`.
+
+### eas.json example
+
+```json
+{
+  "build": {
+    "v1-production": {
+      "env": { "EXPO_PUBLIC_FIGUREPINNER_API": "https://..." }
+    },
+    "v2-preview": {
+      "env": {
+        "EXPO_PUBLIC_V2_COLLECTION_SYNC": "true",
+        "EXPO_PUBLIC_V2_ALERTS": "true",
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_..."
+      }
+    }
+  }
+}
+```
 
 ## Running
 

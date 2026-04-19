@@ -9,6 +9,8 @@ import { colors, radii, spacing } from '@/theme/tokens';
 import { type } from '@/theme/typography';
 import { clearCache } from '@/cache/persist';
 import { resetOnboarding } from '@/onboarding/preferences';
+import { FEATURES } from '@/config/features';
+import { AccountSection } from './settings/AccountSection';
 import type { RootStackParamList } from '@/navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Settings'>;
@@ -17,10 +19,12 @@ const PRIVACY_URL = 'https://figurepinner.com/privacy';
 const TERMS_URL = 'https://figurepinner.com/terms';
 const APP_VERSION = '0.1.0';
 
-// v1 scope: read-only. No account, no sign-in, no delete-account flow —
-// those live in v2 once auth ships. Settings is intentionally minimal:
-// legal links + version + a dev-only onboarding reset.
-
+/**
+ * v1 default: legal + version + dev-only onboarding reset.
+ * When FEATURES.collectionSync is on, the AccountSection is rendered on
+ * top — sign in / sign out / delete account. Keeping it behind the flag
+ * means we don't need ClerkProvider in the tree during v1 builds.
+ */
 export function SettingsScreen() {
   const navigation = useNavigation<Nav>();
 
@@ -45,6 +49,8 @@ export function SettingsScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.screenTitle}>Settings</Text>
 
+        {FEATURES.collectionSync && <AccountSection />}
+
         <Section title="App">
           <Row label="Version" value={APP_VERSION} />
         </Section>
@@ -64,7 +70,7 @@ export function SettingsScreen() {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+export function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{title.toUpperCase()}</Text>
@@ -73,7 +79,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+export function Row({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.row}>
       <Text style={styles.rowLabel}>{label}</Text>
@@ -84,7 +90,7 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function LinkRow({ label, onPress }: { label: string; onPress: () => void }) {
+export function LinkRow({ label, onPress }: { label: string; onPress: () => void }) {
   return (
     <Pressable
       onPress={onPress}
@@ -129,3 +135,5 @@ const styles = StyleSheet.create({
   rowValue: { ...type.meta, color: colors.muted, flexShrink: 1 },
   chevron: { ...type.h2, color: colors.dim, fontSize: 20 },
 });
+
+export { styles as settingsStyles };

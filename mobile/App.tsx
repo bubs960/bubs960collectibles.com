@@ -12,13 +12,12 @@ import {
 } from '@expo-google-fonts/inter';
 import { AppNavigator } from '@/navigation/AppNavigator';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { AuthProvider } from '@/auth/AuthProvider';
+import { CollectionSyncDriver } from '@/auth/CollectionSyncDriver';
+import { FEATURES } from '@/config/features';
 import { track } from '@/analytics/dispatch';
 import { colors } from '@/theme/tokens';
 import { type } from '@/theme/typography';
-
-// v1 scope: no auth UI surface — Clerk wiring lives under src/auth/ ready to
-// re-enable in v2 when vault/wantlist sync ships. ClerkProvider is removed
-// from the tree so no signed-in / signed-out distinction matters here.
 
 export default function App() {
   const [bebasReady] = useBebas({
@@ -48,12 +47,15 @@ export default function App() {
         })
       }
     >
-      <GestureHandlerRootView style={styles.root}>
-        <SafeAreaProvider>
-          <StatusBar style="light" />
-          <AppNavigator />
-        </SafeAreaProvider>
-      </GestureHandlerRootView>
+      <AuthProvider>
+        <GestureHandlerRootView style={styles.root}>
+          <SafeAreaProvider>
+            <StatusBar style="light" />
+            <AppNavigator />
+            {FEATURES.collectionSync && <CollectionSyncDriver />}
+          </SafeAreaProvider>
+        </GestureHandlerRootView>
+      </AuthProvider>
     </ErrorBoundary>
   );
 }

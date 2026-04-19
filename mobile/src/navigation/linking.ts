@@ -2,22 +2,27 @@ import * as Linking from 'expo-linking';
 import type { LinkingOptions } from '@react-navigation/native';
 import type { RootStackParamList } from './types';
 
-// Deep-link config (v1 read-only scope).
+// Deep-link config.
 //
-// Path narrowed from /figure/:id to /open/:id per reviewer note: the broader
-// /figure/* AASA pattern hijacks every figurepinner.com/figure/:id link from
-// the browser to the app on installed devices, which kills the web's
-// engagement metrics + tanks SEO over time (Google sees pages with no
-// dwell). /open/* is an explicit "this link belongs in the app" namespace.
+// Figure path narrowed from /figure/:id to /open/:id per reviewer note so
+// web engagement on figurepinner.com/figure/:id survives (AASA /figure/*
+// would hijack every such link to the app on installed devices, tanking
+// web SEO metrics).
+//
+// Other routes are kept at their intuitive paths (/vault, /wantlist,
+// /sign-in, /alerts). When FEATURES.collectionSync / .alerts are off those
+// screens aren't registered in AppNavigator, so an incoming deep link to
+// them resolves to no-op (React Navigation drops the deep-link event
+// rather than crashing).
 //
 // Action item NOT in this repo:
 //   - Update mobile/native-templates/apple-app-site-association in the
-//     Figure Pinner Dev workspace to declare /open/* (NOT /figure/*).
+//     Figure Pinner Dev workspace to declare /open/* (NOT /figure/*) for
+//     figure detail. Keep /vault, /wantlist, /alerts in the AASA list for
+//     v2 cohort installs.
 //   - Update assetlinks.json the same way.
-//   - Re-host both at /.well-known/ on figurepinner.com with Content-Type
+//   - Host both at /.well-known/ on figurepinner.com with Content-Type
 //     application/json + no redirect.
-// Without those AASA edits, https://figurepinner.com/open/:id won't open
-// the app even with the app installed — only figurepinner://open/:id will.
 export const linking: LinkingOptions<RootStackParamList> = {
   prefixes: [Linking.createURL('/'), 'figurepinner://', 'https://figurepinner.com'],
   config: {
@@ -25,6 +30,10 @@ export const linking: LinkingOptions<RootStackParamList> = {
       FigureDetail: 'open/:figureId',
       Search: 'search',
       Settings: 'settings',
+      Vault: 'vault',
+      Wantlist: 'wantlist',
+      SignIn: 'sign-in',
+      Alerts: 'alerts',
     },
   },
 };

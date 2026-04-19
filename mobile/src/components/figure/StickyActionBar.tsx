@@ -9,25 +9,24 @@ import { type } from '@/theme/typography';
 interface Props {
   ebayUrl: string | null;
   onEbayTapped?: () => void;
+  /**
+   * Optional collection-bar slot. v1 leaves this null and the bar is the
+   * eBay CTA only. v2 passes a CollectionBar element containing Own/Want
+   * pills. Isolating the hook call inside the slotted component keeps the
+   * Rules of Hooks clean — StickyActionBar itself doesn't touch Clerk or
+   * the collection store.
+   */
+  collectionSlot?: React.ReactNode;
 }
 
-/**
- * v1 scope: read-only. The bottom bar is the eBay CTA.
- *
- * Own/Want collection toggles ship in v2 — they require Worker routes
- * (POST/DELETE /api/v1/vault + /api/v1/wantlist) that don't exist yet, and
- * shipping local-only collection state for an account-less app trains users
- * to expect persistence we can't deliver across devices.
- *
- * The component is intentionally minimal so v2 can re-add the collection
- * pills without breaking the eBay CTA's hit-target sizing or haptics.
- */
-export function StickyActionBar({ ebayUrl, onEbayTapped }: Props) {
+export function StickyActionBar({ ebayUrl, onEbayTapped, collectionSlot }: Props) {
   const insets = useSafeAreaInsets();
+  const hasSlot = !!collectionSlot;
 
-  if (!ebayUrl) return null;
+  if (!ebayUrl && !hasSlot) return null;
 
   const handleEbay = async () => {
+    if (!ebayUrl) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onEbayTapped?.();
     await WebBrowser.openBrowserAsync(ebayUrl, {
@@ -40,14 +39,21 @@ export function StickyActionBar({ ebayUrl, onEbayTapped }: Props) {
   return (
     <View style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, spacing.xs) }]}>
       <View style={styles.bar}>
-        <Pressable
-          onPress={handleEbay}
-          accessibilityRole="button"
-          accessibilityLabel="Find on eBay"
-          style={({ pressed }) => [styles.primary, pressed && styles.pressed]}
-        >
-          <Text style={styles.primaryText}>Find on eBay →</Text>
-        </Pressable>
+        {collectionSlot}
+        {ebayUrl && (
+          <Pressable
+            onPress={handleEbay}
+            accessibilityRole="button"
+            accessibilityLabel="Find on eBay"
+            style={({ pressed }) => [
+              styles.primary,
+              !hasSlot && styles.primaryFull,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Text style={styles.primaryText}>Find on eBay →</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -69,6 +75,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     minHeight: 56,
+    gap: spacing.xs,
   },
   primary: {
     flex: 1,
@@ -80,12 +87,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: spacing.md,
   },
-  primaryText: {
-    ...type.h2,
-    color: colors.text,
-    fontSize: 18,
-  },
-  pressed: {
-    opacity: 0.85,
-  },
+  primaryFull: { flex: 1 },
+  primaryText: { ...type.h2, color: colors.text, fontSize: 18 },
+  pressed: { opacity: 0.85 },
 });

@@ -34,6 +34,8 @@ import { CharacterThread } from '@/components/figure/CharacterThread';
 import { CtaCardList, CtaItem } from '@/components/figure/CtaCardList';
 import { DetailsCard } from '@/components/figure/DetailsCard';
 import { StickyActionBar } from '@/components/figure/StickyActionBar';
+import { CollectionBar } from '@/components/figure/CollectionBar';
+import { FEATURES } from '@/config/features';
 import type { RootStackParamList } from '@/navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'FigureDetail'>;
@@ -84,6 +86,32 @@ export function FigureDetailScreen() {
   const showThread = (character_thread?.length ?? 0) > 0;
 
   const ctas: CtaItem[] = [
+    ...(FEATURES.collectionSync
+      ? [
+          {
+            id: 'vault',
+            title: 'Open your vault',
+            subtitle: 'See everything you own',
+            onPress: () => navigation.navigate('Vault'),
+          },
+          {
+            id: 'wantlist',
+            title: 'Open your wantlist',
+            subtitle: "See everything you're hunting",
+            onPress: () => navigation.navigate('Wantlist'),
+          },
+        ]
+      : []),
+    ...(FEATURES.alerts
+      ? [
+          {
+            id: 'alerts',
+            title: 'Price alerts',
+            subtitle: 'Get pinged on drops',
+            onPress: () => navigation.navigate('Alerts'),
+          },
+        ]
+      : []),
     {
       id: 'share',
       title: 'Share this figure',
@@ -98,7 +126,7 @@ export function FigureDetailScreen() {
     {
       id: 'settings',
       title: 'Settings',
-      subtitle: 'Privacy, terms, version',
+      subtitle: FEATURES.collectionSync ? 'Account, privacy, data' : 'Privacy, terms, version',
       onPress: () => navigation.navigate('Settings'),
     },
     {
@@ -253,7 +281,11 @@ export function FigureDetailScreen() {
         </View>
       </Animated.ScrollView>
 
-      <StickyActionBar ebayUrl={ebayUrl} onEbayTapped={onEbayTapped} />
+      <StickyActionBar
+        ebayUrl={ebayUrl}
+        onEbayTapped={onEbayTapped}
+        collectionSlot={FEATURES.collectionSync ? <CollectionBar figure={figure} /> : null}
+      />
     </View>
   );
 }

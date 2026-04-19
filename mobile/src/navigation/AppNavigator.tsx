@@ -6,7 +6,12 @@ import { FigureDetailScreen } from '@/screens/FigureDetailScreen';
 import { SearchScreen } from '@/screens/SearchScreen';
 import { OnboardingScreen } from '@/screens/OnboardingScreen';
 import { SettingsScreen } from '@/screens/SettingsScreen';
+import { VaultScreen } from '@/screens/VaultScreen';
+import { WantlistScreen } from '@/screens/WantlistScreen';
+import { SignInScreen } from '@/screens/SignInScreen';
+import { AlertsScreen } from '@/screens/AlertsScreen';
 import { useOnboardingStatus } from '@/hooks/useOnboardingStatus';
+import { FEATURES } from '@/config/features';
 import { colors } from '@/theme/tokens';
 import { linking } from './linking';
 import type { RootStackParamList } from './types';
@@ -65,6 +70,19 @@ export function AppNavigator({ initialFigureId }: { initialFigureId?: string }) 
         />
         <Stack.Screen name="Search" component={SearchScreen} options={{ presentation: 'modal' }} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
+
+        {FEATURES.collectionSync && (
+          <>
+            <Stack.Screen name="Vault" component={VaultScreen} />
+            <Stack.Screen name="Wantlist" component={WantlistScreen} />
+            <Stack.Screen
+              name="SignIn"
+              component={SignInScreen}
+              options={{ presentation: 'modal' }}
+            />
+          </>
+        )}
+        {FEATURES.alerts && <Stack.Screen name="Alerts" component={AlertsScreen} />}
       </Stack.Navigator>
     </NavigationContainer>
   );
