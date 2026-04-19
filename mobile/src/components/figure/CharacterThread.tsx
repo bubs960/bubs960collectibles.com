@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { colors, radii, spacing } from '@/theme/tokens';
@@ -12,8 +12,21 @@ interface Props {
 
 const CARD_W = 180;
 const CARD_H = 220;
+const PREFETCH_COUNT = 6;
 
 export function CharacterThread({ entries, onSelect }: Props) {
+  // Match SeriesContext: warm the platform image cache for the first N
+  // thumbs so the carousel paints fully populated when scrolled into view.
+  useEffect(() => {
+    const urls = entries
+      .slice(0, PREFETCH_COUNT)
+      .map((e) => e.image_url)
+      .filter((u): u is string => !!u);
+    for (const url of urls) {
+      Image.prefetch(url);
+    }
+  }, [entries]);
+
   return (
     <View style={styles.wrap}>
       <Text style={styles.header}>Character thread</Text>
