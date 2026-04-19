@@ -14,6 +14,7 @@ import { AppNavigator } from '@/navigation/AppNavigator';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AuthProvider } from '@/auth/AuthProvider';
 import { CollectionSyncDriver } from '@/auth/CollectionSyncDriver';
+import { NotificationsDriver } from '@/notifications/NotificationsDriver';
 import { FEATURES } from '@/config/features';
 import { track } from '@/analytics/dispatch';
 import { colors } from '@/theme/tokens';
@@ -53,6 +54,7 @@ export default function App() {
             <StatusBar style="light" />
             <AppNavigator />
             {FEATURES.collectionSync && <CollectionSyncDriver />}
+            {FEATURES.alerts && <NotificationsDriver />}
           </SafeAreaProvider>
         </GestureHandlerRootView>
       </AuthProvider>

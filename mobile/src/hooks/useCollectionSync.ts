@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '@clerk/clerk-expo';
 import { useAuthToken } from '@/auth/useAuthToken';
+import { withAuthRetry } from '@/auth/withAuthRetry';
 import { fetchVault, fetchWantlist } from '@/api/collectionApi';
 import { collectionStore, type ListKind } from '@/collection/localStore';
 import { reconcile } from '@/collection/reconcile';
@@ -12,14 +13,16 @@ interface SyncState {
 }
 
 /**
- * Pull-sync driver. Fetches the server's vault + wantlist for the signed-in
- * user, reconciles against the local store, and writes the merged result
- * back. Intended to run once on sign-in and on explicit refresh.
+ * Pull-sync driver. Fetches vault + wantlist for the signed-in user,
+ * reconciles against the local store, writes merged result back.
  *
- * Today this is a no-op when signed out or when the backend returns 404 /
- * 501 (the Worker routes are planned, not built — see
- * docs/SERVER-ENDPOINTS-NEEDED.md). Once the routes ship, this hook takes
- * over without any callsite changes.
+ * Auth: each fetch is wrapped in withAuthRetry so a 401 triggers a
+ * one-shot Clerk token refresh (engineer Q4 — applies to GET too, not
+ * just writes). Second failure surfaces to `error`.
+ *
+ * Today this is a no-op when signed out or when the Worker returns
+ * 404 / 501 (the routes are planned, not built). Once the routes ship,
+ * this hook takes over without any callsite changes.
  */
 export function useCollectionSync() {
   const { isSignedIn, userId } = useAuth();
@@ -48,14 +51,11 @@ export function useCollectionSync() {
     if (!isSignedIn) return;
     safeSet((s) => ({ ...s, syncing: true, error: null }));
     try {
-      const token = await getToken();
-      if (!token) {
-        safeSet((s) => ({ ...s, syncing: false }));
-        return;
-      }
+      // Both GETs run through withAuthRetry so a stale-token 401 on the
+      // first call force-refreshes and retries once before surfacing.
       const [serverVault, serverWantlist] = await Promise.all([
-        fetchVault(token),
-        fetchWantlist(token),
+        withAuthRetry(getToken, (tok) => fetchVault(tok)),
+        withAuthRetry(getToken, (tok) => fetchWantlist(tok)),
       ]);
       await applyMerged('vault', serverVault);
       await applyMerged('wantlist', serverWantlist);
