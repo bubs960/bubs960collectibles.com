@@ -535,6 +535,7 @@ const NAV_HTML = `
   <a href="/index.html" class="nav-brand">BUBS960</a>
   <ul class="nav-links">
     <li><a href="/shop/index.html">Shop</a></li>
+    <li><a href="/we-buy.html">We Buy</a></li>
     <li><a href="/live.html">Live</a></li>
     <li><a href="/about.html">About</a></li>
     <li><a href="/faq.html">FAQ</a></li>
@@ -554,6 +555,7 @@ const FOOTER_HTML = `
       <h4>Explore</h4>
       <ul>
         <li><a href="/shop/index.html">Shop</a></li>
+        <li><a href="/we-buy.html">We Buy Collections</a></li>
         <li><a href="/live.html">Live Shows</a></li>
         <li><a href="/about.html">About</a></li>
         <li><a href="/faq.html">FAQ</a></li>
@@ -725,7 +727,7 @@ console.log(`[build] shop/index.html (${products.length} products)`);
 
 // Sitemap — regenerated each build so product pages stay indexed.
 const today = new Date().toISOString().slice(0, 10);
-const staticPaths = ['/', '/about.html', '/live.html', '/faq.html', '/shop/'];
+const staticPaths = ['/', '/about.html', '/live.html', '/faq.html', '/we-buy.html', '/shop/'];
 const productPaths = products.map((p) => `/shop/${p.handle}.html`);
 const sitemap = [
   '<?xml version="1.0" encoding="UTF-8"?>',

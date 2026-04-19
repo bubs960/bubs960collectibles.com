@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>We Buy Collections | Bubs960 Collectibles</title>
+    <meta name="description" content="Got a collection gathering dust? Bubs960 pays cash for wrestling figures, vintage toys, and pop culture collectibles. Honest quotes, fast payouts, we handle the hassle.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Bubs960 Collectibles">
+    <meta property="og:title" content="We Buy Collections | Bubs960 Collectibles">
+    <meta property="og:description" content="Got a collection gathering dust? We pay cash. Honest quotes, fast payouts, we handle the hassle.">
+    <meta property="og:image" content="https://www.bubs960collectibles.com/bubs-logo.jpg">
+    <meta property="og:url" content="https://www.bubs960collectibles.com/we-buy.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="We Buy Collections | Bubs960 Collectibles">
+    <meta name="twitter:description" content="Got a collection gathering dust? We pay cash.">
+    <meta name="twitter:image" content="https://www.bubs960collectibles.com/bubs-logo.jpg">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Montserrat:ital,wght@0,400;0,700;0,800;1,800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-red: #e62429;
+            --primary-blue: #1c3b70;
+            --accent-yellow: #f1c40f;
+            --money-green: #2ecc71;
+            --bg-dark: #0a0e17;
+            --bg-panel: #111826;
+            --text-light: #f4f4f4;
+            --text-muted: #9aa3b2;
+            --metal-light: #2a3142;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            background: var(--bg-dark);
+            color: var(--text-light);
+            font-family: 'Montserrat', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        a { color: inherit; text-decoration: none; }
+
+        .marquee {
+            background: var(--money-green); color: #000;
+            font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
+            font-size: 0.8rem;
+            border-bottom: 3px solid var(--accent-yellow);
+            overflow: hidden; white-space: nowrap; padding: 0.45rem 0;
+        }
+        .marquee-track { display: inline-block; padding-left: 100%; animation: marquee 35s linear infinite; }
+        .marquee-track span { margin-right: 3rem; }
+        .marquee-track span::before { content: '💵 '; }
+        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+
+        .nav {
+            position: sticky; top: 0; z-index: 50;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 1rem 2rem;
+            background: rgba(10,14,23,0.92);
+            backdrop-filter: blur(8px);
+            border-bottom: 2px solid var(--primary-red);
+        }
+        .nav-brand {
+            font-family: 'Bangers', cursive;
+            font-size: 1.75rem;
+            color: var(--accent-yellow);
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 0 var(--primary-red);
+        }
+        .nav-links { display: flex; gap: 1.5rem; list-style: none; font-weight: 700; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 1px; }
+        .nav-links a:hover { color: var(--accent-yellow); }
+
+        .rope {
+            position: relative; height: 26px;
+            background:
+                linear-gradient(var(--primary-red), var(--primary-red)) center 2px / 100% 4px no-repeat,
+                linear-gradient(var(--accent-yellow), var(--accent-yellow)) center 12px / 100% 4px no-repeat,
+                linear-gradient(var(--primary-blue), var(--primary-blue)) center 22px / 100% 4px no-repeat,
+                var(--bg-dark);
+        }
+        .rope::before, .rope::after {
+            content: ''; position: absolute; top: -6px;
+            width: 12px; height: 38px;
+            background: linear-gradient(#7a7f8a, #2a2f38 60%, #0f1118);
+            border: 1px solid #000; border-radius: 3px;
+        }
+        .rope::before { left: 10px; } .rope::after  { right: 10px; }
+
+        /* Hero */
+        .buy-hero {
+            position: relative;
+            text-align: center;
+            padding: 5rem 2rem 4rem;
+            background:
+                radial-gradient(ellipse at center, rgba(46,204,113,0.25) 0%, transparent 60%),
+                radial-gradient(circle at center, #1c3b70 0%, #0a0e17 70%);
+            overflow: hidden;
+        }
+        .buy-hero::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: repeating-conic-gradient(from 0deg at 50% 40%, rgba(241,196,15,0.05) 0deg 8deg, transparent 8deg 24deg);
+            animation: spin 80s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .buy-hero-inner { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; }
+
+        .money-stamp {
+            position: absolute;
+            top: 1.5rem;
+            right: 2rem;
+            width: 130px;
+            height: 130px;
+            border: 4px double var(--money-green);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-family: 'Bangers', cursive;
+            color: var(--money-green);
+            font-size: 0.95rem;
+            line-height: 1.05;
+            transform: rotate(-14deg);
+            letter-spacing: 1px;
+            padding: 0.75rem;
+            text-transform: uppercase;
+            text-shadow: 1px 1px 0 #000;
+            box-shadow: 0 0 30px rgba(46,204,113,0.35);
+            z-index: 2;
+        }
+        .money-stamp .big { font-size: 1.45rem; letter-spacing: 2px; }
+        @media (max-width: 700px) {
+            .money-stamp { width: 95px; height: 95px; font-size: 0.7rem; top: 0.75rem; right: 0.75rem; padding: 0.5rem; }
+            .money-stamp .big { font-size: 1.05rem; }
+        }
+
+        .kicker {
+            font-size: 0.85rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--money-green);
+            font-weight: 800;
+            margin-bottom: 0.75rem;
+        }
+        .buy-title {
+            font-family: 'Bangers', cursive;
+            font-size: 5rem;
+            letter-spacing: 3px;
+            color: var(--accent-yellow);
+            text-shadow: 4px 4px 0 var(--primary-red);
+            line-height: 1;
+            text-transform: uppercase;
+        }
+        .buy-lead {
+            font-size: 1.3rem;
+            max-width: 720px;
+            margin: 1.5rem auto 2rem;
+            line-height: 1.55;
+            color: #dfe3ec;
+        }
+        .buy-lead strong { color: var(--accent-yellow); }
+        .buy-lead .cash { color: var(--money-green); font-weight: 800; }
+
+        .cta-row { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+        .btn {
+            display: inline-block;
+            font-family: 'Bangers', cursive;
+            font-size: 1.3rem;
+            padding: 1rem 1.9rem;
+            border: 2px solid transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: transform 0.2s ease;
+        }
+        .btn-money {
+            background: linear-gradient(180deg, #3de87a 0%, var(--money-green) 50%, #1ea155 100%);
+            color: #000;
+            box-shadow: 0 4px 0 #125f30, 0 6px 14px rgba(46,204,113,0.4);
+        }
+        .btn-money:hover { transform: translateY(-2px) scale(1.03); }
+        .btn-ghost {
+            background: transparent;
+            color: var(--accent-yellow);
+            border-color: var(--accent-yellow);
+            box-shadow: 0 4px 0 rgba(212,160,23,0.7);
+        }
+        .btn-ghost:hover { background: var(--accent-yellow); color: #111; transform: translateY(-2px) scale(1.03); }
+
+        /* Section shell */
+        .section {
+            padding: 5rem 2rem;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .section-title {
+            font-family: 'Bangers', cursive;
+            font-size: 2.75rem;
+            letter-spacing: 2px;
+            color: var(--accent-yellow);
+            text-shadow: 2px 2px 0 var(--primary-red);
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+        .section-kicker {
+            text-align: center;
+            color: var(--text-muted);
+            font-style: italic;
+            margin-bottom: 2.5rem;
+        }
+
+        /* What we buy grid */
+        .what-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.25rem;
+        }
+        .what-card {
+            background: linear-gradient(180deg, var(--metal-light), var(--bg-panel) 60%);
+            border: 3px solid #000;
+            border-radius: 12px;
+            padding: 1.5rem 1.25rem;
+            text-align: center;
+            box-shadow: inset 0 0 0 2px var(--money-green), 0 6px 0 #000;
+            transition: transform 0.2s ease;
+        }
+        .what-card:hover { transform: translateY(-4px) rotate(-0.4deg); }
+        .what-card .icon { font-size: 2.5rem; margin-bottom: 0.5rem; display: block; }
+        .what-card h3 {
+            font-family: 'Bangers', cursive;
+            font-size: 1.35rem;
+            color: var(--accent-yellow);
+            letter-spacing: 1px;
+            margin-bottom: 0.4rem;
+        }
+        .what-card p { color: var(--text-muted); font-size: 0.95rem; line-height: 1.5; }
+
+        /* How it works */
+        .steps-band {
+            background:
+                repeating-linear-gradient(45deg, transparent 0 14px, rgba(255,255,255,0.02) 14px 15px),
+                radial-gradient(ellipse at top, rgba(46,204,113,0.18), transparent 60%),
+                var(--bg-panel);
+            padding: 4rem 2rem;
+            border-top: 3px solid var(--money-green);
+            border-bottom: 3px solid var(--money-green);
+        }
+        .steps-grid {
+            max-width: 1100px; margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+        }
+        .step-card {
+            text-align: center;
+            padding: 1.5rem 1rem;
+            position: relative;
+        }
+        .step-num {
+            font-family: 'Bangers', cursive;
+            font-size: 4rem;
+            color: var(--money-green);
+            text-shadow: 3px 3px 0 #000;
+            line-height: 1;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+        .step-card h4 {
+            font-family: 'Bangers', cursive;
+            font-size: 1.4rem;
+            color: var(--accent-yellow);
+            letter-spacing: 1px;
+            margin-bottom: 0.4rem;
+        }
+        .step-card p { color: var(--text-muted); font-size: 0.95rem; line-height: 1.55; }
+
+        /* Why sell to us */
+        .why-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 1rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .why-item {
+            background: var(--bg-panel);
+            padding: 1.25rem 1.5rem;
+            border-left: 4px solid var(--money-green);
+            border-radius: 8px;
+        }
+        .why-item h4 {
+            font-family: 'Bangers', cursive;
+            font-size: 1.25rem;
+            letter-spacing: 1px;
+            color: var(--accent-yellow);
+            margin-bottom: 0.35rem;
+        }
+        .why-item p { color: var(--text-muted); font-size: 0.95rem; line-height: 1.55; }
+
+        /* Intake form */
+        .intake-wrap {
+            max-width: 700px;
+            margin: 0 auto;
+            background: linear-gradient(180deg, var(--metal-light), var(--bg-panel) 60%);
+            border: 3px solid #000;
+            border-radius: 14px;
+            padding: 2.5rem 2rem;
+            box-shadow: inset 0 0 0 2px var(--money-green), 0 8px 0 #000;
+        }
+        .intake-wrap h3 {
+            font-family: 'Bangers', cursive;
+            font-size: 2rem;
+            color: var(--accent-yellow);
+            text-shadow: 2px 2px 0 var(--primary-red);
+            letter-spacing: 2px;
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+        .intake-wrap .help {
+            color: var(--text-muted);
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+        }
+        form.intake { display: flex; flex-direction: column; gap: 1rem; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        @media (max-width: 500px) { .grid-2 { grid-template-columns: 1fr; } }
+        input, textarea, select {
+            padding: 1rem;
+            font-size: 1rem;
+            font-family: 'Montserrat', sans-serif;
+            border: 2px solid #333;
+            border-radius: 6px;
+            background: #111;
+            color: white;
+            outline: none;
+            transition: border-color 0.2s ease;
+            width: 100%;
+        }
+        textarea { min-height: 150px; resize: vertical; }
+        input:focus, textarea:focus, select:focus { border-color: var(--money-green); }
+        label.field-label {
+            font-size: 0.8rem;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 0.35rem;
+            display: block;
+        }
+        .form-status {
+            min-height: 1.25rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            padding-top: 0.25rem;
+            text-align: center;
+        }
+        .form-status.ok  { color: var(--money-green); }
+        .form-status.err { color: #ff6b6b; }
+        form.intake[data-submitting="true"] button[type="submit"] { opacity: 0.6; cursor: wait; }
+
+        /* Footer */
+        .site-footer { border-top: 3px solid var(--primary-red); background: var(--bg-panel); padding: 3rem 2rem 1.5rem; margin-top: 2rem; }
+        .footer-grid { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1.5fr repeat(3, 1fr); gap: 2rem; }
+        .footer-col h4 { font-family: 'Bangers', cursive; font-size: 1.2rem; color: var(--accent-yellow); letter-spacing: 2px; margin-bottom: 0.75rem; text-transform: uppercase; }
+        .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+        .footer-col a { color: var(--text-muted); font-size: 0.9rem; font-weight: 700; transition: color 0.15s ease; }
+        .footer-col a:hover { color: var(--accent-yellow); }
+        .footer-brand { font-family: 'Bangers', cursive; font-size: 2rem; color: var(--accent-yellow); letter-spacing: 2px; text-shadow: 2px 2px 0 var(--primary-red); margin-bottom: 0.5rem; }
+        .footer-tagline { color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; }
+        .footer-bottom { max-width: 1100px; margin: 2rem auto 0; padding-top: 1.5rem; border-top: 1px solid #1a2233; color: #555; font-size: 0.85rem; text-align: center; }
+        @media (max-width: 760px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 500px) { .footer-grid { grid-template-columns: 1fr; } }
+
+        @media (max-width: 700px) {
+            .buy-title { font-size: 3rem; }
+            .buy-lead { font-size: 1.05rem; }
+            .section-title { font-size: 2.2rem; }
+            .nav { padding: 0.75rem 1rem; }
+            .nav-links { gap: 1rem; font-size: 0.8rem; }
+            .section { padding: 3.5rem 1.25rem; }
+            .step-num { font-size: 3rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="marquee" aria-hidden="true">
+        <div class="marquee-track">
+            <span>We pay cash for collections</span>
+            <span>Fair quotes within 24 hours</span>
+            <span>Any size pile — 1 figure or 1,000</span>
+            <span>We cover shipping for bigger lots</span>
+            <span>We pay cash for collections</span>
+            <span>Fair quotes within 24 hours</span>
+            <span>Any size pile — 1 figure or 1,000</span>
+            <span>We cover shipping for bigger lots</span>
+        </div>
+    </div>
+
+    <nav class="nav">
+        <a href="/index.html" class="nav-brand">BUBS960</a>
+        <ul class="nav-links">
+            <li><a href="/shop/index.html">Shop</a></li>
+            <li><a href="/we-buy.html">We Buy</a></li>
+            <li><a href="/live.html">Live</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="/faq.html">FAQ</a></li>
+            <li><a href="/index.html#contact">Contact</a></li>
+        </ul>
+    </nav>
+
+    <section class="buy-hero">
+        <div class="money-stamp" aria-hidden="true">
+            <span>Cash</span>
+            <span class="big">Paid</span>
+            <span>Fast</span>
+        </div>
+        <div class="buy-hero-inner">
+            <div class="kicker">Sell Us Your Collection</div>
+            <h1 class="buy-title">Got Figures?<br>We Got Cash.</h1>
+            <p class="buy-lead">
+                Old collection in the attic? Kid moved out and left a tub of Mattel Elites? Estate to clear out? <strong>Bubs960 pays real money for real collections</strong> — no auction fees eating your payout, no "we'll consign it" runaround. <span class="cash">Cash up front, honest quotes, fast pickup.</span>
+            </p>
+            <div class="cta-row">
+                <a href="#intake" class="btn btn-money">Get a Quote →</a>
+                <a href="#how-it-works" class="btn btn-ghost">How It Works</a>
+            </div>
+        </div>
+    </section>
+
+    <div class="rope" aria-hidden="true"></div>
+
+    <section class="section">
+        <h2 class="section-title">What We Buy</h2>
+        <p class="section-kicker">If it's plastic, pro wrestling, pop culture, or nostalgic — we probably want it.</p>
+
+        <div class="what-grid">
+            <div class="what-card">
+                <span class="icon" aria-hidden="true">🤼</span>
+                <h3>Wrestling Figures</h3>
+                <p>WWE Mattel Elite, Ultimate Edition, Legends, Jakks, Hasbro, LJN, AWA, vintage rings &amp; accessories.</p>
+            </div>
+            <div class="what-card">
+                <span class="icon" aria-hidden="true">🦾</span>
+                <h3>Action Figure Lines</h3>
+                <p>Transformers, G.I. Joe, Masters of the Universe, Star Wars, Marvel Legends, McFarlane, Neca — loose or carded.</p>
+            </div>
+            <div class="what-card">
+                <span class="icon" aria-hidden="true">📦</span>
+                <h3>Sealed Cases &amp; Boxes</h3>
+                <p>Factory-sealed cases, box lots, case-breakers welcome. Bigger the lot, faster we move.</p>
+            </div>
+            <div class="what-card">
+                <span class="icon" aria-hidden="true">🏆</span>
+                <h3>Grails &amp; Graded Slabs</h3>
+                <p>AFA, CAS, WATA graded pieces. Protos, chases, SDCC exclusives, holy-grail vintage. Top dollar.</p>
+            </div>
+            <div class="what-card">
+                <span class="icon" aria-hidden="true">🎨</span>
+                <h3>Pop Culture &amp; Funko</h3>
+                <p>Exclusives, chases, vaulted Pops, and anything con-exclusive with the sticker intact.</p>
+            </div>
+            <div class="what-card">
+                <span class="icon" aria-hidden="true">👴</span>
+                <h3>Whole Estates &amp; Collections</h3>
+                <p>Inherited a collection? Cleaning out a storage unit? We buy whole piles — no need to sort.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="steps-band" id="how-it-works">
+        <div style="max-width:1100px;margin:0 auto 2rem;text-align:center;">
+            <h2 class="section-title" style="color: var(--money-green); text-shadow: 2px 2px 0 #000; margin-bottom: 0.5rem;">How It Works</h2>
+            <p style="color: var(--text-muted); font-style: italic;">Four steps. Couple days, tops.</p>
+        </div>
+
+        <div class="steps-grid">
+            <div class="step-card">
+                <span class="step-num">1</span>
+                <h4>Send Photos</h4>
+                <p>Snap a few shots of what you've got — doesn't have to be pretty. Use the form below or text them over.</p>
+            </div>
+            <div class="step-card">
+                <span class="step-num">2</span>
+                <h4>Get a Quote</h4>
+                <p>Usually same day, always within 24 hours. Fair, itemized, no lowballs. If it's an easy yes, we skip straight to step 3.</p>
+            </div>
+            <div class="step-card">
+                <span class="step-num">3</span>
+                <h4>Ship or Meet</h4>
+                <p>We cover shipping on lots worth $200+. Local to Boston? We'll meet up. Estate? We'll come pick up.</p>
+            </div>
+            <div class="step-card">
+                <span class="step-num">4</span>
+                <h4>Get Paid</h4>
+                <p>PayPal, Venmo, Zelle, or cash-in-hand the second the figures are in. No waiting for an auction to end.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <h2 class="section-title">Why Sell to Bubs960</h2>
+        <p class="section-kicker">Skip the platform tax. Skip the tire-kickers. Skip the 30-day payout wait.</p>
+
+        <div class="why-grid">
+            <div class="why-item">
+                <h4>No Auction Fees</h4>
+                <p>eBay takes 13%+. Whatnot takes a cut. We don't. Every dollar we quote goes in your pocket.</p>
+            </div>
+            <div class="why-item">
+                <h4>Cash Up Front</h4>
+                <p>No consignment BS, no "we'll pay when it sells." You agree, we pay, done.</p>
+            </div>
+            <div class="why-item">
+                <h4>Honest Quotes</h4>
+                <p>We quote what we'd pay a fellow collector — not a lowball with a guilt trip. You can always say no.</p>
+            </div>
+            <div class="why-item">
+                <h4>We Handle the Hassle</h4>
+                <p>No listing, no photographing, no shipping a dozen boxes, no 20 lowball DMs. We do all of it.</p>
+            </div>
+            <div class="why-item">
+                <h4>Any Size Welcome</h4>
+                <p>One grail or an entire childhood in a tub — it all matters. Small lots get the same respect as big ones.</p>
+            </div>
+            <div class="why-item">
+                <h4>Your Collection, Handled Right</h4>
+                <p>These aren't inventory to us — they're pieces. Every one gets described, photographed, and homed properly.</p>
+            </div>
+        </div>
+    </section>
+
+    <div class="rope" aria-hidden="true"></div>
+
+    <section class="section" id="intake">
+        <div class="intake-wrap">
+            <h3>Tell Us What You Got</h3>
+            <p class="help">Fill it out, hit send, and expect a quote within 24 hours. Photos are huge — even phone snaps help a ton.</p>
+
+            <form class="intake js-remote-form" data-formspree="xykljadr" action="mailto:Bubs960toys@gmail.com" method="POST" enctype="text/plain">
+                <div class="grid-2">
+                    <div>
+                        <label class="field-label" for="seller-name">Your Name</label>
+                        <input id="seller-name" type="text" name="name" placeholder="First and last" required>
+                    </div>
+                    <div>
+                        <label class="field-label" for="seller-email">Email</label>
+                        <input id="seller-email" type="email" name="email" placeholder="you@example.com" required>
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div>
+                        <label class="field-label" for="seller-phone">Phone (optional)</label>
+                        <input id="seller-phone" type="tel" name="phone" placeholder="For faster back-and-forth">
+                    </div>
+                    <div>
+                        <label class="field-label" for="seller-location">Your City/State</label>
+                        <input id="seller-location" type="text" name="location" placeholder="Helps with pickup / shipping">
+                    </div>
+                </div>
+                <div>
+                    <label class="field-label" for="seller-size">Collection Size</label>
+                    <select id="seller-size" name="size" required>
+                        <option value="">Pick one…</option>
+                        <option value="1-10">A handful (1–10 pieces)</option>
+                        <option value="10-50">A box or two (10–50 pieces)</option>
+                        <option value="50-200">A shelf or closet (50–200 pieces)</option>
+                        <option value="200+">A full collection / estate (200+ pieces)</option>
+                        <option value="unsure">Not sure — it's a lot</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="field-label" for="seller-details">What are you selling?</label>
+                    <textarea id="seller-details" name="details" placeholder="Brands, character names, condition, sealed vs loose, anything special. Lists welcome, rough sketches welcome, 'stuff from my son's childhood' also welcome." required></textarea>
+                </div>
+                <div>
+                    <label class="field-label" for="seller-expect">What you're hoping to get (optional)</label>
+                    <input id="seller-expect" type="text" name="expectation" placeholder="A ballpark or 'whatever's fair'">
+                </div>
+                <input type="hidden" name="_subject" value="Bubs960 — New Collection Offer">
+                <input type="hidden" name="form_type" value="we-buy-intake">
+                <p style="color: var(--text-muted); font-size: 0.85rem; font-style: italic; text-align: center;">
+                    Photos make quotes fast — email them to <a href="mailto:Bubs960toys@gmail.com" style="color: var(--accent-yellow);">Bubs960toys@gmail.com</a> after you submit.
+                </p>
+                <button type="submit" class="btn btn-money">Get My Quote →</button>
+                <div class="form-status" aria-live="polite"></div>
+            </form>
+        </div>
+    </section>
+
+    <footer class="site-footer">
+        <div class="footer-grid">
+            <div class="footer-col">
+                <div class="footer-brand">BUBS960</div>
+                <p class="footer-tagline">By collectors, for collectors. No middleman, no platform tax.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Explore</h4>
+                <ul>
+                    <li><a href="/shop/index.html">Shop</a></li>
+                    <li><a href="/we-buy.html">We Buy</a></li>
+                    <li><a href="/live.html">Live Shows</a></li>
+                    <li><a href="/about.html">About</a></li>
+                    <li><a href="/faq.html">FAQ</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Buy From</h4>
+                <ul>
+                    <li><a href="https://www.ebay.com/usr/bubs960" target="_blank" rel="noopener">eBay Store</a></li>
+                    <li><a href="https://www.whatnot.com/user/bubs960" target="_blank" rel="noopener">Whatnot Live</a></li>
+                    <li><a href="/index.html#contact">Direct Inquiry</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Connect</h4>
+                <ul>
+                    <li><a href="mailto:Bubs960toys@gmail.com">Bubs960toys@gmail.com</a></li>
+                    <li><a href="/index.html#vip">Join VIP List</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">&copy; 2026 Bubs960 Collectibles. All rights reserved.</div>
+    </footer>
+
+    <script>
+    document.querySelectorAll('form.js-remote-form').forEach((form) => {
+        const id = form.dataset.formspree;
+        const status = form.querySelector('.form-status');
+        const configured = id && !id.startsWith('YOUR_');
+        form.addEventListener('submit', async (event) => {
+            if (!configured) return;
+            event.preventDefault();
+            form.dataset.submitting = 'true';
+            status.textContent = 'Sending…';
+            status.className = 'form-status';
+            try {
+                const res = await fetch(`https://formspree.io/f/${id}`, {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json' },
+                    body: new FormData(form),
+                });
+                if (res.ok) {
+                    status.textContent = "Got it. You'll hear back within 24 hours. 🤝";
+                    status.className = 'form-status ok';
+                    form.reset();
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    status.textContent = data?.errors?.[0]?.message ?? 'Something broke. Try again?';
+                    status.className = 'form-status err';
+                }
+            } catch (err) {
+                status.textContent = 'Network error. Try again?';
+                status.className = 'form-status err';
+            } finally {
+                form.dataset.submitting = 'false';
+            }
+        });
+    });
+    </script>
+
+</body>
+</html>
