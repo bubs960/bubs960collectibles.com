@@ -116,6 +116,9 @@ describe('collectionStore', () => {
   });
 
   it('subscribe fires on each mutation', async () => {
+    // Pre-load so the load-completion emit doesn't show up in the count —
+    // we're locking the mutation-emit contract, not the load lifecycle.
+    await collectionStore.load();
     const listener = jest.fn();
     const unsub = collectionStore.subscribe(listener);
     await collectionStore.addOwned(figure());
@@ -124,5 +127,46 @@ describe('collectionStore', () => {
     unsub();
     await collectionStore.addOwned(figure({ figure_id: 'other' }));
     expect(listener).toHaveBeenCalledTimes(2); // no further calls after unsubscribe
+  });
+
+  it('load() fires exactly one emit on the initial load, zero on subsequent calls', async () => {
+    const listener = jest.fn();
+    collectionStore.subscribe(listener);
+    await collectionStore.load();
+    await collectionStore.load();
+    await collectionStore.load();
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it('concurrent writes do not race with load() — writes survive the load', async () => {
+    // Seed disk with [persisted], then race addOwned before load completes.
+    // The post-load-guard in writes means the addOwned value is preserved.
+    await AsyncStorage.setItem(
+      'fp:v1:collection:vault',
+      JSON.stringify([
+        {
+          figure_id: 'persisted',
+          name: 'Persisted',
+          brand: '',
+          line: '',
+          series: '',
+          genre: '',
+          image_url: null,
+          added_at: 1,
+          server_id: null,
+        },
+      ]),
+    );
+
+    // Don't await load — kick it off and fire addOwned immediately after.
+    const loadPromise = collectionStore.load();
+    const addPromise = collectionStore.addOwned(figure());
+    await Promise.all([loadPromise, addPromise]);
+
+    const vault = collectionStore.get('vault');
+    // Both items survive; the concurrent add lands first (most recent).
+    const ids = vault.map((i) => i.figure_id);
+    expect(ids).toContain('persisted');
+    expect(ids).toContain('mattel-elite-11-rey-mysterio');
   });
 });

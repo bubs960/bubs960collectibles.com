@@ -8,7 +8,7 @@ import { colors, radii, spacing } from '@/theme/tokens';
 import { type } from '@/theme/typography';
 import { collectionStore } from '@/collection/localStore';
 import { clearCache } from '@/cache/persist';
-import { Row, Section } from '../SettingsScreen';
+import { Row, Section } from './primitives';
 import type { RootStackParamList } from '@/navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;

@@ -46,11 +46,22 @@ class CollectionStore {
   private vault: CollectionItem[] = [];
   private wantlist: CollectionItem[] = [];
   private loaded = false;
+  private loadPromise: Promise<void> | null = null;
   private listeners = new Set<Listener>();
 
-  /** Load persisted lists from AsyncStorage. Safe to call repeatedly. */
+  /**
+   * Load persisted lists from AsyncStorage. Idempotent: repeated calls
+   * return the same in-flight promise, and once loaded further calls
+   * no-op. All write paths await load() first so AsyncStorage reads can
+   * never race with optimistic writes and clobber them.
+   */
   async load(): Promise<void> {
     if (this.loaded) return;
+    if (!this.loadPromise) this.loadPromise = this._doLoad();
+    return this.loadPromise;
+  }
+
+  private async _doLoad(): Promise<void> {
     try {
       const [rawV, rawW] = await Promise.all([
         AsyncStorage.getItem(KEYS.vault),
@@ -70,6 +81,7 @@ class CollectionStore {
     this.vault = [];
     this.wantlist = [];
     this.loaded = false;
+    this.loadPromise = null;
     this.listeners.clear();
   }
 
@@ -96,14 +108,15 @@ class CollectionStore {
     figure: ApiFigureV1,
     extra: { paid?: number; condition?: string; server_id?: string | null } = {},
   ): Promise<CollectionItem> {
-    const item = this.upsert('vault', snapshot(figure, { ...extra }));
-    return item;
+    await this.load();
+    return this.upsert('vault', snapshot(figure, { ...extra }));
   }
 
   async addWanted(
     figure: ApiFigureV1,
     extra: { target_price?: number; server_id?: string | null } = {},
   ): Promise<CollectionItem> {
+    await this.load();
     return this.upsert('wantlist', snapshot(figure, { ...extra }));
   }
 
@@ -112,6 +125,7 @@ class CollectionStore {
     figureId: string,
     serverId: string,
   ): Promise<void> {
+    await this.load();
     const list = this.get(kind);
     const idx = list.findIndex((i) => i.figure_id === figureId);
     if (idx < 0) return;
@@ -121,6 +135,7 @@ class CollectionStore {
   }
 
   async remove(kind: ListKind, figureId: string): Promise<CollectionItem | null> {
+    await this.load();
     const list = this.get(kind);
     const removed = list.find((i) => i.figure_id === figureId) ?? null;
     if (!removed) return null;
@@ -133,6 +148,7 @@ class CollectionStore {
 
   /** Overwrite a whole list — used by pull-sync reconciliation. */
   async replaceList(kind: ListKind, next: CollectionItem[]): Promise<void> {
+    await this.load();
     this.write(kind, next);
   }
 

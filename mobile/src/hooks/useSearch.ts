@@ -16,12 +16,20 @@ const DEBOUNCE_MS = 220;
 export function useSearch(query: string, limit = 8): State {
   const [state, setState] = useState<State>({ results: [], loading: false, error: null });
   const inFlight = useRef<AbortController | null>(null);
+  const mounted = useRef(true);
 
   useEffect(() => {
-    // Short queries short-circuit to empty without hitting the network.
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      inFlight.current?.abort();
+    };
+  }, []);
+
+  useEffect(() => {
     if (query.trim().length < 2) {
       inFlight.current?.abort();
-      setState({ results: [], loading: false, error: null });
+      if (mounted.current) setState({ results: [], loading: false, error: null });
       return;
     }
 
@@ -29,21 +37,23 @@ export function useSearch(query: string, limit = 8): State {
       inFlight.current?.abort();
       const controller = new AbortController();
       inFlight.current = controller;
-      setState((s) => ({ ...s, loading: true, error: null }));
+      if (mounted.current) setState((s) => ({ ...s, loading: true, error: null }));
 
       searchFigures(query, { limit, signal: controller.signal })
         .then((results) => {
-          if (controller.signal.aborted) return;
+          if (controller.signal.aborted || !mounted.current) return;
           setState({ results, loading: false, error: null });
         })
         .catch((err: unknown) => {
           if ((err as { name?: string })?.name === 'AbortError') return;
+          if (!mounted.current) return;
           setState({ results: [], loading: false, error: err as Error });
         });
     }, DEBOUNCE_MS);
 
     return () => {
       clearTimeout(timer);
+      inFlight.current?.abort();
     };
   }, [query, limit]);
 
