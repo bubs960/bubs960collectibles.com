@@ -9,7 +9,56 @@ diff without guessing.
 
 ---
 
-## Phase 8 — Engineer punch-list update (current)
+## Phase 9 — Handoff update post-engineer-standdown (current)
+
+Engineer's 2026-04-19 standdown note brought four decisions. Mobile-side
+actions below; most were no-ops.
+
+### Decisions absorbed
+- **Dev worker + dev D1 → GO.** `.env.example` now shows
+  `figurepinner-api-dev.bubs960.workers.dev` as the v2-preview target
+  URL; v1-production profile keeps the live Worker. No source change.
+- **price_snapshots rip-out** — no mobile-side change. Response shape
+  on `/api/v1/price-history` unchanged.
+- **JWT template stays "no template"** — matches what I already shipped
+  in Phase 8. `EXPO_PUBLIC_CLERK_JWT_TEMPLATE` escape hatch retained.
+- **Extension EPN fix deferred** — real leak is NOT in
+  `companion.js` shipped as v11.2.0; lives in ui-deals / ui-priceboard
+  / affiliate-engine. Engineer flagged the "activeListingsUrl" pattern
+  for mobile's attention IF mobile ever ships a companion view.
+
+### Added
+- **eBay URL invariant regression guard** (`__tests__/ebayUrlInvariant.test.ts`).
+  Walks `src/` looking for `ebay.com` strings; allowlists only
+  `api/figureApi.ts`. Second case sanity-checks the builder still has
+  `mkrid=711-53200-19255-0` + `customid=...figurepinner-mobile`. If a
+  future surface (companion view, alerts banner) writes a raw eBay URL
+  the test catches the leak before it ships.
+- **Ultimate Warrior alias fixture** (`__tests__/fixtures/aliasPairs.ts`).
+  Canonical Mint A id + DB sibling id documented for the backend's
+  alias-patch smoke test. `aliasPair.test.ts` locks the fixture shape
+  (both ids match `fp_..._<hash6>`, they differ, expected
+  match_quality is `'moved'`). Drop-in device smoke test instructions
+  live in the fixture header.
+
+### Documentation
+- `figureApi.ts` gained an INVARIANT block above `buildEbayUrl` stating
+  it's the only place in `src/` that writes an `ebay.com/sch` URL, with
+  the callsite list that routes through it. New contributors can't miss
+  it on reading the file.
+
+### Not done (deliberate)
+- **Compound-character-name tokenizer** — downstream of API, no mobile
+  change. Queued post-#55 dict rebuild per engineer note.
+- **Mobile companion view** — not in v1 or v2 scope. Engineer's
+  "activeListingsUrl pattern to watch for" is noted in the buildEbayUrl
+  header so it's impossible to miss IF the view ever ships.
+
+Suite: 32 logic suites / 221 tests / green.
+
+---
+
+## Phase 8 — Engineer punch-list update
 
 Steve brought updated answers on 2026-04-19. Working the resolved
 items; unblocked items below.

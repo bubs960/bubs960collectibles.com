@@ -85,6 +85,15 @@ export class FigureFetchError extends Error {
 // 'figurepinner-mobile' (matches mobile/src/js/lib/affiliate.js:5-9 in the
 // Figure Pinner Dev workspace). Campaign ID comes from
 // EXPO_PUBLIC_EBAY_CAMPAIGN_ID; falls back to the live Bubs960 EPN ID.
+//
+// INVARIANT: this is the ONLY place in mobile/src that writes an
+// `ebay.com/sch` URL. Every external-link callsite (StickyActionBar's
+// Find-on-eBay button, MarketPanel's comp rows) receives the URL as
+// an `ebayUrl` prop that traces back to buildEbayUrl(figure). Raw
+// URLs skip EPN params → silent revenue leak (see the extension's
+// companion.js leak pattern — engineer audit 2026-04-19 confirmed it
+// doesn't exist in this codebase). If adding a new surface that
+// links to eBay: route through buildEbayUrl, never concatenate.
 const DEFAULT_EBAY_CAMPAIGN_ID = '5339147406';
 const EBAY_CUSTOM_ID = 'figurepinner-mobile';
 
