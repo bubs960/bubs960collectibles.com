@@ -122,3 +122,46 @@ breaks mid-launch.
       boot, replace the dev console logger with the real provider
       (Amplitude / PostHog / Segment). Event registry is already typed
       in `src/analytics/events.ts`.
+
+## Example: wire Sentry without touching feature code
+
+Per the engineer's recommendation. Requires `@sentry/react-native` as a
+new runtime dep (not yet added — pick a provider first, then add).
+
+```tsx
+// App.tsx, at the top of the module (before the React tree mounts)
+import * as Sentry from '@sentry/react-native';
+import { setAnalyticsSink } from '@/analytics/dispatch';
+
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  enableInExpoDevelopment: false,
+  debug: __DEV__,
+});
+
+// Wire our typed event registry into Sentry breadcrumbs. Crashes from
+// ErrorBoundary already post through `app_error` → this captures the
+// full breadcrumb trail automatically.
+setAnalyticsSink((name, props) => {
+  Sentry.addBreadcrumb({
+    category: 'analytics',
+    message: name,
+    data: props as Record<string, unknown>,
+    level: name === 'app_error' ? 'error' : 'info',
+  });
+  if (name === 'app_error') {
+    Sentry.captureMessage(
+      (props as { message: string }).message,
+      'error',
+    );
+  }
+});
+```
+
+Alternative providers follow the same pattern:
+- **PostHog** — call `posthog.capture(name, props)` in the sink.
+- **Amplitude** — `amplitude.track(name, props)`.
+- **Segment** — `analytics.track(name, props)`.
+
+`src/analytics/dispatch.ts` is the only file that needs editing;
+components / hooks don't know which provider is downstream.

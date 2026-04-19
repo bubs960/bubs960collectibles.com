@@ -1,5 +1,64 @@
 # FigurePinner Mobile
 
+## Architecture at a glance
+
+```
+  ┌─────────────────┐   ┌─────────────────┐
+  │ EAS Build profile│──▶│ process.env (  )│
+  │  v1 / v2-preview │   │ EXPO_PUBLIC_*   │
+  └─────────────────┘   └─────────────────┘
+                                 │
+                                 ▼
+                       ┌─────────────────────┐
+                       │ src/config/features │ ← reads once at boot
+                       └──────────┬──────────┘
+                                  │
+      ┌───────────────────────────┼────────────────────────┐
+      ▼                           ▼                        ▼
+  ┌───────────┐         ┌───────────────┐          ┌────────────────┐
+  │ AppNav     │         │ StickyAction   │          │ FigureDetailScr│
+  │ conditional│         │ collectionSlot │          │ CTA list + Miss│
+  │ Stack.Screen│        │ mounts v2      │          │ banner etc.    │
+  └───────────┘         └───────────────┘          └────────────────┘
+      │                           │                        │
+      │ (v2 only)                 │ (v2 only)              │
+      ▼                           ▼                        ▼
+  Vault/Wantlist/             CollectionBar              useFigureDetail
+  Alerts/SignIn             + useCollection              ↓
+                                                     ┌───────────────┐
+                                                     │ cache/useSWR   │
+                                                     │ + persist      │
+                                                     └───────┬───────┘
+                                                             │
+  ┌──────────────────────────────────────────────────────────┼──────┐
+  │                        Worker HTTP                              │
+  │ /api/v1/figure/:id    (alias layer, match_quality)              │
+  │ /api/v1/figure-price  (best effort)                             │
+  │ /api/v1/search        (anti-scrape projection; client synth id) │
+  │ /api/v1/vault + /items/:id (v2 — auth'd)                        │
+  │ /api/v1/wantlist + /items/:id (v2 — auth'd)                     │
+  │ /api/v1/devices       (v2 — push registration)                  │
+  └─────────────────────────────────────────────────────────────────┘
+
+  Clerk (v2 only):
+    mobile → Clerk.getToken({ template: 'mobile' })
+           → Bearer <jwt>
+           → Worker verifies against Clerk JWKS directly
+             (clerk-jwt.cjs middleware, hand-rolled)
+
+  Local-only state (always on):
+    AsyncStorage │
+      ├─ fp:v1:figure:*           (SWR cache, 24h stale)
+      ├─ fp:v1:collection:*       (vault, wantlist — v2 surfaces, v1 unused)
+      ├─ fp:v1:search_history     (recent queries, capped 10)
+      ├─ fp:v1:preferences        (onboarding complete + home genre)
+      └─ fp:v1:push_token         (Expo push token, v2)
+
+  Secure store:
+    expo-secure-store │
+      └─ Clerk session token (v2)
+```
+
 ## v1 scope: read-only browser
 
 Mobile v1 ships **without** vault, wantlist, alerts, or sign-in. The Worker
