@@ -36,6 +36,7 @@ import { StickyActionBar } from '@/components/figure/StickyActionBar';
 import { CollectionBar } from '@/components/figure/CollectionBar';
 import { FigureDetailSkeleton } from '@/components/figure/FigureDetailSkeleton';
 import { FigureDetailError } from '@/components/figure/FigureDetailError';
+import { FigureMissBanner } from '@/components/figure/FigureMissBanner';
 import { FEATURES } from '@/config/features';
 import type { RootStackParamList } from '@/navigation/types';
 
@@ -59,9 +60,28 @@ export function FigureDetailScreen() {
 
   const lore = useMemo(() => (data ? renderLoreBand(data) : null), [data]);
 
+  // Emit figure_viewed once per figure_id load. If the worker resolved the
+  // requested id to a different canonical (match_quality !== 'exact') we
+  // also log figure_id_resolved so the drift is observable in the wild.
   useEffect(() => {
-    if (data) track('figure_viewed', { figure_id: figureId });
-  }, [data, figureId]);
+    if (!data) return;
+    const canonical = data.figure.figure_id;
+    const quality = data.figure.match_quality ?? 'exact';
+    track('figure_viewed', { figure_id: canonical });
+    if (quality !== 'exact') {
+      track('figure_id_resolved', {
+        requested_id: figureId,
+        canonical_id: canonical,
+        match_quality: quality,
+      });
+      // Swap the route param to the canonical id so a back-gesture-then-
+      // -deep-link cycle doesn't re-resolve from the stale id. The
+      // navigation noop-dedupes if params are already equal.
+      if (canonical !== figureId && quality !== 'not_found_but_logged') {
+        navigation.setParams({ figureId: canonical });
+      }
+    }
+  }, [data, figureId, navigation]);
 
   if (loading && !data) {
     return (
@@ -71,9 +91,15 @@ export function FigureDetailScreen() {
     );
   }
 
+  // Network / server errors still take the old error screen. The alias
+  // patch deploys HTTP 200 for miss (match_quality='not_found_but_logged'),
+  // which is handled below via the zone-layer CTAs rather than as an error.
   if ((error && !data) || !data) {
     return <FigureDetailError error={error} onRetry={refetch} retrying={revalidating} />;
   }
+
+  const matchQuality = data.figure.match_quality ?? 'exact';
+  const isLoggedMiss = matchQuality === 'not_found_but_logged';
 
   const { figure, price, series_siblings, character_thread, rarity_tier } = data;
   const name = cleanFigureName(figure.name);
@@ -98,7 +124,24 @@ export function FigureDetailScreen() {
             onPress: () => navigation.navigate('Wantlist'),
           },
         ]
-      : []),
+      : [
+          // v1 "Coming soon" placeholders per engineer Q3. Trains the
+          // mental model so v2-preview isn't a surprise "where did these
+          // tabs come from?" moment. Not a waitlist CTA — a factual
+          // placeholder that no-ops on tap.
+          {
+            id: 'vault-soon',
+            title: 'Vault — Coming soon',
+            subtitle: 'Sign in to save figures across devices',
+            onPress: () => {},
+          },
+          {
+            id: 'wantlist-soon',
+            title: 'Wantlist — Coming soon',
+            subtitle: 'Track figures you want and get price alerts',
+            onPress: () => {},
+          },
+        ]),
     ...(FEATURES.alerts
       ? [
           {
@@ -220,6 +263,12 @@ export function FigureDetailScreen() {
         }
       >
         <Hero figure={figure} rarity={rarity_tier} />
+
+        {isLoggedMiss && (
+          <View style={styles.section}>
+            <FigureMissBanner />
+          </View>
+        )}
 
         {isStale && (
           <View style={styles.stalePill}>

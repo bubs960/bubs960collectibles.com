@@ -170,13 +170,16 @@ describe('FigureDetailScreen render states', () => {
     expect(getByText('Year')).toBeTruthy();
   });
 
-  it('renders the v1 CTA list: Share, Settings, Report (no Vault/Wantlist/Alerts by default)', () => {
+  it('renders the v1 CTA list: Coming-soon Vault/Wantlist, Share, Settings, Report (no real Vault/Wantlist links)', () => {
     useFigureDetailMock.__setState({ loading: false, data: baseDetail() });
     const { getByText, queryByText } = render(<TestHost />);
+    // v1 placeholder copy per engineer Q3.
+    expect(getByText('Vault — Coming soon')).toBeTruthy();
+    expect(getByText('Wantlist — Coming soon')).toBeTruthy();
     expect(getByText('Share this figure')).toBeTruthy();
     expect(getByText('Settings')).toBeTruthy();
     expect(getByText('Spot something off?')).toBeTruthy();
-    // FEATURES.collectionSync defaults to false.
+    // Real v2 links are NOT rendered with collectionSync=false.
     expect(queryByText('Open your vault')).toBeNull();
     expect(queryByText('Open your wantlist')).toBeNull();
   });

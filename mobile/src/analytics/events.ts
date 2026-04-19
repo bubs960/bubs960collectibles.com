@@ -13,6 +13,16 @@ export interface EventProps {
   auth_required_shown: { figure_id: string; trigger: 'own' | 'want' };
   pro_waitlist_tapped: { figure_id: string };
   app_error: { message: string; component_stack: string };
+  /**
+   * Emitted when /figure/:id returns a canonical figure_id different
+   * from what mobile requested (moved / cluster / not_found_but_logged).
+   * Lets us measure KB↔DB drift in the wild.
+   */
+  figure_id_resolved: {
+    requested_id: string;
+    canonical_id: string;
+    match_quality: 'moved' | 'cluster' | 'not_found_but_logged';
+  };
 }
 
 export type EventName = keyof EventProps;

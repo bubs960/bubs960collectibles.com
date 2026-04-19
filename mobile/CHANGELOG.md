@@ -9,7 +9,45 @@ diff without guessing.
 
 ---
 
-## Phase 6 — Reviewer corrections (current)
+## Phase 7 — Engineer contract alignment (current)
+
+Engineer answered the open questions on 2026-04-19. This phase wires the
+mobile client against the decided contracts.
+
+### Added
+- **`match_quality` response handling.** `ApiFigureV1.match_quality` is
+  now a typed optional field (`exact | moved | cluster |
+  not_found_but_logged`) matching the Worker's alias-layer contract per
+  `docs/v3/FIGURE-ID-MINT-CANONICAL-DECISION-2026-04-19.md §5`. On non-
+  exact resolution, mobile emits the new `figure_id_resolved` analytics
+  event (drift observability) and swaps the route param to the canonical
+  id so back-gesture-then-relink doesn't re-resolve a stale id.
+- **`FigureMissBanner`** — renders when `match_quality='not_found_but_logged'`
+  to tell the user the miss was captured. Factual placeholder without a
+  request-to-add button (v3 mobile scope per Q9); the data pipe already
+  exists via the miss log.
+- **v1 "Coming soon" CTAs** — Vault + Wantlist appear in the CTA list
+  with `Coming soon` copy per engineer Q3 ("train the mental model
+  early"). Tap is a no-op. When `FEATURES.collectionSync=true` flips in
+  v2, real linked CTAs replace the placeholders.
+- **`registerDeviceWithWorker`** — POST /api/v1/devices body uses
+  `{ token, platform, app_version }`, NOT `{ expo_push_token, platform }`.
+  Platform-agnostic column name per engineer Q4.7 — leaves room for direct
+  FCM later without a D1 migration.
+- **Server item metadata** — `ServerCollectionItem.removed_at?` (TTL
+  cleanup pivot) and `match_quality_at_insert?` (drift badge later)
+  added to the type per engineer Q7 + optional addition.
+
+### Tests
+- `registerDeviceWithWorker.test.ts`: locks the body shape contract,
+  Bearer-JWT header, 401 bubble-up, env + apiBase overrides.
+- `FigureMissBanner.test.tsx`: copy + alert role lock.
+- Updated `FigureDetailScreen.test.tsx` v1 CTA assertions to expect
+  the Coming-soon placeholders.
+
+---
+
+## Phase 6 — Reviewer corrections
 
 ### Changed
 - **`figure_id` drift reframed** — `src/shared/figureId.ts` header

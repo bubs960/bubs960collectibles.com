@@ -2,6 +2,26 @@
 // Source of truth: figurepinner-site/src/app/api/v1/figure/[figure_id]/route.ts
 // and the PriceData type in figurepinner-site/src/app/figure/[figure_id]/page.tsx.
 
+/**
+ * Worker's resolution status on /api/v1/figure/:id.
+ *
+ * Per the backend decision doc (docs/v3/FIGURE-ID-MINT-CANONICAL-DECISION-2026-04-19.md §5):
+ * the endpoint always returns HTTP 200 — never 404 — with one of:
+ *   - 'exact'    → requested id is already the canonical Mint A
+ *   - 'moved'    → requested id matched an alias row; figure_id in the
+ *                  response is the canonical, cache it
+ *   - 'cluster'  → sibling search matched multiple rows; figure_id is
+ *                  the best guess — may want to disambiguate later
+ *   - 'not_found_but_logged' → no match; request logged to
+ *                  figure_id_miss_log for the KB admin review /
+ *                  eventual request-to-add flow (v3 mobile)
+ *
+ * Missing / undefined is treated as 'exact' for backward compat until
+ * the alias-patch worker deploy lands (today mobile still hits a bare
+ * 404 — client-side soft-recovery in FigureDetailError is the bridge).
+ */
+export type FigureMatchQuality = 'exact' | 'moved' | 'cluster' | 'not_found_but_logged';
+
 /** GET /api/v1/figure/:figure_id */
 export interface ApiFigureV1 {
   figure_id: string;
@@ -17,6 +37,7 @@ export interface ApiFigureV1 {
   scale: string | null;
   /** Added by engineer later — optional for now. */
   series_total?: number;
+  match_quality?: FigureMatchQuality;
 }
 
 export interface ApiSoldComp {

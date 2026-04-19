@@ -92,9 +92,15 @@ export async function deleteWantlistItem(itemId: string, token: string): Promise
 }
 
 /**
- * Server-side list item shape returned by the (planned) GET endpoints.
- * Adjust when backend ships the real contract — this mirrors the POST body
- * plus the server-assigned id + status.
+ * Server-side list item shape returned by the GET endpoints.
+ *
+ * Per the 2026-04-19 backend doc:
+ *   - figure_id is always canonical Mint A (the endpoint rejects Mint B/C
+ *     on insert with HTTP 400, so rows in D1 are guaranteed Mint A)
+ *   - removed_at tracks when status flipped to 'removed' so the
+ *     90-day TTL cleanup job deletes from-remove, not from-add
+ *   - match_quality_at_insert preserves how the insert-time id was
+ *     resolved (exact / moved / cluster) for later badges / analytics
  */
 export interface ServerCollectionItem {
   id: string;
@@ -106,6 +112,10 @@ export interface ServerCollectionItem {
   canonical_image_url?: string | null;
   series?: string | null;
   added_at?: number;
+  /** Timestamp set when status transitions to 'removed'. Null for active rows. */
+  removed_at?: number | null;
+  /** How figure_id was resolved at insert — see FigureMatchQuality. */
+  match_quality_at_insert?: 'exact' | 'moved' | 'cluster';
   paid?: number;
   condition?: string;
   target_price?: number;
