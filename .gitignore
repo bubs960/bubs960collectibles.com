@@ -1,0 +1,22 @@
+# Local-only eBay / Shopify tokens — never commit
+.ebay-tokens.json
+*.local.env
+.env
+.env.*
+
+# eBay / Shopify CSV working files — keep local
+ebay-export*.csv
+shopify-import*.csv
+active-listings*.csv
+orders*.csv
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# Node
+node_modules/
+npm-debug.log

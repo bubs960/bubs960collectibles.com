@@ -1,0 +1,45 @@
+name: eBay Sold-Item Sync
+
+# Polls eBay for recent orders every 15 minutes and marks matching
+# Shopify products sold (adds the "sold" tag). Our site treats that
+# as SOLD — rendering the stamp, disabling buy buttons, struck price.
+#
+# Also triggered manually from the Actions tab if needed (e.g. right
+# after a Whatnot show when you want faster reconciliation).
+#
+# Required secrets (all optional — the script exits 0 if any missing):
+#   EBAY_APP_ID, EBAY_CERT_ID, EBAY_REFRESH_TOKEN
+#   SHOPIFY_STORE, SHOPIFY_ADMIN_TOKEN
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    inputs:
+      lookback_minutes:
+        description: 'How far back to scan eBay orders (default 120 min)'
+        required: false
+        default: '120'
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Sync eBay sold items to Shopify
+        env:
+          EBAY_APP_ID: ${{ secrets.EBAY_APP_ID }}
+          EBAY_CERT_ID: ${{ secrets.EBAY_CERT_ID }}
+          EBAY_REFRESH_TOKEN: ${{ secrets.EBAY_REFRESH_TOKEN }}
+          SHOPIFY_STORE: ${{ secrets.SHOPIFY_STORE }}
+          SHOPIFY_ADMIN_TOKEN: ${{ secrets.SHOPIFY_ADMIN_TOKEN }}
+          EBAY_LOOKBACK_MINUTES: ${{ github.event.inputs.lookback_minutes || '120' }}
+        run: node scripts/sync-ebay-sold.mjs
