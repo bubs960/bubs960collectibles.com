@@ -216,6 +216,123 @@
         }
         .btn-ghost:hover { background: var(--accent-yellow); color: #111; transform: translateY(-2px) scale(1.03); }
 
+        /* Two Ways to Sell */
+        .two-ways-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.75rem;
+        }
+        .way-card {
+            position: relative;
+            background: linear-gradient(180deg, var(--metal-light), var(--bg-panel) 60%);
+            border: 3px solid #000;
+            border-radius: 14px;
+            padding: 2rem 1.75rem 1.75rem;
+            box-shadow: inset 0 0 0 2px var(--money-green), 0 8px 0 #000;
+            transition: transform 0.2s ease;
+        }
+        .way-card:hover { transform: translateY(-4px) rotate(-0.3deg); }
+        .way-card::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 6px;
+            background: linear-gradient(90deg, var(--money-green), var(--accent-yellow), var(--primary-red));
+            border-radius: 11px 11px 0 0;
+        }
+        .way-badge {
+            display: inline-block;
+            background: var(--money-green);
+            color: #000;
+            font-family: 'Bangers', cursive;
+            font-size: 0.95rem;
+            letter-spacing: 2px;
+            padding: 0.3rem 0.8rem;
+            border-radius: 4px;
+            border: 2px solid var(--accent-yellow);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+        }
+        .way-badge.alt { background: var(--primary-red); color: white; }
+        .way-card h3 {
+            font-family: 'Bangers', cursive;
+            font-size: 1.8rem;
+            color: var(--accent-yellow);
+            text-shadow: 2px 2px 0 var(--primary-red);
+            letter-spacing: 1.5px;
+            margin-bottom: 0.75rem;
+            line-height: 1.05;
+        }
+        .way-card > p {
+            color: #dfe3ec;
+            line-height: 1.6;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+        .way-points {
+            list-style: none;
+            margin: 0;
+            padding: 1rem;
+            background: rgba(0,0,0,0.25);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+        .way-points li {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.45;
+        }
+        .way-points strong { color: var(--accent-yellow); }
+
+        /* Data-backed quotes band */
+        .data-band {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 2rem;
+            align-items: center;
+            background: linear-gradient(180deg, #0d1a28, var(--bg-panel) 70%);
+            border: 2px solid var(--primary-blue);
+            border-radius: 14px;
+            padding: 2rem 2.25rem;
+            box-shadow: 0 0 30px rgba(28,59,112,0.3);
+        }
+        .data-stamp {
+            width: 140px; height: 140px;
+            border: 4px double var(--primary-blue);
+            border-radius: 50%;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            font-family: 'Bangers', cursive;
+            color: #66a6ff;
+            font-size: 1rem; line-height: 1.05;
+            transform: rotate(-14deg);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            text-shadow: 2px 2px 0 #000;
+            box-shadow: 0 0 24px rgba(102, 166, 255, 0.25);
+            background: radial-gradient(circle at 30% 30%, rgba(28,59,112,0.35), transparent 70%);
+            flex-shrink: 0;
+        }
+        .data-stamp .big { font-size: 2rem; letter-spacing: 2.5px; margin: 0.1rem 0; }
+        .data-copy h3 {
+            font-family: 'Bangers', cursive;
+            font-size: 2rem;
+            letter-spacing: 1.5px;
+            color: var(--accent-yellow);
+            text-shadow: 2px 2px 0 var(--primary-red);
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            line-height: 1.1;
+        }
+        .data-copy p { color: #dfe3ec; line-height: 1.6; margin-bottom: 0.75rem; font-size: 1rem; }
+        .data-copy p strong { color: var(--money-green); }
+        .data-copy .data-note { color: var(--text-muted); font-style: italic; margin-bottom: 0; font-size: 0.9rem; }
+        @media (max-width: 700px) {
+            .data-band { grid-template-columns: 1fr; text-align: center; padding: 1.5rem; }
+            .data-stamp { margin: 0 auto; width: 110px; height: 110px; font-size: 0.8rem; }
+            .data-stamp .big { font-size: 1.55rem; }
+        }
+
         /* Section shell */
         .section {
             padding: 5rem 2rem;
@@ -449,11 +566,11 @@
             <div class="kicker">Sell Us Your Collection</div>
             <h1 class="buy-title">Got Figures?<br>We Got Cash.</h1>
             <p class="buy-lead">
-                Old collection in the attic? Kid moved out and left a tub of Mattel Elites? Estate to clear out? <strong>Bubs960 pays real money for real collections</strong> — no auction fees eating your payout, no "we'll consign it" runaround. <span class="cash">Cash up front, honest quotes, fast pickup.</span>
+                Old collection in the attic? Estate to clear? Kid moved out and left a tub of Mattel Elites? <strong>Buy it outright or consign it</strong> — your call. Quotes priced from <span class="cash">real eBay sold comps</span>, so you know the number is fair and the piece will actually move.
             </p>
             <div class="cta-row">
                 <a href="#intake" class="btn btn-money">Get a Quote →</a>
-                <a href="#how-it-works" class="btn btn-ghost">How It Works</a>
+                <a href="#two-ways" class="btn btn-ghost">Buy or Consign?</a>
             </div>
         </div>
     </section>
@@ -494,6 +611,50 @@
                 <span class="icon" aria-hidden="true">👴</span>
                 <h3>Whole Estates &amp; Collections</h3>
                 <p>Inherited a collection? Cleaning out a storage unit? We buy whole piles — no need to sort.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="two-ways">
+        <h2 class="section-title" style="color: var(--money-green); text-shadow: 2px 2px 0 #000;">Two Ways to Sell</h2>
+        <p class="section-kicker">Pick the path that fits. Either way, the quote is fair and the money comes fast.</p>
+
+        <div class="two-ways-grid">
+            <article class="way-card">
+                <div class="way-badge">Buy Outright</div>
+                <h3>Cash. Today.</h3>
+                <p>We pay you a flat lump sum, we take the collection, you're done. No waiting, no back-end drama, no "we'll send you a check when it sells."</p>
+                <ul class="way-points">
+                    <li><strong>Best for:</strong> estates, big piles, fast-moving pieces, when you just want it gone</li>
+                    <li><strong>Timeline:</strong> quote → agree → payment within 24 hours of inspection</li>
+                    <li><strong>Payment:</strong> PayPal, Venmo, Zelle, or cash in hand</li>
+                </ul>
+            </article>
+
+            <article class="way-card">
+                <div class="way-badge alt">Consign</div>
+                <h3>Sell For More, Together.</h3>
+                <p>We list, photograph, and move your piece on our storefront, eBay, and Whatnot. Our cut is a flat %, the rest is yours. You get full market value without doing any of the work.</p>
+                <ul class="way-points">
+                    <li><strong>Best for:</strong> high-value grails, slabbed pieces, anything where retail price matters</li>
+                    <li><strong>Timeline:</strong> 2–8 weeks depending on rarity (faster than you'd think — we know what moves)</li>
+                    <li><strong>Payment:</strong> you get paid the moment it sells, net of our consignment %</li>
+                </ul>
+            </article>
+        </div>
+    </section>
+
+    <section class="section" style="padding-top: 1rem;">
+        <div class="data-band">
+            <div class="data-stamp" aria-hidden="true">
+                <span>eBay</span>
+                <span class="big">Sold</span>
+                <span>Data</span>
+            </div>
+            <div class="data-copy">
+                <h3>Quotes Backed by Real Comps</h3>
+                <p>Every quote we give — whether we're buying outright or proposing a consignment price — starts from <strong>actual eBay sold listings</strong>, not wish-list asking prices. We look at what the piece has moved for in the last 30/60/90 days, across conditions, to set a number that's both fair to you and realistic for the market.</p>
+                <p class="data-note">That's also why our stuff sells fast. We know what wave is hot, what's sitting, what's a sleeper — and we price accordingly.</p>
             </div>
         </div>
     </section>
@@ -588,16 +749,26 @@
                         <input id="seller-location" type="text" name="location" placeholder="Helps with pickup / shipping">
                     </div>
                 </div>
-                <div>
-                    <label class="field-label" for="seller-size">Collection Size</label>
-                    <select id="seller-size" name="size" required>
-                        <option value="">Pick one…</option>
-                        <option value="1-10">A handful (1–10 pieces)</option>
-                        <option value="10-50">A box or two (10–50 pieces)</option>
-                        <option value="50-200">A shelf or closet (50–200 pieces)</option>
-                        <option value="200+">A full collection / estate (200+ pieces)</option>
-                        <option value="unsure">Not sure — it's a lot</option>
-                    </select>
+                <div class="grid-2">
+                    <div>
+                        <label class="field-label" for="seller-size">Collection Size</label>
+                        <select id="seller-size" name="size" required>
+                            <option value="">Pick one…</option>
+                            <option value="1-10">A handful (1–10 pieces)</option>
+                            <option value="10-50">A box or two (10–50 pieces)</option>
+                            <option value="50-200">A shelf or closet (50–200 pieces)</option>
+                            <option value="200+">A full collection / estate (200+ pieces)</option>
+                            <option value="unsure">Not sure — it's a lot</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="field-label" for="seller-path">Preferred Path</label>
+                        <select id="seller-path" name="preferred_path" required>
+                            <option value="open">Open — recommend what's best</option>
+                            <option value="buy">Buy outright (cash, today)</option>
+                            <option value="consign">Consign (let you sell it for more)</option>
+                        </select>
+                    </div>
                 </div>
                 <div>
                     <label class="field-label" for="seller-details">What are you selling?</label>

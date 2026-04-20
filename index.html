@@ -710,6 +710,55 @@
             .we-buy-band { padding: 3.5rem 1.25rem; }
         }
 
+        /* Mini homepage intake form */
+        .mini-intake-wrap {
+            max-width: 1200px;
+            margin: 2.5rem auto 0;
+            position: relative;
+            z-index: 1;
+        }
+        .mini-intake-card {
+            max-width: 560px;
+            margin: 0 auto;
+            background: linear-gradient(180deg, var(--metal-light), var(--bg-panel) 60%);
+            border: 3px solid #000;
+            border-radius: 14px;
+            padding: 1.75rem 1.5rem;
+            box-shadow: inset 0 0 0 2px var(--money-green), 0 6px 0 #000;
+        }
+        .mini-intake-card h3 {
+            font-family: 'Bangers', cursive;
+            font-size: 1.75rem;
+            color: var(--accent-yellow);
+            text-shadow: 2px 2px 0 var(--primary-red);
+            letter-spacing: 2px;
+            text-align: center;
+            margin-bottom: 0.25rem;
+            text-transform: uppercase;
+        }
+        .mini-intake-sub {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-style: italic;
+            margin-bottom: 1.25rem;
+        }
+        form.mini-intake { display: flex; flex-direction: column; gap: 0.75rem; }
+        form.mini-intake input, form.mini-intake textarea {
+            padding: 0.85rem 0.95rem;
+            font-size: 0.95rem;
+            font-family: 'Montserrat', sans-serif;
+            border: 2px solid #333;
+            border-radius: 6px;
+            background: #111;
+            color: white;
+            outline: none;
+            transition: border-color 0.2s ease;
+            width: 100%;
+        }
+        form.mini-intake textarea { min-height: 90px; resize: vertical; }
+        form.mini-intake input:focus, form.mini-intake textarea:focus { border-color: var(--money-green); }
+
         /* Footer */
         .site-footer {
             border-top: 3px solid var(--primary-red);
@@ -841,23 +890,39 @@
     <section class="we-buy-band" id="we-buy-cta">
         <div class="we-buy-inner">
             <div class="we-buy-copy">
-                <div class="we-buy-kicker">💵 We Buy Collections</div>
-                <h2>Got Figures?<br>We Got Cash.</h2>
-                <p>Old collection in the attic? Estate to clear? Kid moved out and left a tub of Mattel Elites? Skip the platform fees and lowball DMs. <strong>We quote it, we buy it, we pay fast.</strong></p>
+                <div class="we-buy-kicker">💵 We Buy &amp; Consign Collections</div>
+                <h2>Got Figures?<br>We Got Options.</h2>
+                <p>Old collection in the attic? Estate to clear? <strong>Buy it outright or consign it</strong> — your call. Quotes priced from real <strong>eBay sold comps</strong>, so the number's fair and the pieces actually move.</p>
                 <div class="we-buy-actions">
                     <a href="/we-buy.html#intake" class="btn btn-money">Get a Quote →</a>
-                    <a href="/we-buy.html" class="btn btn-ghost">How It Works</a>
+                    <a href="/we-buy.html#two-ways" class="btn btn-ghost">Buy or Consign?</a>
                 </div>
                 <div class="we-buy-points">
-                    <span>✓ Fair quotes in 24 hours</span>
+                    <span>✓ Data-backed fair quotes</span>
                     <span>✓ Any size — 1 piece to 1,000</span>
-                    <span>✓ Cash up front, no consignment</span>
+                    <span>✓ Buy outright or consign</span>
                 </div>
             </div>
             <div class="we-buy-stamp" aria-hidden="true">
                 <span>Cash</span>
                 <span class="big">Paid</span>
                 <span>Fast</span>
+            </div>
+        </div>
+
+        <div class="mini-intake-wrap">
+            <div class="mini-intake-card">
+                <h3>Quick Pitch</h3>
+                <p class="mini-intake-sub">Three fields. We reply with a quote in 24 hours.</p>
+                <form class="mini-intake js-remote-form" data-formspree="xykljadr" action="mailto:Bubs960toys@gmail.com" method="POST" enctype="text/plain">
+                    <input type="text" name="name" placeholder="Your name" required>
+                    <input type="email" name="email" placeholder="Your email" required>
+                    <textarea name="details" placeholder="What you've got — brands, characters, rough quantity…" required></textarea>
+                    <input type="hidden" name="_subject" value="Bubs960 — Quick Pitch (homepage)">
+                    <input type="hidden" name="form_type" value="we-buy-homepage-mini">
+                    <button type="submit" class="btn btn-money">Send Pitch →</button>
+                    <div class="form-status" aria-live="polite"></div>
+                </form>
             </div>
         </div>
     </section>

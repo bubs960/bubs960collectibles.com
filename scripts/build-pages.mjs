@@ -54,7 +54,7 @@ function imageGallery(images, title) {
   const main = images[0];
   const imagesJson = JSON.stringify(images);
   const thumbs = images
-    .map((src, i) => `<img class="thumb ${i === 0 ? 'active' : ''}" data-full="${escapeHtml(src)}" data-index="${i}" src="${escapeHtml(src)}" alt="${escapeHtml(title)} photo ${i + 1}">`)
+    .map((src, i) => `<img class="thumb ${i === 0 ? 'active' : ''}" data-full="${escapeHtml(src)}" data-index="${i}" src="${escapeHtml(src)}" alt="${escapeHtml(title)} photo ${i + 1}" loading="lazy" decoding="async">`)
     .join('\n');
   return `
     <div class="gallery">
@@ -1059,7 +1059,7 @@ function renderCard(p) {
     const isSold = (p.status ?? '').toLowerCase() === 'sold';
     const imgs = resolveImages(p, LOCAL_IMG_PREFIX);
     const img = imgs[0]
-      ? `<img class="card-img" src="${escapeHtml(imgs[0])}" alt="${escapeHtml(p.title)}">`
+      ? `<img class="card-img" src="${escapeHtml(imgs[0])}" alt="${escapeHtml(p.title)}" loading="lazy" decoding="async">`
       : `<div class="card-img-placeholder">BUBS960</div>`;
     const ribbon = isSold
       ? ''
