@@ -30,7 +30,14 @@ export async function fetchShopifyProducts() {
     const normalized = (data.products ?? [])
       .map((p) => normalize(p, SHOPIFY_STORE))
       .filter(Boolean);
-    return normalized;
+
+    // Drafts stay hidden from the public site, matching Shopify's own
+    // storefront behavior. Log the split so workflow runs still show
+    // that the pipeline fetched drafts (useful for verification).
+    const live = normalized.filter((p) => p.status !== 'draft');
+    const drafts = normalized.length - live.length;
+    console.log(`[shopify-source] Fetched ${normalized.length} product(s): ${live.length} live, ${drafts} draft (hidden).`);
+    return live;
   } catch (err) {
     console.error(`[shopify-source] fetch error: ${err.message}`);
     return null;
