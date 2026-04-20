@@ -40,6 +40,7 @@ works pre-Shopify and it's still a valid backup path.
 node scripts/build-pages.mjs                    # regenerate shop/ HTML pages + sitemap
 node scripts/sync-shopify.mjs                   # push local JSON shells INTO Shopify (migration tool)
 node scripts/ebay-to-shopify-csv.mjs IN.csv     # convert eBay export CSV -> Shopify import CSV (15% off)
+node scripts/mark-sold-from-csv.mjs ORDERS.csv  # mark Shopify products sold from an eBay Orders CSV
 ```
 
 The sync script is a one-way push of local JSON into Shopify. It's
@@ -62,6 +63,27 @@ For bulk migrating an existing eBay store into Shopify:
 3. Shopify admin -> Products -> Import -> upload `shopify-import.csv`.
    Photos pull from eBay's CDN URLs automatically.
 4. GitHub Actions rebuilds the site on next cron (or manual dispatch).
+
+## Mark eBay-sold items sold on the site (manual, no API needed)
+
+Use this when the automated eBay sync isn't available (no dev
+account, API issues, etc.). Free and fast.
+
+1. eBay Seller Hub -> **Orders** -> **Download report** (any
+   recent window — last 24h, last week, etc.). Save the CSV.
+2. Run locally with your Shopify secrets:
+   ```
+   SHOPIFY_STORE=bubs960-collectibles.myshopify.com \
+   SHOPIFY_ADMIN_TOKEN=your_token \
+   node scripts/mark-sold-from-csv.mjs path/to/orders.csv
+   ```
+3. Script matches eBay SKUs (or falls back to `BUBS-EB-<itemId>`)
+   against Shopify products and adds the `sold` tag to any that
+   aren't already marked.
+4. Site rebuilds on the next cron tick and those products render
+   the SOLD stamp with disabled buy buttons.
+
+Cancelled, refunded, or returned orders are automatically skipped.
 
 ## eBay listing template (drive sellers, stay legal)
 
