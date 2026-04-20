@@ -845,8 +845,8 @@ const NAV_HTML = `
 <nav class="nav">
   <a href="/index.html" class="nav-brand">BUBS960</a>
   <ul class="nav-links">
+    <li><a href="/we-buy.html" class="nav-cta">💵 We Buy</a></li>
     <li><a href="/shop/index.html">Shop</a></li>
-    <li><a href="/we-buy.html">We Buy</a></li>
     <li><a href="/live.html">Live</a></li>
     <li><a href="/about.html">About</a></li>
     <li><a href="/faq.html">FAQ</a></li>
@@ -865,8 +865,8 @@ const FOOTER_HTML = `
     <div class="footer-col">
       <h4>Explore</h4>
       <ul>
-        <li><a href="/shop/index.html">Shop</a></li>
-        <li><a href="/we-buy.html">We Buy Collections</a></li>
+        <li><a href="/we-buy.html">💵 We Buy Collections</a></li>
+                    <li><a href="/shop/index.html">Shop</a></li>
         <li><a href="/want-list.html">Want List</a></li>
         <li><a href="/live.html">Live Shows</a></li>
         <li><a href="/about.html">About</a></li>
