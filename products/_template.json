@@ -1,0 +1,28 @@
+{
+  "handle": "unique-url-slug-goes-here",
+  "title": "Product Title (shown large on the page)",
+  "subtitle": "Optional short tagline",
+  "collection": "Wrestling Figures",
+  "description": "<p>HTML description. Use paragraphs, <strong>bold</strong>, lists etc. This renders in both the HTML product page and the Shopify product description.</p>",
+  "vendor": "Bubs960 Collectibles",
+  "productType": "Wrestling Figure",
+  "tags": ["wrestling", "elite", "loose"],
+  "status": "draft",
+  "price": "0.00",
+  "compareAtPrice": null,
+  "sku": "BUBS-XXX-000",
+  "inventory": 1,
+  "condition": "Mint / Loose / Sealed / etc.",
+  "year": "2024",
+  "series": "Series or wave",
+  "images": [
+    "https://your-image-host.com/photo-1.jpg",
+    "https://your-image-host.com/photo-2.jpg"
+  ],
+  "buyLinks": {
+    "shopify": null,
+    "ebay": null,
+    "whatnot": null
+  },
+  "featured": false
+}

@@ -1,0 +1,1206 @@
+// Generates static HTML product pages from products/*.json into /shop/.
+// Produces:
+//   shop/index.html              — catalog listing
+//   shop/<handle>.html           — one high-res page per product
+// Safe to re-run; output is fully overwritten.
+
+import { mkdir, writeFile, readdir, unlink } from 'node:fs/promises';
+import { join } from 'node:path';
+import { loadProducts, resolveImages, SHOP_DIR, escapeHtml } from './products.mjs';
+
+const LOCAL_IMG_PREFIX = '/products/images/';
+
+const SITE_BRAND = 'Bubs960 Collectibles';
+const SITE_URL = 'https://www.bubs960collectibles.com';
+const DEFAULT_OG_IMAGE = `${SITE_URL}/bubs-logo.jpg`;
+
+function fmtPrice(p) {
+  if (p == null || p === '') return '';
+  const n = Number(p);
+  return Number.isFinite(n) ? `$${n.toFixed(2)}` : String(p);
+}
+
+function statusBadge(status) {
+  const s = (status ?? 'draft').toLowerCase();
+  if (s === 'active') return '<span class="badge badge-live">Live</span>';
+  if (s === 'sold') return '<span class="badge badge-sold">Sold</span>';
+  return '<span class="badge badge-soon">Coming Soon</span>';
+}
+
+function buyButtons(p) {
+  if ((p.status ?? '').toLowerCase() === 'sold') {
+    return `<span class="btn btn-sold" aria-disabled="true">Sold — Thanks!</span>
+<a class="btn btn-ghost" href="/index.html#contact">Looking for One?</a>`;
+  }
+  const links = p.buyLinks ?? {};
+  const out = [];
+  if (links.shopify) {
+    out.push(`<a class="btn btn-primary" href="${escapeHtml(links.shopify)}" target="_blank" rel="noopener">Buy on Shopify</a>`);
+  }
+  if (links.ebay) {
+    out.push(`<a class="btn btn-yellow" href="${escapeHtml(links.ebay)}" target="_blank" rel="noopener">Buy on eBay</a>`);
+  }
+  if (links.whatnot) {
+    out.push(`<a class="btn btn-ghost" href="${escapeHtml(links.whatnot)}" target="_blank" rel="noopener">Catch on Whatnot</a>`);
+  }
+  out.push(`<a class="btn btn-ghost" href="/index.html#contact">Inquire Direct</a>`);
+  return out.join('\n');
+}
+
+function imageGallery(images, title) {
+  if (!images || images.length === 0) {
+    return `<div class="gallery placeholder"><div class="placeholder-logo">BUBS960</div></div>`;
+  }
+  const main = images[0];
+  const imagesJson = JSON.stringify(images);
+  const thumbs = images
+    .map((src, i) => `<img class="thumb ${i === 0 ? 'active' : ''}" data-full="${escapeHtml(src)}" data-index="${i}" src="${escapeHtml(src)}" alt="${escapeHtml(title)} photo ${i + 1}" loading="lazy" decoding="async">`)
+    .join('\n');
+  return `
+    <div class="gallery">
+      <div class="gallery-main">
+        <img id="galleryMain" src="${escapeHtml(main)}" alt="${escapeHtml(title)}" title="Click to zoom">
+        <button type="button" class="zoom-hint" id="zoomHint" aria-label="Zoom image">
+          <span>🔍</span> Click to Zoom
+        </button>
+      </div>
+      ${images.length > 1 ? `<div class="gallery-thumbs">${thumbs}</div>` : ''}
+    </div>
+
+    <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Image zoom" hidden>
+      <button type="button" class="lightbox-close" id="lightboxClose" aria-label="Close">&times;</button>
+      ${images.length > 1 ? `<button type="button" class="lightbox-nav prev" id="lightboxPrev" aria-label="Previous image">&lsaquo;</button>` : ''}
+      <img class="lightbox-img" id="lightboxImg" src="" alt="${escapeHtml(title)}">
+      ${images.length > 1 ? `<button type="button" class="lightbox-nav next" id="lightboxNext" aria-label="Next image">&rsaquo;</button>` : ''}
+      ${images.length > 1 ? `<div class="lightbox-counter" id="lightboxCounter"></div>` : ''}
+    </div>
+
+    <script>
+      (function() {
+        const images = ${imagesJson};
+        const title = ${JSON.stringify(title)};
+        const main = document.getElementById('galleryMain');
+        const lightbox = document.getElementById('lightbox');
+        const lbImg = document.getElementById('lightboxImg');
+        const lbCounter = document.getElementById('lightboxCounter');
+        let current = 0;
+
+        function setMain(i) {
+          current = i;
+          main.src = images[i];
+          document.querySelectorAll('.thumb').forEach((t) => {
+            t.classList.toggle('active', Number(t.dataset.index) === i);
+          });
+        }
+        document.querySelectorAll('.thumb').forEach((t) => {
+          t.addEventListener('click', () => setMain(Number(t.dataset.index)));
+        });
+
+        function openLightbox(i) {
+          current = i;
+          lbImg.src = images[i];
+          lbImg.alt = title + ' photo ' + (i + 1);
+          if (lbCounter) lbCounter.textContent = (i + 1) + ' / ' + images.length;
+          lightbox.hidden = false;
+          document.body.style.overflow = 'hidden';
+        }
+        function closeLightbox() {
+          lightbox.hidden = true;
+          document.body.style.overflow = '';
+        }
+        function step(delta) {
+          const next = (current + delta + images.length) % images.length;
+          openLightbox(next);
+        }
+
+        main.addEventListener('click', () => openLightbox(current));
+        const zoomHint = document.getElementById('zoomHint');
+        if (zoomHint) zoomHint.addEventListener('click', (e) => { e.stopPropagation(); openLightbox(current); });
+        document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+        const prev = document.getElementById('lightboxPrev');
+        const next = document.getElementById('lightboxNext');
+        if (prev) prev.addEventListener('click', (e) => { e.stopPropagation(); step(-1); });
+        if (next) next.addEventListener('click', (e) => { e.stopPropagation(); step(1); });
+        lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeLightbox(); });
+        document.addEventListener('keydown', (e) => {
+          if (lightbox.hidden) return;
+          if (e.key === 'Escape') closeLightbox();
+          else if (e.key === 'ArrowLeft' && images.length > 1) step(-1);
+          else if (e.key === 'ArrowRight' && images.length > 1) step(1);
+        });
+      })();
+    </script>
+  `;
+}
+
+function specList(p) {
+  const rows = [
+    ['Condition', p.condition],
+    ['Year', p.year],
+    ['Series', p.series],
+    ['SKU', p.sku],
+    ['Collection', p.collection],
+  ].filter(([, v]) => v != null && v !== '');
+  if (rows.length === 0) return '';
+  return `
+    <dl class="specs">
+      ${rows.map(([k, v]) => `<div class="spec-row"><dt>${escapeHtml(k)}</dt><dd>${escapeHtml(v)}</dd></div>`).join('')}
+    </dl>
+  `;
+}
+
+const PAGE_CSS = `
+:root {
+  --primary-red: #e62429;
+  --red-glow: rgba(230, 36, 41, 0.55);
+  --primary-blue: #1c3b70;
+  --accent-yellow: #f1c40f;
+  --accent-gold: #d4a017;
+  --accent-cyan: #00e0ff;
+  --bg-dark: #05070d;
+  --bg-panel: #101827;
+  --bg-panel-2: #0a1120;
+  --metal-light: #2a3142;
+  --text-light: #f4f4f4;
+  --text-muted: #9aa3b2;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg-dark);
+  color: var(--text-light);
+  font-family: 'Montserrat', system-ui, sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+a { color: inherit; text-decoration: none; }
+
+.nav {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 1rem 2rem;
+  background: rgba(5,7,13,0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 2px solid var(--primary-red);
+}
+.nav-brand {
+  font-family: 'Bangers', cursive;
+  font-size: 1.75rem;
+  color: var(--accent-yellow);
+  letter-spacing: 2px;
+  text-shadow: 2px 2px 0 var(--primary-red);
+}
+.nav-links { display: flex; gap: 1.75rem; list-style: none; font-weight: 700; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 1px; }
+.nav-links a:hover { color: var(--accent-yellow); }
+
+.page-wrap { max-width: 1300px; margin: 0 auto; padding: 3rem 2rem; }
+
+.product {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 3rem;
+  align-items: start;
+}
+
+/* Zoom-hint pill + lightbox */
+.gallery-main { position: relative; }
+.gallery-main img { cursor: zoom-in; }
+.zoom-hint {
+  position: absolute; bottom: 1rem; right: 1rem;
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  background: rgba(10, 14, 23, 0.85);
+  color: var(--accent-yellow);
+  font-family: 'Bangers', cursive;
+  font-size: 0.85rem;
+  letter-spacing: 1.5px;
+  padding: 0.4rem 0.75rem;
+  border: 2px solid var(--accent-yellow);
+  border-radius: 999px;
+  cursor: zoom-in;
+  text-transform: uppercase;
+  backdrop-filter: blur(4px);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.zoom-hint:hover { transform: translateY(-2px); background: rgba(241, 196, 15, 0.15); }
+
+.lightbox {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.93);
+  z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 2rem;
+  backdrop-filter: blur(4px);
+}
+.lightbox[hidden] { display: none; }
+.lightbox-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+  box-shadow: 0 0 60px rgba(230, 36, 41, 0.35);
+}
+.lightbox-close, .lightbox-nav {
+  position: absolute;
+  background: var(--primary-red);
+  color: white;
+  border: 3px solid var(--accent-yellow);
+  border-radius: 50%;
+  width: 52px; height: 52px;
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Bangers', cursive;
+  transition: transform 0.15s ease, background 0.15s ease;
+  padding: 0;
+}
+.lightbox-close:hover, .lightbox-nav:hover { background: #c91d22; transform: scale(1.08); }
+.lightbox-close { top: 1.25rem; right: 1.25rem; font-size: 1.75rem; }
+.lightbox-nav.prev { left: 1.25rem; top: 50%; transform: translateY(-50%); }
+.lightbox-nav.next { right: 1.25rem; top: 50%; transform: translateY(-50%); }
+.lightbox-nav.prev:hover { transform: translateY(-50%) scale(1.08); }
+.lightbox-nav.next:hover { transform: translateY(-50%) scale(1.08); }
+.lightbox-counter {
+  position: absolute; bottom: 1.25rem; left: 50%; transform: translateX(-50%);
+  background: var(--primary-red);
+  color: white;
+  font-family: 'Bangers', cursive;
+  letter-spacing: 2px;
+  padding: 0.4rem 1rem;
+  border: 2px solid var(--accent-yellow);
+  border-radius: 999px;
+  font-size: 0.95rem;
+}
+@media (max-width: 600px) {
+  .lightbox { padding: 1rem; }
+  .lightbox-close { width: 44px; height: 44px; font-size: 1.5rem; }
+  .lightbox-nav { width: 44px; height: 44px; font-size: 1.5rem; }
+}
+
+/* Gallery */
+.gallery {
+  position: sticky; top: 90px;
+  background: linear-gradient(145deg, var(--primary-blue), #0a1a36 70%, #05070d);
+  border: 2px solid var(--primary-red);
+  border-radius: 16px;
+  padding: 1.25rem;
+  box-shadow: 0 0 50px var(--red-glow);
+}
+.gallery.placeholder {
+  aspect-ratio: 1 / 1;
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 30% 30%, var(--primary-blue), var(--bg-dark) 70%);
+}
+.placeholder-logo {
+  font-family: 'Bangers', cursive;
+  font-size: 5rem;
+  color: var(--accent-yellow);
+  text-shadow: 4px 4px 0 var(--primary-red);
+  letter-spacing: 4px;
+}
+.gallery-main img {
+  width: 100%; height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  border-radius: 10px;
+  background: #000;
+  display: block;
+}
+.gallery-thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.thumb {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+  background: #000;
+}
+.thumb:hover { transform: translateY(-2px); }
+.thumb.active { border-color: var(--accent-yellow); }
+
+/* Info */
+.info-collection {
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent-yellow);
+  margin-bottom: 0.75rem;
+}
+.info-title {
+  font-family: 'Bangers', cursive;
+  font-size: 3.5rem;
+  line-height: 1.05;
+  letter-spacing: 1px;
+  color: var(--text-light);
+  text-shadow: 3px 3px 0 var(--primary-red);
+  margin-bottom: 0.5rem;
+}
+.info-subtitle {
+  font-size: 1.1rem;
+  font-style: italic;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}
+
+.price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+.price {
+  font-family: 'Bangers', cursive;
+  font-size: 3rem;
+  color: var(--accent-yellow);
+  letter-spacing: 1px;
+}
+.compare-price {
+  font-size: 1.25rem;
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+.price.struck { text-decoration: line-through; color: var(--text-muted); }
+.badge {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  padding: 0.35rem 0.7rem;
+  border-radius: 4px;
+}
+.badge-live { background: var(--primary-red); color: white; }
+.badge-soon { background: var(--primary-blue); color: white; }
+.badge-sold { background: #333; color: var(--text-muted); }
+
+.description {
+  background: var(--bg-panel);
+  padding: 1.5rem;
+  border-radius: 10px;
+  border-left: 4px solid var(--primary-red);
+  margin-bottom: 1.5rem;
+  line-height: 1.7;
+  color: #dfe3ec;
+}
+.description p { margin-bottom: 0.75rem; }
+.description p:last-child { margin-bottom: 0; }
+
+.buy-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bangers', cursive;
+  font-size: 1.25rem;
+  letter-spacing: 2px;
+  padding: 0.9rem 1.5rem;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+.btn-primary { background: var(--primary-red); color: white; }
+.btn-primary:hover { background: #c91d22; transform: scale(1.03); }
+.btn-yellow { background: var(--accent-yellow); color: #111; }
+.btn-yellow:hover { background: #e4b507; transform: scale(1.03); }
+.btn-ghost { background: transparent; color: var(--accent-yellow); border-color: var(--accent-yellow); }
+.btn-ghost:hover { background: var(--accent-yellow); color: #111; transform: scale(1.03); }
+
+.specs {
+  background: var(--bg-panel-2);
+  border: 1px solid #1a2233;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.spec-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #1a2233;
+}
+.spec-row:last-child { border-bottom: none; }
+.spec-row dt { font-weight: 800; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px; color: var(--text-muted); }
+.spec-row dd { color: var(--text-light); }
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 2rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  color: var(--accent-yellow);
+}
+.back-link:hover { color: var(--primary-red); }
+
+/* Rope divider */
+.rope {
+  position: relative; height: 26px;
+  background:
+    linear-gradient(var(--primary-red), var(--primary-red)) center 2px / 100% 4px no-repeat,
+    linear-gradient(var(--accent-yellow), var(--accent-yellow)) center 12px / 100% 4px no-repeat,
+    linear-gradient(var(--primary-blue), var(--primary-blue)) center 22px / 100% 4px no-repeat,
+    var(--bg-dark);
+  margin: 0 -2rem;
+}
+.rope::before, .rope::after {
+  content: ''; position: absolute; top: -6px;
+  width: 12px; height: 38px;
+  background: linear-gradient(#7a7f8a, #2a2f38 60%, #0f1118);
+  border: 1px solid #000; border-radius: 3px;
+}
+.rope::before { left: 10px; }
+.rope::after  { right: 10px; }
+
+/* Empty shop state */
+.empty-state {
+  position: relative;
+  max-width: 700px;
+  margin: 1rem auto 3rem;
+  padding: 3rem 2rem;
+  text-align: center;
+  background: linear-gradient(180deg, var(--metal-light), var(--bg-panel) 60%);
+  border: 3px solid #000;
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 2px var(--accent-yellow), 0 8px 0 #000;
+}
+.empty-state h2 {
+  font-family: 'Bangers', cursive;
+  font-size: 2.5rem;
+  letter-spacing: 2px;
+  color: var(--accent-yellow);
+  text-shadow: 3px 3px 0 var(--primary-red);
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+}
+.empty-state p {
+  color: #dfe3ec;
+  line-height: 1.6;
+  font-size: 1.05rem;
+  max-width: 500px;
+  margin: 0 auto 1.5rem;
+}
+.empty-state p strong { color: var(--accent-yellow); }
+.empty-actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+.empty-stamp {
+  position: absolute;
+  top: -1rem; right: -1rem;
+  width: 110px; height: 110px;
+  border: 4px double var(--accent-yellow);
+  border-radius: 50%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  font-family: 'Bangers', cursive;
+  color: var(--accent-yellow);
+  font-size: 0.8rem; line-height: 1.05;
+  letter-spacing: 1px;
+  transform: rotate(-14deg);
+  text-shadow: 1px 1px 0 var(--primary-red);
+  background: rgba(10,14,23,0.85);
+  pointer-events: none;
+}
+.empty-stamp .big { font-size: 1.45rem; letter-spacing: 2px; margin: 0.1rem 0; }
+@media (max-width: 600px) {
+  .empty-stamp { width: 80px; height: 80px; font-size: 0.65rem; top: -0.5rem; right: -0.5rem; }
+  .empty-stamp .big { font-size: 1.1rem; }
+}
+
+/* Collection chips */
+.collection-chips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--bg-panel);
+  border: 2px solid #1a2233;
+  border-radius: 999px;
+  font-family: 'Bangers', cursive;
+  letter-spacing: 1.5px;
+  font-size: 0.95rem;
+  color: var(--text-light);
+  text-transform: uppercase;
+  transition: border-color 0.2s ease, transform 0.15s ease, color 0.2s ease;
+}
+.chip:hover {
+  border-color: var(--accent-yellow);
+  color: var(--accent-yellow);
+  transform: translateY(-2px);
+}
+.chip-count {
+  background: var(--primary-red);
+  color: white;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  min-width: 22px;
+  text-align: center;
+}
+
+/* Collection sections */
+.collection-section { margin-bottom: 3.5rem; scroll-margin-top: 90px; }
+.collection-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: 'Bangers', cursive;
+  font-size: 2rem;
+  letter-spacing: 2px;
+  color: var(--accent-yellow);
+  text-shadow: 2px 2px 0 var(--primary-red);
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--primary-red);
+  text-transform: uppercase;
+  gap: 1rem;
+}
+.collection-count {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  text-shadow: none;
+  white-space: nowrap;
+}
+
+/* Catalog page */
+.catalog-header { text-align: center; margin-bottom: 3rem; }
+.catalog-title {
+  font-family: 'Bangers', cursive;
+  font-size: 4rem;
+  letter-spacing: 2px;
+  color: var(--accent-yellow);
+  text-shadow: 3px 3px 0 var(--primary-red);
+}
+.catalog-sub { color: var(--text-muted); font-style: italic; margin-top: 0.5rem; }
+.catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 2rem;
+}
+
+/* Action-figure cardback style */
+.card {
+  position: relative;
+  background: linear-gradient(180deg, var(--metal-light), var(--bg-panel) 60%);
+  border: 3px solid #000;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  transition: transform 0.25s ease, border-color 0.2s ease, box-shadow 0.25s ease;
+  box-shadow:
+    inset 0 0 0 2px var(--accent-yellow),
+    0 6px 0 #000;
+}
+.card:hover {
+  transform: translateY(-6px) rotate(-0.5deg);
+  box-shadow:
+    inset 0 0 0 2px var(--accent-yellow),
+    0 12px 0 #000,
+    0 16px 30px var(--red-glow);
+}
+.card-banner {
+  background: linear-gradient(90deg, var(--primary-red), #a01519);
+  color: white;
+  font-family: 'Bangers', cursive;
+  letter-spacing: 2px;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  border-bottom: 3px solid var(--accent-yellow);
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+  display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;
+}
+.card-banner .wave {
+  background: var(--accent-yellow); color: #111;
+  font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 3px;
+  letter-spacing: 1px;
+}
+.card-img-wrap {
+  background:
+    radial-gradient(ellipse at 50% 35%, rgba(255,255,255,0.08), transparent 60%),
+    linear-gradient(180deg, #0d1220, var(--bg-dark));
+  aspect-ratio: 4 / 3;
+  position: relative;
+  overflow: hidden;
+}
+.card-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.card-img-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Bangers', cursive;
+  color: var(--accent-yellow);
+  font-size: 2.5rem;
+  letter-spacing: 3px;
+  text-shadow: 3px 3px 0 var(--primary-red);
+}
+.card-body { padding: 1.1rem 1.25rem 1.25rem; display: flex; flex-direction: column; gap: 0.5rem; flex-grow: 1; }
+.card-title { font-family: 'Bangers', cursive; font-size: 1.45rem; color: var(--text-light); line-height: 1.1; letter-spacing: 1px; }
+.card-foot { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 0.75rem; border-top: 1px dashed #2a3142; }
+.card-price { font-family: 'Bangers', cursive; color: var(--accent-yellow); font-size: 1.5rem; }
+.card-ribbon {
+  position: absolute;
+  top: 12px; right: -36px;
+  background: var(--accent-yellow); color: #111;
+  font-family: 'Bangers', cursive;
+  padding: 0.3rem 3rem;
+  font-size: 0.9rem;
+  letter-spacing: 2px;
+  transform: rotate(35deg);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  z-index: 2;
+  text-transform: uppercase;
+}
+
+/* SOLD stamp */
+.sold-stamp {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) rotate(-18deg);
+  font-family: 'Bangers', cursive;
+  font-size: 4.5rem;
+  letter-spacing: 8px;
+  color: var(--primary-red);
+  border: 6px solid var(--primary-red);
+  padding: 0.4rem 1.5rem;
+  border-radius: 10px;
+  background: rgba(10, 14, 23, 0.85);
+  text-shadow: 2px 2px 0 #000;
+  box-shadow: 0 0 30px rgba(230, 36, 41, 0.6);
+  pointer-events: none;
+  z-index: 5;
+  text-transform: uppercase;
+  opacity: 0.95;
+}
+.card.is-sold .card-img-wrap { opacity: 0.55; filter: grayscale(0.3); }
+
+.sold-banner {
+  background: var(--primary-red);
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 10px;
+  font-family: 'Bangers', cursive;
+  font-size: 1.75rem;
+  letter-spacing: 3px;
+  text-align: center;
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+  border: 3px solid var(--accent-yellow);
+  box-shadow: 0 0 24px rgba(230, 36, 41, 0.45);
+}
+.sold-banner .small {
+  display: block;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--accent-yellow);
+  margin-top: 0.25rem;
+  text-transform: none;
+}
+
+.btn-sold {
+  background: #333;
+  color: var(--text-muted);
+  font-family: 'Bangers', cursive;
+  cursor: not-allowed;
+  box-shadow: 0 4px 0 #111;
+}
+
+/* Related products — "More From The Vault" row at bottom of product page */
+.related {
+  margin-top: 4rem;
+  padding-top: 3rem;
+  border-top: 3px solid var(--primary-red);
+  position: relative;
+}
+.related::before {
+  content: '';
+  position: absolute;
+  top: -8px; left: 50%; transform: translateX(-50%);
+  width: 16px; height: 16px;
+  background: var(--accent-yellow);
+  border: 3px solid var(--primary-red);
+  border-radius: 50%;
+  box-shadow: 0 0 16px rgba(241,196,15,0.5);
+}
+.related-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.related-header h2 {
+  font-family: 'Bangers', cursive;
+  font-size: 2.25rem;
+  letter-spacing: 2px;
+  color: var(--accent-yellow);
+  text-shadow: 3px 3px 0 var(--primary-red);
+  text-transform: uppercase;
+}
+.related-link {
+  font-family: 'Bangers', cursive;
+  font-size: 1rem;
+  letter-spacing: 2px;
+  color: var(--accent-yellow);
+  text-transform: uppercase;
+  padding: 0.4rem 0.8rem;
+  border: 2px solid var(--accent-yellow);
+  border-radius: 6px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.related-link:hover { background: var(--accent-yellow); color: var(--bg-dark); }
+.related-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.5rem;
+}
+@media (max-width: 600px) {
+  .related-header h2 { font-size: 1.75rem; }
+}
+
+/* HOT DEAL stamp for product page */
+.hot-stamp {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 110px; height: 110px;
+  border: 4px double var(--accent-yellow);
+  border-radius: 50%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  font-family: 'Bangers', cursive;
+  color: var(--accent-yellow);
+  font-size: 0.85rem; line-height: 1;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transform: rotate(-14deg);
+  text-shadow: 1px 1px 0 var(--primary-red);
+  box-shadow: 0 0 24px rgba(241,196,15,0.3);
+  background: radial-gradient(circle, rgba(230,36,41,0.15), transparent 70%);
+  pointer-events: none;
+  z-index: 3;
+}
+.hot-stamp .big { font-size: 1.25rem; letter-spacing: 2px; }
+.info { position: relative; }
+
+.site-footer { border-top: 3px solid var(--primary-red); background: var(--bg-panel); padding: 3rem 2rem 1.5rem; margin-top: 3rem; }
+.footer-grid { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1.5fr repeat(3, 1fr); gap: 2rem; }
+.footer-col h4 { font-family: 'Bangers', cursive; font-size: 1.2rem; color: var(--accent-yellow); letter-spacing: 2px; margin-bottom: 0.75rem; text-transform: uppercase; }
+.footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+.footer-col a { color: var(--text-muted); font-size: 0.9rem; font-weight: 700; transition: color 0.15s ease; }
+.footer-col a:hover { color: var(--accent-yellow); }
+.footer-brand { font-family: 'Bangers', cursive; font-size: 2rem; color: var(--accent-yellow); letter-spacing: 2px; text-shadow: 2px 2px 0 var(--primary-red); margin-bottom: 0.5rem; }
+.footer-tagline { color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; }
+.footer-bottom { max-width: 1100px; margin: 2rem auto 0; padding-top: 1.5rem; border-top: 1px solid #1a2233; color: #555; font-size: 0.85rem; text-align: center; }
+@media (max-width: 760px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 500px) { .footer-grid { grid-template-columns: 1fr; } }
+
+@media (max-width: 900px) {
+  .product { grid-template-columns: 1fr; }
+  .gallery { position: static; }
+  .info-title { font-size: 2.5rem; }
+  .price { font-size: 2.25rem; }
+}
+@media (max-width: 600px) {
+  .page-wrap { padding: 2rem 1rem; }
+  .nav { padding: 0.75rem 1rem; }
+  .nav-links { gap: 1rem; font-size: 0.8rem; }
+  .catalog-title { font-size: 2.75rem; }
+  .spec-row { grid-template-columns: 100px 1fr; }
+}
+`;
+
+const NAV_HTML = `
+<nav class="nav">
+  <a href="/index.html" class="nav-brand">BUBS960</a>
+  <ul class="nav-links">
+    <li><a href="/shop/index.html">Shop</a></li>
+    <li><a href="/we-buy.html">We Buy</a></li>
+    <li><a href="/live.html">Live</a></li>
+    <li><a href="/about.html">About</a></li>
+    <li><a href="/faq.html">FAQ</a></li>
+    <li><a href="/index.html#contact">Contact</a></li>
+  </ul>
+</nav>
+`;
+
+const FOOTER_HTML = `
+<footer class="site-footer">
+  <div class="footer-grid">
+    <div class="footer-col">
+      <div class="footer-brand">BUBS960</div>
+      <p class="footer-tagline">By collectors, for collectors. No middleman, no platform tax.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Explore</h4>
+      <ul>
+        <li><a href="/shop/index.html">Shop</a></li>
+        <li><a href="/we-buy.html">We Buy Collections</a></li>
+        <li><a href="/want-list.html">Want List</a></li>
+        <li><a href="/live.html">Live Shows</a></li>
+        <li><a href="/about.html">About</a></li>
+        <li><a href="/faq.html">FAQ</a></li>
+        <li><a href="/grading.html">Grading Guide</a></li>
+        <li><a href="/testimonials.html">Reviews</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <ul>
+        <li><a href="/shipping.html">Shipping</a></li>
+        <li><a href="/returns.html">Returns &amp; Refunds</a></li>
+        <li><a href="/privacy.html">Privacy</a></li>
+        <li><a href="/terms.html">Terms of Service</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Also From Bubs</h4>
+      <ul>
+        <li><a href="https://figurepinner.com" target="_blank" rel="noopener">Figure Pinner</a></li>
+        <li><a href="https://www.ebay.com/usr/bubs960" target="_blank" rel="noopener">eBay Store</a></li>
+        <li><a href="https://www.whatnot.com/user/bubs960" target="_blank" rel="noopener">Whatnot Live</a></li>
+        <li><a href="mailto:Bubs960toys@gmail.com">Email Us</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">&copy; 2026 Bubs960 Collectibles. All rights reserved.</div>
+</footer>
+`;
+
+const HEAD = (title, description, options = {}) => {
+  const ogImage = options.ogImage ?? DEFAULT_OG_IMAGE;
+  const ogUrl = options.ogUrl ?? SITE_URL;
+  const fullTitle = `${title} | ${SITE_BRAND}`;
+  const jsonLd = options.jsonLd ? `<script type="application/ld+json">${JSON.stringify(options.jsonLd)}</script>` : '';
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(fullTitle)}</title>
+  <meta name="description" content="${escapeHtml(description ?? '')}">
+  <link rel="canonical" href="${escapeHtml(ogUrl)}">
+  <meta property="og:type" content="${options.ogType ?? 'website'}">
+  <meta property="og:site_name" content="${escapeHtml(SITE_BRAND)}">
+  <meta property="og:title" content="${escapeHtml(fullTitle)}">
+  <meta property="og:description" content="${escapeHtml(description ?? '')}">
+  <meta property="og:image" content="${escapeHtml(ogImage)}">
+  <meta property="og:url" content="${escapeHtml(ogUrl)}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${escapeHtml(fullTitle)}">
+  <meta name="twitter:description" content="${escapeHtml(description ?? '')}">
+  <meta name="twitter:image" content="${escapeHtml(ogImage)}">
+  ${jsonLd}
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/site.css">
+  <style>${PAGE_CSS}</style>
+</head>
+<body>
+${NAV_HTML}
+<main class="page-wrap">
+`;
+};
+
+const FOOT = `
+</main>
+${FOOTER_HTML}
+</body>
+</html>
+`;
+
+function getRelated(current, all, max = 3) {
+  const others = all.filter((p) => p.handle !== current.handle);
+  const available = others.filter((p) => (p.status ?? '').toLowerCase() !== 'sold');
+  const sameCollection = available.filter((p) => p.collection && p.collection === current.collection);
+  // Prefer same-collection, then fall back to anything else available.
+  const pool = sameCollection.length >= max ? sameCollection : [...sameCollection, ...available.filter((p) => !sameCollection.includes(p))];
+  // Featured first, then handle-alphabetical for determinism.
+  pool.sort((a, b) => (a.featured === b.featured ? a.handle.localeCompare(b.handle) : a.featured ? -1 : 1));
+  return pool.slice(0, max);
+}
+
+function productPage(p, allProducts = []) {
+  const meta = (p.description ?? '').replace(/<[^>]*>/g, '').slice(0, 160);
+  const isSold = (p.status ?? '').toLowerCase() === 'sold';
+  const hotStamp = !isSold && p.compareAtPrice != null
+    ? `<div class="hot-stamp"><span>Hot</span><span class="big">Deal</span></div>`
+    : '';
+  const soldBanner = isSold
+    ? `<div class="sold-banner">Sold <span class="small">This one found a new shelf. Tell me what you're hunting — I'll watch for one.</span></div>`
+    : '';
+  const images = resolveImages(p, LOCAL_IMG_PREFIX);
+  const shopifyImages = resolveImages(p, `${SITE_URL}/products/images/`);
+  const ogImage = shopifyImages[0] ?? DEFAULT_OG_IMAGE;
+  const ogUrl = `${SITE_URL}/shop/${p.handle}.html`;
+
+  // Schema.org Product JSON-LD — rich result eligible.
+  const availability = (p.status ?? '').toLowerCase() === 'sold'
+    ? 'https://schema.org/SoldOut'
+    : (p.inventory > 0 || p.inventory == null ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock');
+  const productSchema = {
+    '@context': 'https://schema.org/',
+    '@type': 'Product',
+    name: p.title,
+    description: (p.description ?? '').replace(/<[^>]*>/g, '').trim() || p.title,
+    image: shopifyImages.length ? shopifyImages : [DEFAULT_OG_IMAGE],
+    sku: p.sku || undefined,
+    brand: { '@type': 'Brand', name: p.vendor || SITE_BRAND },
+    category: p.collection || p.productType || undefined,
+    url: ogUrl,
+    offers: {
+      '@type': 'Offer',
+      url: ogUrl,
+      priceCurrency: 'USD',
+      price: p.price != null ? String(p.price) : undefined,
+      availability,
+      itemCondition: 'https://schema.org/UsedCondition',
+      seller: { '@type': 'Organization', name: SITE_BRAND },
+    },
+  };
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org/',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Shop', item: `${SITE_URL}/shop/` },
+      p.collection ? { '@type': 'ListItem', position: 2, name: p.collection, item: `${SITE_URL}/shop/#${slugify(p.collection)}` } : null,
+      { '@type': 'ListItem', position: p.collection ? 3 : 2, name: p.title, item: ogUrl },
+    ].filter(Boolean),
+  };
+  const jsonLd = [productSchema, breadcrumbSchema];
+
+  const related = getRelated(p, allProducts);
+  const relatedSection = related.length > 0 ? `
+<section class="related">
+  <div class="related-header">
+    <h2>More From The Vault</h2>
+    <a href="/shop/index.html${p.collection ? `#${slugify(p.collection)}` : ''}" class="related-link">See all ${escapeHtml(p.collection ?? 'pieces')} &rsaquo;</a>
+  </div>
+  <div class="related-grid">${related.map(renderCard).join('\n')}</div>
+</section>
+  ` : '';
+
+  return `${HEAD(p.title, meta, { ogImage, ogUrl, ogType: 'product', jsonLd })}
+<a class="back-link" href="/shop/index.html">&lsaquo; Back to Shop</a>
+<div class="product">
+  <div>${imageGallery(images, p.title)}</div>
+  <div class="info">
+    ${hotStamp}
+    ${p.collection ? `<div class="info-collection">${escapeHtml(p.collection)}</div>` : ''}
+    <h1 class="info-title">${escapeHtml(p.title)}</h1>
+    ${p.subtitle ? `<p class="info-subtitle">${escapeHtml(p.subtitle)}</p>` : ''}
+    ${soldBanner}
+    <div class="price-row">
+      ${p.price != null ? `<span class="price${isSold ? ' struck' : ''}">${fmtPrice(p.price)}</span>` : ''}
+      ${!isSold && p.compareAtPrice != null ? `<span class="compare-price">${fmtPrice(p.compareAtPrice)}</span>` : ''}
+      ${statusBadge(p.status)}
+    </div>
+    <div class="description">${p.description ?? '<p>Details coming soon — reach out for photos and condition notes.</p>'}</div>
+    <div class="buy-row">${buyButtons(p)}</div>
+    ${specList(p)}
+  </div>
+</div>
+${relatedSection}
+${FOOT}`;
+}
+
+function slugify(s) {
+  return (s ?? '').toString()
+    .toLowerCase()
+    .normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function groupByCollection(products) {
+  const map = new Map();
+  for (const p of products) {
+    const key = p.collection || 'Other';
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(p);
+  }
+  return Array.from(map.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]));
+}
+
+function renderCard(p) {
+    const isSold = (p.status ?? '').toLowerCase() === 'sold';
+    const imgs = resolveImages(p, LOCAL_IMG_PREFIX);
+    const img = imgs[0]
+      ? `<img class="card-img" src="${escapeHtml(imgs[0])}" alt="${escapeHtml(p.title)}" loading="lazy" decoding="async">`
+      : `<div class="card-img-placeholder">BUBS960</div>`;
+    const ribbon = isSold
+      ? ''
+      : p.featured
+        ? `<div class="card-ribbon">Grail</div>`
+        : (p.compareAtPrice ? `<div class="card-ribbon">Deal</div>` : '');
+    const soldStamp = isSold ? `<div class="sold-stamp">Sold</div>` : '';
+    return `
+      <a class="card ${isSold ? 'is-sold' : ''}" href="/shop/${escapeHtml(p.handle)}.html">
+        ${ribbon}
+        <div class="card-banner">
+          <span>${escapeHtml(p.collection ?? 'Collectible')}</span>
+          ${p.year ? `<span class="wave">${escapeHtml(p.year)}</span>` : ''}
+        </div>
+        <div class="card-img-wrap">
+          ${img}
+          ${soldStamp}
+        </div>
+        <div class="card-body">
+          <div class="card-title">${escapeHtml(p.title)}</div>
+          <div class="card-foot">
+            ${p.price != null ? `<span class="card-price">${fmtPrice(p.price)}</span>` : '<span></span>'}
+            ${statusBadge(p.status)}
+          </div>
+        </div>
+      </a>
+    `;
+}
+
+function renderEmptyState() {
+  return `
+<section class="empty-state">
+  <div class="empty-stamp" aria-hidden="true">
+    <span>Loading</span>
+    <span class="big">Up</span>
+    <span>The Vault</span>
+  </div>
+  <h2>The Shop Is Loading Up</h2>
+  <p>New drops land every week. <strong>VIP list gets first crack</strong> before pieces hit the catalog. In the meantime, plenty live on eBay and Whatnot — and the live show is fire.</p>
+  <div class="empty-actions">
+    <a href="/index.html#vip" class="btn btn-primary">Join VIP List</a>
+    <a href="https://www.ebay.com/usr/bubs960" target="_blank" rel="noopener" class="btn btn-yellow">Shop on eBay</a>
+    <a href="/live.html" class="btn btn-ghost">Catch the Live Show</a>
+  </div>
+</section>
+  `;
+}
+
+function catalogPage(products) {
+  const isEmpty = products.length === 0;
+  const grouped = groupByCollection(products);
+  const showChips = grouped.length > 1;
+
+  const chips = showChips
+    ? `<nav class="collection-chips" aria-label="Filter by collection">
+         ${grouped.map(([name, items]) => (
+           `<a href="#${slugify(name)}" class="chip">
+              <span>${escapeHtml(name)}</span>
+              <span class="chip-count">${items.length}</span>
+            </a>`
+         )).join('')}
+       </nav>`
+    : '';
+
+  const sections = grouped.map(([name, items]) => `
+    <section class="collection-section" id="${slugify(name)}">
+      <h2 class="collection-heading">
+        <span>${escapeHtml(name)}</span>
+        <span class="collection-count">${items.length} piece${items.length === 1 ? '' : 's'}</span>
+      </h2>
+      <div class="catalog-grid">${items.map(renderCard).join('\n')}</div>
+    </section>
+  `).join('\n');
+
+  const subCopy = isEmpty
+    ? 'New drops loading — VIP list gets first crack.'
+    : `${products.length} piece${products.length === 1 ? '' : 's'} across ${grouped.length} collection${grouped.length === 1 ? '' : 's'}.`;
+
+  return `${HEAD('Shop', isEmpty ? 'New drops every week — VIP list gets first crack at every piece.' : 'Shop Bubs960 Collectibles — hard-to-find figures, vintage grails, and pop culture pieces.', { ogUrl: `${SITE_URL}/shop/` })}
+<div class="catalog-header">
+  <h1 class="catalog-title">The Shop</h1>
+  <p class="catalog-sub">${subCopy}</p>
+</div>
+<div class="rope" aria-hidden="true"></div>
+<div style="height:2rem"></div>
+${isEmpty ? renderEmptyState() : `${chips}${sections}`}
+${FOOT}`;
+}
+
+async function clearOldPages() {
+  try {
+    const existing = await readdir(SHOP_DIR);
+    for (const f of existing) {
+      if (f.endsWith('.html')) await unlink(join(SHOP_DIR, f));
+    }
+  } catch {}
+}
+
+await mkdir(SHOP_DIR, { recursive: true });
+await clearOldPages();
+
+const products = await loadProducts();
+products.sort((a, b) => (a.featured === b.featured ? a.title.localeCompare(b.title) : a.featured ? -1 : 1));
+
+await writeFile(join(SHOP_DIR, 'index.html'), catalogPage(products));
+for (const p of products) {
+  await writeFile(join(SHOP_DIR, `${p.handle}.html`), productPage(p, products));
+  console.log(`[build] shop/${p.handle}.html`);
+}
+console.log(`[build] shop/index.html (${products.length} products)`);
+
+// Sitemap — regenerated each build. Priority + changefreq help search
+// engines crawl the most important pages more aggressively.
+const today = new Date().toISOString().slice(0, 10);
+const staticEntries = [
+  { path: '/',                  priority: '1.0', changefreq: 'daily'   },
+  { path: '/shop/',             priority: '0.9', changefreq: 'daily'   },
+  { path: '/we-buy.html',       priority: '0.9', changefreq: 'weekly'  },
+  { path: '/live.html',         priority: '0.8', changefreq: 'weekly'  },
+  { path: '/want-list.html',    priority: '0.7', changefreq: 'monthly' },
+  { path: '/about.html',        priority: '0.6', changefreq: 'monthly' },
+  { path: '/faq.html',          priority: '0.6', changefreq: 'monthly' },
+  { path: '/grading.html',      priority: '0.6', changefreq: 'monthly' },
+  { path: '/testimonials.html', priority: '0.6', changefreq: 'weekly'  },
+  { path: '/shipping.html',     priority: '0.4', changefreq: 'yearly'  },
+  { path: '/returns.html',      priority: '0.4', changefreq: 'yearly'  },
+  { path: '/privacy.html',      priority: '0.3', changefreq: 'yearly'  },
+  { path: '/terms.html',        priority: '0.3', changefreq: 'yearly'  },
+];
+const productEntries = products.map((p) => ({
+  path: `/shop/${p.handle}.html`,
+  priority: p.featured ? '0.8' : '0.7',
+  changefreq: 'weekly',
+}));
+const sitemap = [
+  '<?xml version="1.0" encoding="UTF-8"?>',
+  '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+  ...[...staticEntries, ...productEntries].map(({ path, priority, changefreq }) => (
+    `  <url><loc>${SITE_URL}${path}</loc><lastmod>${today}</lastmod><changefreq>${changefreq}</changefreq><priority>${priority}</priority></url>`
+  )),
+  '</urlset>',
+].join('\n');
+await writeFile(new URL('../sitemap.xml', import.meta.url), sitemap);
+console.log(`[build] sitemap.xml (${staticEntries.length + productEntries.length} URLs)`);

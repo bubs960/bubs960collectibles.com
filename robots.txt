@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /products/images/.gitkeep
+
+Sitemap: https://www.bubs960collectibles.com/sitemap.xml

@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Product Tool | Bubs960 Admin</title>
+    <meta name="robots" content="noindex,nofollow">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/site.css">
+    <style>
+        :root { --primary-red:#e62429; --primary-blue:#1c3b70; --accent-yellow:#f1c40f; --money-green:#2ecc71; --bg-dark:#0a0e17; --bg-panel:#111826; --bg-panel-2:#0a1120; --text-light:#f4f4f4; --text-muted:#9aa3b2; --metal-light:#2a3142; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background:var(--bg-dark); color:var(--text-light); font-family:'Montserrat',sans-serif; min-height:100vh; }
+        a { color:inherit; text-decoration:none; }
+
+        .admin-header {
+            padding:1rem 1.5rem;
+            display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;
+            border-bottom:2px solid var(--primary-red);
+            background:rgba(10,14,23,0.92);
+            position:sticky; top:0; z-index:50;
+            backdrop-filter:blur(6px);
+        }
+        .admin-brand { font-family:'Bangers',cursive; font-size:1.5rem; letter-spacing:2px; color:var(--accent-yellow); text-shadow:2px 2px 0 var(--primary-red); }
+        .admin-brand .tag { background:var(--primary-red); color:white; font-family:'Montserrat',sans-serif; font-weight:800; font-size:0.65rem; letter-spacing:2px; padding:0.2rem 0.55rem; border-radius:4px; margin-left:0.5rem; vertical-align:middle; }
+        .admin-actions { display:flex; gap:0.5rem; }
+        .btn { display:inline-block; font-family:'Bangers',cursive; font-size:1rem; padding:0.6rem 1.1rem; border:2px solid transparent; border-radius:6px; cursor:pointer; text-transform:uppercase; letter-spacing:1.5px; transition:transform 0.2s ease; background:none; color:inherit; }
+        .btn-primary { background:linear-gradient(180deg,#ff3940 0%,var(--primary-red) 50%,#b01b1f 100%); color:white; box-shadow:0 3px 0 #7a1216; }
+        .btn-primary:hover { transform:translateY(-1px); }
+        .btn-money { background:linear-gradient(180deg,#3de87a,var(--money-green) 50%,#1ea155); color:#000; box-shadow:0 3px 0 #125f30; }
+        .btn-money:hover { transform:translateY(-1px); }
+        .btn-ghost { background:transparent; color:var(--accent-yellow); border-color:var(--accent-yellow); }
+        .btn-ghost:hover { background:var(--accent-yellow); color:#111; }
+
+        .workspace { display:grid; grid-template-columns:minmax(340px,420px) 1fr; gap:0; min-height:calc(100vh - 61px); }
+        @media (max-width:900px) { .workspace { grid-template-columns:1fr; } }
+
+        .form-pane {
+            padding:1.5rem;
+            border-right:1px solid #1a2233;
+            overflow-y:auto;
+            background:var(--bg-panel-2);
+        }
+        .pane-title { font-family:'Bangers',cursive; font-size:1.5rem; letter-spacing:2px; color:var(--accent-yellow); margin-bottom:0.25rem; }
+        .pane-sub { color:var(--text-muted); font-size:0.9rem; font-style:italic; margin-bottom:1.5rem; }
+
+        form { display:flex; flex-direction:column; gap:1rem; }
+        .field-row { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; }
+        @media (max-width:500px) { .field-row { grid-template-columns:1fr; } }
+        label.field-label { display:block; font-size:0.7rem; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.3rem; }
+        input, textarea, select { width:100%; padding:0.65rem 0.8rem; font-size:0.95rem; font-family:'Montserrat',sans-serif; border:2px solid #333; border-radius:5px; background:#111; color:white; outline:none; transition:border-color 0.2s ease; }
+        input:focus, textarea:focus, select:focus { border-color:var(--primary-red); }
+        textarea { min-height:110px; resize:vertical; font-family:inherit; }
+        fieldset { border:1px dashed #2a3142; border-radius:6px; padding:0.9rem 1rem; }
+        fieldset legend { font-size:0.7rem; letter-spacing:2px; text-transform:uppercase; color:var(--accent-yellow); font-weight:800; padding:0 0.5rem; }
+        fieldset .field-row { margin-bottom:0.75rem; }
+        fieldset .field-row:last-child { margin-bottom:0; }
+
+        .preview-pane {
+            padding:1.5rem;
+            overflow-y:auto;
+            background:var(--bg-dark);
+        }
+        .preview-section { margin-bottom:2rem; }
+        .preview-label { font-size:0.7rem; font-weight:800; letter-spacing:2px; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.75rem; }
+
+        /* Mini card mirror */
+        .mini-card {
+            max-width:320px;
+            background:linear-gradient(180deg,var(--metal-light),var(--bg-panel) 60%);
+            border:3px solid #000;
+            border-radius:12px;
+            overflow:hidden;
+            box-shadow:inset 0 0 0 2px var(--accent-yellow), 0 6px 0 #000;
+        }
+        .mini-banner { background:linear-gradient(90deg,var(--primary-red),#a01519); color:white; font-family:'Bangers',cursive; letter-spacing:1.5px; padding:0.45rem 0.8rem; font-size:0.85rem; text-transform:uppercase; border-bottom:3px solid var(--accent-yellow); display:flex; justify-content:space-between; gap:0.5rem; }
+        .mini-banner .wave { background:var(--accent-yellow); color:#111; font-size:0.65rem; padding:0.1rem 0.4rem; border-radius:3px; letter-spacing:1px; }
+        .mini-img { aspect-ratio:4/3; background:radial-gradient(ellipse at 50% 35%,rgba(255,255,255,0.08),transparent 60%), linear-gradient(180deg,#0d1220,var(--bg-dark)); display:flex; align-items:center; justify-content:center; font-family:'Bangers',cursive; color:var(--accent-yellow); font-size:2rem; letter-spacing:2px; text-shadow:2px 2px 0 var(--primary-red); }
+        .mini-body { padding:1rem 1.1rem; }
+        .mini-title { font-family:'Bangers',cursive; font-size:1.25rem; color:var(--text-light); line-height:1.1; letter-spacing:1px; margin-bottom:0.6rem; }
+        .mini-foot { display:flex; justify-content:space-between; align-items:center; padding-top:0.6rem; border-top:1px dashed #2a3142; }
+        .mini-price { font-family:'Bangers',cursive; color:var(--accent-yellow); font-size:1.25rem; }
+        .mini-badge { font-size:0.65rem; font-weight:800; text-transform:uppercase; letter-spacing:1.2px; padding:0.2rem 0.5rem; border-radius:3px; }
+        .mini-badge.active { background:var(--primary-red); color:white; }
+        .mini-badge.draft { background:var(--primary-blue); color:white; }
+        .mini-badge.sold { background:#333; color:var(--text-muted); }
+
+        /* Full preview mirror */
+        .full-preview {
+            background:var(--bg-panel-2);
+            border:1px solid #1a2233;
+            border-radius:12px;
+            padding:1.5rem;
+        }
+        .fp-collection { font-size:0.7rem; letter-spacing:2px; text-transform:uppercase; color:var(--accent-yellow); font-weight:800; margin-bottom:0.5rem; }
+        .fp-title { font-family:'Bangers',cursive; font-size:2.5rem; color:var(--text-light); text-shadow:2px 2px 0 var(--primary-red); letter-spacing:1px; line-height:1.05; margin-bottom:0.4rem; }
+        .fp-subtitle { color:var(--text-muted); font-style:italic; margin-bottom:1rem; }
+        .fp-price-row { display:flex; gap:0.75rem; align-items:baseline; flex-wrap:wrap; margin-bottom:1rem; }
+        .fp-price { font-family:'Bangers',cursive; font-size:2rem; color:var(--accent-yellow); letter-spacing:1px; }
+        .fp-compare { color:var(--text-muted); text-decoration:line-through; font-size:1rem; }
+        .fp-desc { background:var(--bg-panel); padding:1rem; border-radius:8px; border-left:3px solid var(--primary-red); margin-bottom:1rem; line-height:1.6; color:#dfe3ec; font-size:0.95rem; }
+        .fp-desc p { margin-bottom:0.5rem; }
+        .fp-desc p:last-child { margin-bottom:0; }
+        .fp-specs { background:var(--bg-panel-2); border:1px solid #1a2233; border-radius:8px; overflow:hidden; }
+        .fp-spec-row { display:grid; grid-template-columns:120px 1fr; padding:0.65rem 0.9rem; border-bottom:1px solid #1a2233; font-size:0.85rem; }
+        .fp-spec-row:last-child { border-bottom:none; }
+        .fp-spec-row dt { font-weight:800; text-transform:uppercase; font-size:0.7rem; letter-spacing:1px; color:var(--text-muted); }
+
+        /* JSON output */
+        .json-box {
+            background:#05070d;
+            border:1px solid #1a2233;
+            border-radius:8px;
+            padding:1rem;
+            font-family:'Monaco','Menlo','Courier New',monospace;
+            font-size:0.8rem;
+            line-height:1.5;
+            color:#b7bfc9;
+            white-space:pre-wrap;
+            word-break:break-word;
+            max-height:360px;
+            overflow-y:auto;
+        }
+        .json-box .k { color:#f1c40f; }
+        .json-box .s { color:#62d98a; }
+        .json-box .n { color:#5aa9ff; }
+        .json-box .b { color:#ff6b6b; }
+        .json-box .null { color:#888; }
+
+        .flash { padding:0.75rem 1rem; background:rgba(241,196,15,0.1); border-left:3px solid var(--accent-yellow); border-radius:6px; color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem; }
+    </style>
+</head>
+<body>
+    <header class="admin-header">
+        <div class="admin-brand">Bubs960 <span class="tag">Admin</span></div>
+        <div class="admin-actions">
+            <button type="button" class="btn btn-ghost" id="btn-reset">Clear</button>
+            <button type="button" class="btn btn-primary" id="btn-download">Download JSON</button>
+            <button type="button" class="btn btn-money" id="btn-copy">Copy JSON</button>
+        </div>
+    </header>
+
+    <div class="workspace">
+        <aside class="form-pane">
+            <div class="pane-title">Product Shell</div>
+            <p class="pane-sub">Fill in what you have — the preview updates as you type. Nothing is saved until you click Download or Copy.</p>
+
+            <form id="shell-form" autocomplete="off">
+                <div>
+                    <label class="field-label" for="f-title">Title *</label>
+                    <input id="f-title" name="title" placeholder="WWE Elite 87 Stone Cold Steve Austin">
+                </div>
+                <div>
+                    <label class="field-label" for="f-handle">Handle (URL slug) *</label>
+                    <input id="f-handle" name="handle" placeholder="auto-generates from title">
+                </div>
+                <div class="field-row">
+                    <div>
+                        <label class="field-label" for="f-collection">Collection</label>
+                        <select id="f-collection" name="collection">
+                            <option value="">—</option>
+                            <option>Wrestling Figures</option>
+                            <option>Vintage Grails</option>
+                            <option>Pop Culture &amp; Exclusives</option>
+                            <option>Sealed &amp; Boxed</option>
+                            <option>Graded Slabs</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="field-label" for="f-status">Status</label>
+                        <select id="f-status" name="status">
+                            <option value="draft">Draft (hidden)</option>
+                            <option value="active">Active (live)</option>
+                            <option value="sold">Sold</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="field-label" for="f-subtitle">Subtitle (optional)</label>
+                    <input id="f-subtitle" name="subtitle" placeholder="Loose with briefcase — Never removed from box">
+                </div>
+                <div class="field-row">
+                    <div>
+                        <label class="field-label" for="f-price">Price ($) *</label>
+                        <input id="f-price" name="price" inputmode="decimal" placeholder="49.99">
+                    </div>
+                    <div>
+                        <label class="field-label" for="f-compare">Compare-at ($) (optional)</label>
+                        <input id="f-compare" name="compareAtPrice" inputmode="decimal" placeholder="69.99">
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div>
+                        <label class="field-label" for="f-sku">SKU</label>
+                        <input id="f-sku" name="sku" placeholder="BUBS-WWE-E87-SCSA">
+                    </div>
+                    <div>
+                        <label class="field-label" for="f-inventory">Quantity</label>
+                        <input id="f-inventory" name="inventory" type="number" min="0" value="1">
+                    </div>
+                </div>
+                <div>
+                    <label class="field-label" for="f-condition">Condition</label>
+                    <input id="f-condition" name="condition" placeholder="Loose — Complete with briefcase, excellent paint">
+                </div>
+                <div class="field-row">
+                    <div>
+                        <label class="field-label" for="f-year">Year</label>
+                        <input id="f-year" name="year" placeholder="2021">
+                    </div>
+                    <div>
+                        <label class="field-label" for="f-series">Series</label>
+                        <input id="f-series" name="series" placeholder="Elite Series 87">
+                    </div>
+                </div>
+                <div>
+                    <label class="field-label" for="f-tags">Tags (comma-separated)</label>
+                    <input id="f-tags" name="tags" placeholder="wwe, elite, stone-cold, moc">
+                </div>
+                <div>
+                    <label class="field-label" for="f-description">Description (HTML allowed)</label>
+                    <textarea id="f-description" name="description" placeholder="&lt;p&gt;The Texas Rattlesnake in all his Elite 87 glory. Mint in box, clean bubble, corners sharp.&lt;/p&gt;"></textarea>
+                </div>
+                <fieldset>
+                    <legend>Buy Links</legend>
+                    <div>
+                        <label class="field-label" for="f-ebay">eBay URL</label>
+                        <input id="f-ebay" name="buyLinks.ebay" placeholder="https://www.ebay.com/itm/...">
+                    </div>
+                    <div style="margin-top:0.6rem;">
+                        <label class="field-label" for="f-whatnot">Whatnot URL</label>
+                        <input id="f-whatnot" name="buyLinks.whatnot" placeholder="https://www.whatnot.com/...">
+                    </div>
+                    <div style="margin-top:0.6rem;">
+                        <label class="field-label" for="f-shopify">Shopify URL</label>
+                        <input id="f-shopify" name="buyLinks.shopify" placeholder="https://bubs960-collectibles.myshopify.com/products/...">
+                    </div>
+                </fieldset>
+                <div>
+                    <label>
+                        <input id="f-featured" name="featured" type="checkbox" style="width:auto; margin-right:0.4rem;">
+                        <span style="font-size:0.85rem; color:var(--text-muted); letter-spacing:1px; text-transform:uppercase; font-weight:700;">Featured (Grail ribbon)</span>
+                    </label>
+                </div>
+            </form>
+        </aside>
+
+        <section class="preview-pane">
+            <div class="flash" id="flash">
+                Filename will be <strong id="filename">new-product.json</strong>. After download, drop it into <code>products/</code> and commit. Photos: drop them into <code>products/images/</code> named starting with the handle (e.g. <code>&lt;handle&gt;-1.jpg</code>) — auto-discovered.
+            </div>
+
+            <div class="preview-section">
+                <div class="preview-label">Catalog Card Preview</div>
+                <div id="mini-card" class="mini-card"></div>
+            </div>
+
+            <div class="preview-section">
+                <div class="preview-label">Product Page Preview</div>
+                <div id="full-preview" class="full-preview"></div>
+            </div>
+
+            <div class="preview-section">
+                <div class="preview-label">Generated JSON</div>
+                <pre id="json-output" class="json-box"></pre>
+            </div>
+        </section>
+    </div>
+
+    <script>
+    const form = document.getElementById('shell-form');
+    const miniCard = document.getElementById('mini-card');
+    const fullPreview = document.getElementById('full-preview');
+    const jsonOutput = document.getElementById('json-output');
+    const filename = document.getElementById('filename');
+    const handleField = document.getElementById('f-handle');
+    let handleTouched = false;
+    handleField.addEventListener('input', () => { handleTouched = true; });
+
+    function slugify(s) {
+        return (s ?? '').toString()
+            .toLowerCase()
+            .normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/&/g, ' and ')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+            .slice(0, 80);
+    }
+
+    function escapeHtml(s) {
+        return (s ?? '').toString().replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    function fmtPrice(v) {
+        if (v == null || v === '') return '';
+        const n = Number(v);
+        return Number.isFinite(n) ? '$' + n.toFixed(2) : String(v);
+    }
+
+    function collectShell() {
+        const data = Object.fromEntries(new FormData(form));
+        const tags = (data.tags ?? '').split(',').map(t => t.trim()).filter(Boolean);
+        const featured = form.querySelector('#f-featured').checked;
+        const inventory = data.inventory === '' ? undefined : Number(data.inventory);
+        return {
+            handle: data.handle || slugify(data.title),
+            title: data.title || '',
+            subtitle: data.subtitle || undefined,
+            collection: data.collection || undefined,
+            description: data.description || undefined,
+            vendor: 'Bubs960 Collectibles',
+            productType: data.collection || undefined,
+            tags: tags.length ? tags : undefined,
+            status: data.status || 'draft',
+            price: data.price || undefined,
+            compareAtPrice: data.compareAtPrice || undefined,
+            sku: data.sku || undefined,
+            inventory: Number.isFinite(inventory) ? inventory : undefined,
+            condition: data.condition || undefined,
+            year: data.year || undefined,
+            series: data.series || undefined,
+            images: [],
+            buyLinks: {
+                shopify: data['buyLinks.shopify'] || null,
+                ebay: data['buyLinks.ebay'] || null,
+                whatnot: data['buyLinks.whatnot'] || null,
+            },
+            featured: featured || undefined,
+        };
+    }
+
+    function renderMini(p) {
+        const isSold = p.status === 'sold';
+        const ribbon = isSold ? '' : (p.featured ? '<div style="position:absolute;top:10px;right:-30px;background:var(--accent-yellow);color:#111;font-family:Bangers;padding:0.25rem 2.5rem;font-size:0.8rem;letter-spacing:2px;transform:rotate(35deg);">Grail</div>' : (p.compareAtPrice ? '<div style="position:absolute;top:10px;right:-30px;background:var(--accent-yellow);color:#111;font-family:Bangers;padding:0.25rem 2.5rem;font-size:0.8rem;letter-spacing:2px;transform:rotate(35deg);">Deal</div>' : ''));
+        const soldOverlay = isSold ? '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-18deg);font-family:Bangers;font-size:2.5rem;color:var(--primary-red);border:4px solid var(--primary-red);padding:0.2rem 0.8rem;background:rgba(10,14,23,0.85);letter-spacing:4px;">Sold</div>' : '';
+        const badge = p.status === 'active' ? '<span class="mini-badge active">Live</span>' : p.status === 'sold' ? '<span class="mini-badge sold">Sold</span>' : '<span class="mini-badge draft">Draft</span>';
+        miniCard.innerHTML = `
+            <div style="position:relative; overflow:hidden; border-radius:9px 9px 0 0;">
+                ${ribbon}
+                <div class="mini-banner">
+                    <span>${escapeHtml(p.collection || 'Collectible')}</span>
+                    ${p.year ? `<span class="wave">${escapeHtml(p.year)}</span>` : ''}
+                </div>
+                <div class="mini-img" style="position:relative;">
+                    BUBS960
+                    ${soldOverlay}
+                </div>
+            </div>
+            <div class="mini-body">
+                <div class="mini-title">${escapeHtml(p.title || 'Untitled')}</div>
+                <div class="mini-foot">
+                    <span class="mini-price">${fmtPrice(p.price)}</span>
+                    ${badge}
+                </div>
+            </div>
+        `;
+    }
+
+    function renderFull(p) {
+        const specs = [
+            ['Condition', p.condition],
+            ['Year', p.year],
+            ['Series', p.series],
+            ['SKU', p.sku],
+            ['Collection', p.collection],
+        ].filter(([, v]) => v);
+        const specsHtml = specs.length
+            ? `<dl class="fp-specs">${specs.map(([k, v]) => `<div class="fp-spec-row"><dt>${escapeHtml(k)}</dt><dd>${escapeHtml(v)}</dd></div>`).join('')}</dl>`
+            : '';
+        fullPreview.innerHTML = `
+            ${p.collection ? `<div class="fp-collection">${escapeHtml(p.collection)}</div>` : ''}
+            <h1 class="fp-title">${escapeHtml(p.title || 'Untitled')}</h1>
+            ${p.subtitle ? `<p class="fp-subtitle">${escapeHtml(p.subtitle)}</p>` : ''}
+            <div class="fp-price-row">
+                ${p.price ? `<span class="fp-price">${fmtPrice(p.price)}</span>` : ''}
+                ${p.compareAtPrice ? `<span class="fp-compare">${fmtPrice(p.compareAtPrice)}</span>` : ''}
+            </div>
+            <div class="fp-desc">${p.description || '<p style="color:var(--text-muted);font-style:italic;">Description preview will render here.</p>'}</div>
+            ${specsHtml}
+        `;
+    }
+
+    function syntaxHighlight(json) {
+        return json.replace(/(".*?")\s*:/g, '<span class="k">$1</span>:')
+            .replace(/: (".*?")/g, ': <span class="s">$1</span>')
+            .replace(/: (-?\d+\.?\d*)/g, ': <span class="n">$1</span>')
+            .replace(/: (true|false)/g, ': <span class="b">$1</span>')
+            .replace(/: (null)/g, ': <span class="null">$1</span>');
+    }
+
+    function stripUndefined(obj) {
+        if (Array.isArray(obj)) return obj.map(stripUndefined);
+        if (obj && typeof obj === 'object') {
+            const out = {};
+            for (const [k, v] of Object.entries(obj)) {
+                if (v === undefined) continue;
+                out[k] = stripUndefined(v);
+            }
+            return out;
+        }
+        return obj;
+    }
+
+    function renderAll() {
+        if (!handleTouched) {
+            const title = document.getElementById('f-title').value;
+            handleField.value = slugify(title);
+        }
+        const p = collectShell();
+        renderMini(p);
+        renderFull(p);
+        const json = JSON.stringify(stripUndefined(p), null, 2);
+        jsonOutput.innerHTML = syntaxHighlight(json);
+        filename.textContent = (p.handle || 'new-product') + '.json';
+    }
+
+    form.addEventListener('input', renderAll);
+    form.addEventListener('change', renderAll);
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+        form.reset();
+        handleTouched = false;
+        renderAll();
+    });
+
+    document.getElementById('btn-download').addEventListener('click', () => {
+        const p = stripUndefined(collectShell());
+        const blob = new Blob([JSON.stringify(p, null, 2)], { type:'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = (p.handle || 'new-product') + '.json';
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+
+    document.getElementById('btn-copy').addEventListener('click', async () => {
+        const p = stripUndefined(collectShell());
+        try {
+            await navigator.clipboard.writeText(JSON.stringify(p, null, 2));
+            const btn = document.getElementById('btn-copy');
+            const orig = btn.textContent;
+            btn.textContent = 'Copied ✓';
+            setTimeout(() => { btn.textContent = orig; }, 1500);
+        } catch (e) {
+            alert('Copy failed — your browser blocked clipboard access.');
+        }
+    });
+
+    renderAll();
+    </script>
+</body>
+</html>

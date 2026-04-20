@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grading &amp; Condition Guide | Bubs960 Collectibles</title>
+    <meta name="description" content="How Bubs960 grades every figure — from MOC Mint to Played With. Clear scale, honest descriptions, no surprises.">
+    <link rel="canonical" href="https://www.bubs960collectibles.com/grading.html">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Bubs960 Collectibles">
+    <meta property="og:title" content="Grading & Condition Guide | Bubs960 Collectibles">
+    <meta property="og:description" content="How Bubs960 grades every figure. Clear scale, honest descriptions, no surprises.">
+    <meta property="og:image" content="https://www.bubs960collectibles.com/bubs-logo.jpg">
+    <meta property="og:url" content="https://www.bubs960collectibles.com/grading.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Grading & Condition Guide | Bubs960 Collectibles">
+    <meta name="twitter:description" content="How Bubs960 grades every figure.">
+    <meta name="twitter:image" content="https://www.bubs960collectibles.com/bubs-logo.jpg">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/site.css">
+    <style>
+        :root { --primary-red:#e62429; --primary-blue:#1c3b70; --accent-yellow:#f1c40f; --bg-dark:#0a0e17; --bg-panel:#111826; --text-light:#f4f4f4; --text-muted:#9aa3b2; --metal-light:#2a3142; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        html { scroll-behavior:smooth; }
+        body { background:var(--bg-dark); color:var(--text-light); font-family:'Montserrat',sans-serif; min-height:100vh; overflow-x:hidden; }
+        a { color:inherit; text-decoration:none; }
+
+        .marquee { background:var(--primary-red); color:white; font-weight:800; letter-spacing:2px; text-transform:uppercase; font-size:0.8rem; border-bottom:3px solid var(--accent-yellow); overflow:hidden; white-space:nowrap; padding:0.45rem 0; }
+        .marquee-track { display:inline-block; padding-left:100%; animation:marquee 35s linear infinite; }
+        .marquee-track span { margin-right:3rem; }
+        .marquee-track span::before { content:'★ '; color:var(--accent-yellow); }
+        @keyframes marquee { 0%{transform:translateX(0);} 100%{transform:translateX(-100%);} }
+
+        .nav { position:sticky; top:0; z-index:50; display:flex; justify-content:space-between; align-items:center; padding:1rem 2rem; background:rgba(10,14,23,0.92); backdrop-filter:blur(8px); border-bottom:2px solid var(--primary-red); }
+        .nav-brand { font-family:'Bangers',cursive; font-size:1.75rem; color:var(--accent-yellow); letter-spacing:2px; text-shadow:2px 2px 0 var(--primary-red); }
+        .nav-links { display:flex; gap:1.5rem; list-style:none; font-weight:700; text-transform:uppercase; font-size:0.9rem; letter-spacing:1px; }
+        .nav-links a:hover { color:var(--accent-yellow); }
+
+        .rope { position:relative; height:26px; background:linear-gradient(var(--primary-red),var(--primary-red)) center 2px/100% 4px no-repeat, linear-gradient(var(--accent-yellow),var(--accent-yellow)) center 12px/100% 4px no-repeat, linear-gradient(var(--primary-blue),var(--primary-blue)) center 22px/100% 4px no-repeat, var(--bg-dark); }
+        .rope::before, .rope::after { content:''; position:absolute; top:-6px; width:12px; height:38px; background:linear-gradient(#7a7f8a,#2a2f38 60%,#0f1118); border:1px solid #000; border-radius:3px; }
+        .rope::before { left:10px; } .rope::after { right:10px; }
+
+        .hero { text-align:center; padding:5rem 2rem 3rem; background-image:radial-gradient(circle at center,#1c3b70 0%,#0a0e17 70%); }
+        .kicker { font-size:0.85rem; letter-spacing:4px; text-transform:uppercase; color:var(--accent-yellow); font-weight:800; margin-bottom:0.75rem; }
+        .title { font-family:'Bangers',cursive; font-size:4.5rem; letter-spacing:3px; color:var(--accent-yellow); text-shadow:4px 4px 0 var(--primary-red); line-height:1; text-transform:uppercase; }
+        .lead { font-size:1.15rem; max-width:700px; margin:1rem auto 0; color:#dfe3ec; line-height:1.55; }
+
+        .section { padding:4rem 2rem; max-width:1100px; margin:0 auto; }
+        .section-title { font-family:'Bangers',cursive; font-size:2.5rem; letter-spacing:2px; color:var(--accent-yellow); text-shadow:2px 2px 0 var(--primary-red); text-align:center; margin-bottom:1.5rem; text-transform:uppercase; }
+        .section-kicker { text-align:center; color:var(--text-muted); font-style:italic; margin-bottom:2.5rem; }
+
+        .grades { display:flex; flex-direction:column; gap:1rem; }
+        .grade {
+            display:grid;
+            grid-template-columns:auto 1fr auto;
+            gap:1.5rem;
+            align-items:flex-start;
+            background:linear-gradient(180deg,var(--metal-light),var(--bg-panel) 60%);
+            border:3px solid #000;
+            border-radius:12px;
+            padding:1.5rem;
+            box-shadow:inset 0 0 0 2px var(--accent-yellow), 0 4px 0 #000;
+        }
+        .grade-badge {
+            background:var(--primary-red);
+            color:white;
+            font-family:'Bangers',cursive;
+            font-size:2.75rem;
+            letter-spacing:1px;
+            padding:0.6rem 1.2rem;
+            border-radius:8px;
+            border:2px solid var(--accent-yellow);
+            text-shadow:2px 2px 0 rgba(0,0,0,0.3);
+            min-width:100px;
+            text-align:center;
+            line-height:1;
+        }
+        .grade-badge .sub { display:block; font-size:0.65rem; letter-spacing:2px; color:var(--accent-yellow); font-weight:800; font-family:'Montserrat',sans-serif; margin-top:0.3rem; }
+        .grade-body h3 { font-family:'Bangers',cursive; font-size:1.6rem; color:var(--accent-yellow); letter-spacing:1px; margin-bottom:0.25rem; }
+        .grade-body .short { font-style:italic; color:var(--text-muted); font-size:0.9rem; margin-bottom:0.75rem; }
+        .grade-body p { color:#dfe3ec; line-height:1.55; font-size:0.95rem; }
+        .grade-price { font-family:'Bangers',cursive; font-size:1.1rem; color:var(--accent-yellow); letter-spacing:1.5px; text-align:center; align-self:center; min-width:90px; }
+        @media (max-width:760px){
+            .grade { grid-template-columns:1fr; text-align:left; }
+            .grade-badge { justify-self:start; }
+            .grade-price { text-align:left; }
+        }
+
+        .note-band { background:var(--bg-panel); border-top:3px solid var(--primary-red); border-bottom:3px solid var(--primary-red); padding:3rem 2rem; }
+        .note-inner { max-width:800px; margin:0 auto; text-align:center; }
+        .note-inner h3 { font-family:'Bangers',cursive; font-size:2rem; letter-spacing:2px; color:var(--accent-yellow); margin-bottom:1rem; }
+        .note-inner p { color:#dfe3ec; line-height:1.65; font-size:1.05rem; margin-bottom:0.75rem; }
+
+        .cta-band { text-align:center; padding:5rem 2rem; background:radial-gradient(circle at center,rgba(28,59,112,0.35) 0%,transparent 70%); }
+        .cta-band h2 { font-family:'Bangers',cursive; font-size:2.5rem; letter-spacing:2px; color:var(--accent-yellow); text-shadow:3px 3px 0 var(--primary-red); margin-bottom:1rem; }
+        .cta-band p { color:var(--text-muted); max-width:500px; margin:0 auto 2rem; font-size:1.05rem; }
+        .btn { display:inline-block; font-family:'Bangers',cursive; font-size:1.25rem; padding:0.9rem 1.75rem; border:2px solid transparent; border-radius:6px; text-transform:uppercase; letter-spacing:2px; margin:0.35rem; transition:transform 0.2s ease; }
+        .btn-primary { background:linear-gradient(180deg,#ff3940 0%,var(--primary-red) 50%,#b01b1f 100%); color:white; box-shadow:0 4px 0 #7a1216, 0 6px 12px rgba(230,36,41,0.35); text-shadow:1px 1px 0 rgba(0,0,0,0.3); }
+        .btn-primary:hover { transform:translateY(-2px) scale(1.03); }
+        .btn-ghost { background:transparent; color:var(--accent-yellow); border-color:var(--accent-yellow); box-shadow:0 4px 0 rgba(212,160,23,0.7); }
+        .btn-ghost:hover { background:var(--accent-yellow); color:#111; transform:translateY(-2px) scale(1.03); }
+
+        .site-footer { border-top:3px solid var(--primary-red); background:var(--bg-panel); padding:3rem 2rem 1.5rem; margin-top:2rem; }
+        .footer-grid { max-width:1100px; margin:0 auto; display:grid; grid-template-columns:1.5fr repeat(3,1fr); gap:2rem; }
+        .footer-col h4 { font-family:'Bangers',cursive; font-size:1.2rem; color:var(--accent-yellow); letter-spacing:2px; margin-bottom:0.75rem; text-transform:uppercase; }
+        .footer-col ul { list-style:none; display:flex; flex-direction:column; gap:0.5rem; }
+        .footer-col a { color:var(--text-muted); font-size:0.9rem; font-weight:700; transition:color 0.15s ease; }
+        .footer-col a:hover { color:var(--accent-yellow); }
+        .footer-brand { font-family:'Bangers',cursive; font-size:2rem; color:var(--accent-yellow); letter-spacing:2px; text-shadow:2px 2px 0 var(--primary-red); margin-bottom:0.5rem; }
+        .footer-tagline { color:var(--text-muted); font-size:0.9rem; line-height:1.5; }
+        .footer-bottom { max-width:1100px; margin:2rem auto 0; padding-top:1.5rem; border-top:1px solid #1a2233; color:#555; font-size:0.85rem; text-align:center; }
+        @media (max-width:760px){ .footer-grid { grid-template-columns:1fr 1fr; } }
+        @media (max-width:500px){ .footer-grid { grid-template-columns:1fr; } }
+
+        @media (max-width:700px) {
+            .title { font-size:3rem; }
+            .section-title { font-size:2rem; }
+            .nav { padding:0.75rem 1rem; }
+            .nav-links { gap:1rem; font-size:0.8rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="marquee" aria-hidden="true">
+        <div class="marquee-track">
+            <span>Every flaw photographed, every grade earned</span>
+            <span>Described the way we'd want it described</span>
+            <span>No surprises, ever</span>
+            <span>Every flaw photographed, every grade earned</span>
+            <span>Described the way we'd want it described</span>
+            <span>No surprises, ever</span>
+        </div>
+    </div>
+    <nav class="nav">
+        <a href="/index.html" class="nav-brand">BUBS960</a>
+        <ul class="nav-links">
+            <li><a href="/shop/index.html">Shop</a></li>
+            <li><a href="/we-buy.html">We Buy</a></li>
+            <li><a href="/live.html">Live</a></li>
+            <li><a href="/about.html">About</a></li>
+            <li><a href="/faq.html">FAQ</a></li>
+            <li><a href="/index.html#contact">Contact</a></li>
+        </ul>
+    </nav>
+
+    <section class="hero">
+        <div class="kicker">The Bubs960 Scale</div>
+        <h1 class="title">Grading Guide</h1>
+        <p class="lead">Six grades. Plain English. Every piece on Bubs960 is rated the same way, and every flaw gets photographed. Here's what each grade means.</p>
+    </section>
+
+    <div class="rope" aria-hidden="true"></div>
+
+    <section class="section">
+        <h2 class="section-title">The Scale</h2>
+        <p class="section-kicker">From "never touched" to "definitely touched" — and everything in between.</p>
+
+        <div class="grades">
+            <article class="grade">
+                <div class="grade-badge">MOC<span class="sub">Sealed</span></div>
+                <div class="grade-body">
+                    <h3>Mint On Card / Factory Sealed</h3>
+                    <div class="short">Never opened. Card, bubble, and figure all in collector-grade shape.</div>
+                    <p>No creases, no soft corners, no tape lift. Bubble clear and attached. Factory seals intact. Any minor card wear or warehouse dings are called out explicitly in the description and shown in photos.</p>
+                </div>
+                <div class="grade-price">100% value</div>
+            </article>
+
+            <article class="grade">
+                <div class="grade-badge">M<span class="sub">Mint</span></div>
+                <div class="grade-body">
+                    <h3>Mint — Loose, Complete</h3>
+                    <div class="short">Out of package, but looks like it never was.</div>
+                    <p>Figure is loose but pristine. All accessories present and unworn. Joints tight, paint perfect, no scuffs or rubs. Displayed only — never played with.</p>
+                </div>
+                <div class="grade-price">~90% MOC</div>
+            </article>
+
+            <article class="grade">
+                <div class="grade-badge">NM<span class="sub">Near Mint</span></div>
+                <div class="grade-body">
+                    <h3>Near Mint — Loose, Complete</h3>
+                    <div class="short">One or two tiny tells under a magnifying glass.</div>
+                    <p>Figure looks great from arm's length. Maybe a faint paint rub or a joint with a hair of slack — noted explicitly. All accessories present. Still gallery-shelf worthy.</p>
+                </div>
+                <div class="grade-price">~80% MOC</div>
+            </article>
+
+            <article class="grade">
+                <div class="grade-badge">GD<span class="sub">Good</span></div>
+                <div class="grade-body">
+                    <h3>Good — Loose, Complete or Near-Complete</h3>
+                    <div class="short">Shelf condition. Looks the part, shows its age up close.</div>
+                    <p>Light paint rubs, a soft joint or two, maybe minor accessory wear. All major accessories present (missing ones listed). Display-worthy from 2+ feet; shows loved-and-handled up close.</p>
+                </div>
+                <div class="grade-price">~60% MOC</div>
+            </article>
+
+            <article class="grade">
+                <div class="grade-badge">F<span class="sub">Fair</span></div>
+                <div class="grade-body">
+                    <h3>Fair — Loose, Incomplete or Wear Visible</h3>
+                    <div class="short">Loved by someone. Still a solid shelf piece or parts donor.</div>
+                    <p>Noticeable wear: paint wear on high-contact zones, loose joints, or missing one or more accessories (always listed by name). Honest shelf condition, fair pricing.</p>
+                </div>
+                <div class="grade-price">~40% MOC</div>
+            </article>
+
+            <article class="grade">
+                <div class="grade-badge">P<span class="sub">Played</span></div>
+                <div class="grade-body">
+                    <h3>Played With</h3>
+                    <div class="short">The real deal — somebody's Saturday-morning hero.</div>
+                    <p>Heavy paint wear, loose/missing accessories, possible joint repairs, bite marks (it happens). Perfect for parts, customs, budget builders, or nostalgic shelves. Every issue listed and shown.</p>
+                </div>
+                <div class="grade-price">~20% MOC</div>
+            </article>
+        </div>
+    </section>
+
+    <section class="note-band">
+        <div class="note-inner">
+            <h3>A Note on Third-Party Grading</h3>
+            <p>When a piece is slabbed (AFA, CAS, WATA, UKG), the grade on the slab rules — we list the slab grade in the title and include the case number. Unslabbed pieces use the Bubs960 scale above.</p>
+            <p>If a grade ever feels off when it arrives, message within 48 hours. We'll make it right, every time.</p>
+        </div>
+    </section>
+
+    <section class="cta-band">
+        <h2>See it in the Wild</h2>
+        <p>Every listing uses this scale. Browse the shop and see grades called out on each piece.</p>
+        <a href="/shop/index.html" class="btn btn-primary">Browse the Shop</a>
+        <a href="/faq.html" class="btn btn-ghost">More FAQs</a>
+    </section>
+
+    <footer class="site-footer">
+        <div class="footer-grid">
+            <div class="footer-col">
+                <div class="footer-brand">BUBS960</div>
+                <p class="footer-tagline">By collectors, for collectors. No middleman, no platform tax.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Explore</h4>
+                <ul>
+                    <li><a href="/shop/index.html">Shop</a></li>
+                    <li><a href="/we-buy.html">We Buy Collections</a></li>
+                    <li><a href="/live.html">Live Shows</a></li>
+                    <li><a href="/about.html">About</a></li>
+                    <li><a href="/faq.html">FAQ</a></li>
+                    <li><a href="/grading.html">Grading Guide</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="/shipping.html">Shipping</a></li>
+                    <li><a href="/returns.html">Returns &amp; Refunds</a></li>
+                    <li><a href="/privacy.html">Privacy</a></li>
+                    <li><a href="/terms.html">Terms of Service</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Also From Bubs</h4>
+                <ul>
+                    <li><a href="https://figurepinner.com" target="_blank" rel="noopener">Figure Pinner</a></li>
+                    <li><a href="https://www.ebay.com/usr/bubs960" target="_blank" rel="noopener">eBay Store</a></li>
+                    <li><a href="https://www.whatnot.com/user/bubs960" target="_blank" rel="noopener">Whatnot Live</a></li>
+                    <li><a href="mailto:Bubs960toys@gmail.com">Email Us</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">&copy; 2026 Bubs960 Collectibles. All rights reserved.</div>
+    </footer>
+</body>
+</html>
