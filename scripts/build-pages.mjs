@@ -876,18 +876,21 @@ const FOOTER_HTML = `
       </ul>
     </div>
     <div class="footer-col">
-      <h4>Buy From</h4>
+      <h4>Legal</h4>
       <ul>
-        <li><a href="https://www.ebay.com/usr/bubs960" target="_blank" rel="noopener">eBay Store</a></li>
-        <li><a href="https://www.whatnot.com/user/bubs960" target="_blank" rel="noopener">Whatnot Live</a></li>
-        <li><a href="/index.html#contact">Direct Inquiry</a></li>
+        <li><a href="/shipping.html">Shipping</a></li>
+        <li><a href="/returns.html">Returns &amp; Refunds</a></li>
+        <li><a href="/privacy.html">Privacy</a></li>
+        <li><a href="/terms.html">Terms of Service</a></li>
       </ul>
     </div>
     <div class="footer-col">
-      <h4>Connect</h4>
+      <h4>Also From Bubs</h4>
       <ul>
-        <li><a href="mailto:Bubs960toys@gmail.com">Bubs960toys@gmail.com</a></li>
-        <li><a href="/index.html#vip">Join VIP List</a></li>
+        <li><a href="https://figurepinner.com" target="_blank" rel="noopener">Figure Pinner</a></li>
+        <li><a href="https://www.ebay.com/usr/bubs960" target="_blank" rel="noopener">eBay Store</a></li>
+        <li><a href="https://www.whatnot.com/user/bubs960" target="_blank" rel="noopener">Whatnot Live</a></li>
+        <li><a href="mailto:Bubs960toys@gmail.com">Email Us</a></li>
       </ul>
     </div>
   </div>
@@ -899,6 +902,7 @@ const HEAD = (title, description, options = {}) => {
   const ogImage = options.ogImage ?? DEFAULT_OG_IMAGE;
   const ogUrl = options.ogUrl ?? SITE_URL;
   const fullTitle = `${title} | ${SITE_BRAND}`;
+  const jsonLd = options.jsonLd ? `<script type="application/ld+json">${JSON.stringify(options.jsonLd)}</script>` : '';
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -907,6 +911,7 @@ const HEAD = (title, description, options = {}) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtml(fullTitle)}</title>
   <meta name="description" content="${escapeHtml(description ?? '')}">
+  <link rel="canonical" href="${escapeHtml(ogUrl)}">
   <meta property="og:type" content="${options.ogType ?? 'website'}">
   <meta property="og:site_name" content="${escapeHtml(SITE_BRAND)}">
   <meta property="og:title" content="${escapeHtml(fullTitle)}">
@@ -917,6 +922,7 @@ const HEAD = (title, description, options = {}) => {
   <meta name="twitter:title" content="${escapeHtml(fullTitle)}">
   <meta name="twitter:description" content="${escapeHtml(description ?? '')}">
   <meta name="twitter:image" content="${escapeHtml(ogImage)}">
+  ${jsonLd}
   <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/site.css">
   <style>${PAGE_CSS}</style>
@@ -959,6 +965,41 @@ function productPage(p, allProducts = []) {
   const ogImage = shopifyImages[0] ?? DEFAULT_OG_IMAGE;
   const ogUrl = `${SITE_URL}/shop/${p.handle}.html`;
 
+  // Schema.org Product JSON-LD — rich result eligible.
+  const availability = (p.status ?? '').toLowerCase() === 'sold'
+    ? 'https://schema.org/SoldOut'
+    : (p.inventory > 0 || p.inventory == null ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock');
+  const productSchema = {
+    '@context': 'https://schema.org/',
+    '@type': 'Product',
+    name: p.title,
+    description: (p.description ?? '').replace(/<[^>]*>/g, '').trim() || p.title,
+    image: shopifyImages.length ? shopifyImages : [DEFAULT_OG_IMAGE],
+    sku: p.sku || undefined,
+    brand: { '@type': 'Brand', name: p.vendor || SITE_BRAND },
+    category: p.collection || p.productType || undefined,
+    url: ogUrl,
+    offers: {
+      '@type': 'Offer',
+      url: ogUrl,
+      priceCurrency: 'USD',
+      price: p.price != null ? String(p.price) : undefined,
+      availability,
+      itemCondition: 'https://schema.org/UsedCondition',
+      seller: { '@type': 'Organization', name: SITE_BRAND },
+    },
+  };
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org/',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Shop', item: `${SITE_URL}/shop/` },
+      p.collection ? { '@type': 'ListItem', position: 2, name: p.collection, item: `${SITE_URL}/shop/#${slugify(p.collection)}` } : null,
+      { '@type': 'ListItem', position: p.collection ? 3 : 2, name: p.title, item: ogUrl },
+    ].filter(Boolean),
+  };
+  const jsonLd = [productSchema, breadcrumbSchema];
+
   const related = getRelated(p, allProducts);
   const relatedSection = related.length > 0 ? `
 <section class="related">
@@ -970,7 +1011,7 @@ function productPage(p, allProducts = []) {
 </section>
   ` : '';
 
-  return `${HEAD(p.title, meta, { ogImage, ogUrl, ogType: 'product' })}
+  return `${HEAD(p.title, meta, { ogImage, ogUrl, ogType: 'product', jsonLd })}
 <a class="back-link" href="/shop/index.html">&lsaquo; Back to Shop</a>
 <div class="product">
   <div>${imageGallery(images, p.title)}</div>
@@ -1130,17 +1171,36 @@ for (const p of products) {
 }
 console.log(`[build] shop/index.html (${products.length} products)`);
 
-// Sitemap — regenerated each build so product pages stay indexed.
+// Sitemap — regenerated each build. Priority + changefreq help search
+// engines crawl the most important pages more aggressively.
 const today = new Date().toISOString().slice(0, 10);
-const staticPaths = ['/', '/about.html', '/live.html', '/faq.html', '/we-buy.html', '/want-list.html', '/grading.html', '/testimonials.html', '/shop/'];
-const productPaths = products.map((p) => `/shop/${p.handle}.html`);
+const staticEntries = [
+  { path: '/',                  priority: '1.0', changefreq: 'daily'   },
+  { path: '/shop/',             priority: '0.9', changefreq: 'daily'   },
+  { path: '/we-buy.html',       priority: '0.9', changefreq: 'weekly'  },
+  { path: '/live.html',         priority: '0.8', changefreq: 'weekly'  },
+  { path: '/want-list.html',    priority: '0.7', changefreq: 'monthly' },
+  { path: '/about.html',        priority: '0.6', changefreq: 'monthly' },
+  { path: '/faq.html',          priority: '0.6', changefreq: 'monthly' },
+  { path: '/grading.html',      priority: '0.6', changefreq: 'monthly' },
+  { path: '/testimonials.html', priority: '0.6', changefreq: 'weekly'  },
+  { path: '/shipping.html',     priority: '0.4', changefreq: 'yearly'  },
+  { path: '/returns.html',      priority: '0.4', changefreq: 'yearly'  },
+  { path: '/privacy.html',      priority: '0.3', changefreq: 'yearly'  },
+  { path: '/terms.html',        priority: '0.3', changefreq: 'yearly'  },
+];
+const productEntries = products.map((p) => ({
+  path: `/shop/${p.handle}.html`,
+  priority: p.featured ? '0.8' : '0.7',
+  changefreq: 'weekly',
+}));
 const sitemap = [
   '<?xml version="1.0" encoding="UTF-8"?>',
   '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-  ...[...staticPaths, ...productPaths].map((path) => (
-    `  <url><loc>${SITE_URL}${path}</loc><lastmod>${today}</lastmod></url>`
+  ...[...staticEntries, ...productEntries].map(({ path, priority, changefreq }) => (
+    `  <url><loc>${SITE_URL}${path}</loc><lastmod>${today}</lastmod><changefreq>${changefreq}</changefreq><priority>${priority}</priority></url>`
   )),
   '</urlset>',
 ].join('\n');
 await writeFile(new URL('../sitemap.xml', import.meta.url), sitemap);
-console.log(`[build] sitemap.xml (${staticPaths.length + productPaths.length} URLs)`);
+console.log(`[build] sitemap.xml (${staticEntries.length + productEntries.length} URLs)`);

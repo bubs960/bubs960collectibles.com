@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bubs960 Collectibles | By Collectors, For Collectors</title>
     <meta name="description" content="Hard-to-find figures, epic grails, and relentless deals. By collectors, for collectors. Shop coming soon on Shopify.">
+    <link rel="canonical" href="https://www.bubs960collectibles.com/">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Bubs960 Collectibles">
     <meta property="og:title" content="Bubs960 Collectibles | By Collectors, For Collectors">
@@ -15,6 +16,35 @@
     <meta name="twitter:title" content="Bubs960 Collectibles | By Collectors, For Collectors">
     <meta name="twitter:description" content="Hard-to-find figures, epic grails, and relentless deals.">
     <meta name="twitter:image" content="https://www.bubs960collectibles.com/bubs-logo.jpg">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Bubs960 Collectibles",
+      "url": "https://www.bubs960collectibles.com/",
+      "logo": "https://www.bubs960collectibles.com/bubs-logo.jpg",
+      "description": "Hard-to-find action figures, wrestling grails, and pop-culture collectibles — by collectors, for collectors. Cutting out the auction middleman.",
+      "email": "Bubs960toys@gmail.com",
+      "sameAs": [
+        "https://www.ebay.com/usr/bubs960",
+        "https://www.whatnot.com/user/bubs960",
+        "https://figurepinner.com"
+      ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Bubs960 Collectibles",
+      "url": "https://www.bubs960collectibles.com/",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://www.bubs960collectibles.com/shop/?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Luckiest+Guy&family=Montserrat:ital,wght@0,400;0,700;0,800;1,800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/assets/site.css">
     <style>
@@ -570,54 +600,83 @@
 
         form.contact { display: flex; flex-direction: column; gap: 1rem; }
 
-        /* We Buy teaser band */
+        /* We Buy band — headline spot right under the main hero */
         .we-buy-band {
-            padding: 4.5rem 2rem;
+            padding: 5rem 2rem;
             background:
-                repeating-linear-gradient(45deg, transparent 0 14px, rgba(255,255,255,0.02) 14px 15px),
-                radial-gradient(ellipse at center, rgba(46, 204, 113, 0.2) 0%, transparent 60%),
-                var(--bg-panel);
-            border-top: 3px solid var(--money-green);
-            border-bottom: 3px solid var(--money-green);
+                repeating-linear-gradient(45deg, transparent 0 14px, rgba(255,255,255,0.025) 14px 15px),
+                radial-gradient(ellipse at center, rgba(46, 204, 113, 0.28) 0%, transparent 60%),
+                linear-gradient(180deg, #0d1520, var(--bg-panel));
+            border-top: 4px solid var(--money-green);
+            border-bottom: 4px solid var(--money-green);
+            box-shadow: 0 0 40px rgba(46, 204, 113, 0.15) inset;
+            position: relative;
+            overflow: hidden;
+        }
+        .we-buy-band::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(46,204,113,0.04) 0deg 6deg, transparent 6deg 18deg);
+            animation: spin 90s linear infinite;
+            pointer-events: none;
         }
         .we-buy-inner {
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
             display: grid;
             grid-template-columns: 1fr auto;
             gap: 3rem;
             align-items: center;
+            position: relative;
+            z-index: 1;
         }
         .we-buy-copy h2 {
             font-family: 'Bangers', cursive;
-            font-size: 3rem;
-            letter-spacing: 2px;
+            font-size: 4.5rem;
+            letter-spacing: 3px;
             color: var(--accent-yellow);
-            text-shadow: 3px 3px 0 var(--primary-red);
+            text-shadow: 4px 4px 0 var(--primary-red);
             text-transform: uppercase;
-            line-height: 1.05;
-            margin-bottom: 0.75rem;
+            line-height: 1;
+            margin-bottom: 1rem;
         }
         .we-buy-copy p {
             color: #dfe3ec;
-            font-size: 1.1rem;
-            line-height: 1.55;
-            margin-bottom: 1.25rem;
+            font-size: 1.2rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
             max-width: 640px;
         }
-        .we-buy-copy p strong { color: var(--money-green); }
+        .we-buy-copy p strong { color: var(--money-green); font-size: 1.25rem; }
         .we-buy-kicker {
-            color: var(--money-green);
+            display: inline-block;
+            color: #000;
+            background: var(--money-green);
             font-weight: 800;
-            letter-spacing: 4px;
+            letter-spacing: 3px;
             text-transform: uppercase;
             font-size: 0.85rem;
-            margin-bottom: 0.5rem;
+            margin-bottom: 1rem;
+            padding: 0.35rem 0.85rem;
+            border-radius: 4px;
+            border: 2px solid var(--accent-yellow);
         }
+        .we-buy-actions { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+        .we-buy-points {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.85rem 1.5rem;
+            color: var(--money-green);
+            font-weight: 800;
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .we-buy-points span { white-space: nowrap; }
         .we-buy-stamp {
-            width: 150px;
-            height: 150px;
-            border: 4px double var(--money-green);
+            width: 200px;
+            height: 200px;
+            border: 5px double var(--money-green);
             border-radius: 50%;
             display: flex;
             flex-direction: column;
@@ -626,21 +685,29 @@
             text-align: center;
             font-family: 'Bangers', cursive;
             color: var(--money-green);
-            font-size: 1rem;
+            font-size: 1.25rem;
             line-height: 1.05;
             transform: rotate(-12deg);
-            letter-spacing: 1px;
-            padding: 1rem;
+            letter-spacing: 1.5px;
+            padding: 1.25rem;
             text-transform: uppercase;
-            text-shadow: 1px 1px 0 #000;
-            box-shadow: 0 0 30px rgba(46, 204, 113, 0.35);
+            text-shadow: 2px 2px 0 #000;
+            box-shadow: 0 0 50px rgba(46, 204, 113, 0.5);
+            background: radial-gradient(circle at 30% 30%, rgba(46,204,113,0.15), transparent 70%);
         }
-        .we-buy-stamp .big { font-size: 1.75rem; letter-spacing: 2px; }
-        @media (max-width: 760px) {
+        .we-buy-stamp .big { font-size: 2.5rem; letter-spacing: 3px; margin: 0.1rem 0; }
+        @media (max-width: 880px) {
             .we-buy-inner { grid-template-columns: 1fr; text-align: center; gap: 2rem; }
             .we-buy-copy p { margin-left: auto; margin-right: auto; }
-            .we-buy-stamp { margin: 0 auto; }
+            .we-buy-stamp { margin: 0 auto; width: 150px; height: 150px; font-size: 1rem; padding: 1rem; }
+            .we-buy-stamp .big { font-size: 1.85rem; }
+            .we-buy-copy h2 { font-size: 3rem; }
+            .we-buy-actions { justify-content: center; }
+            .we-buy-points { justify-content: center; }
+        }
+        @media (max-width: 500px) {
             .we-buy-copy h2 { font-size: 2.25rem; }
+            .we-buy-band { padding: 3.5rem 1.25rem; }
         }
 
         /* Footer */
@@ -771,6 +838,32 @@
 
     <div class="rope" aria-hidden="true"></div>
 
+    <section class="we-buy-band" id="we-buy-cta">
+        <div class="we-buy-inner">
+            <div class="we-buy-copy">
+                <div class="we-buy-kicker">💵 We Buy Collections</div>
+                <h2>Got Figures?<br>We Got Cash.</h2>
+                <p>Old collection in the attic? Estate to clear? Kid moved out and left a tub of Mattel Elites? Skip the platform fees and lowball DMs. <strong>We quote it, we buy it, we pay fast.</strong></p>
+                <div class="we-buy-actions">
+                    <a href="/we-buy.html#intake" class="btn btn-money">Get a Quote →</a>
+                    <a href="/we-buy.html" class="btn btn-ghost">How It Works</a>
+                </div>
+                <div class="we-buy-points">
+                    <span>✓ Fair quotes in 24 hours</span>
+                    <span>✓ Any size — 1 piece to 1,000</span>
+                    <span>✓ Cash up front, no consignment</span>
+                </div>
+            </div>
+            <div class="we-buy-stamp" aria-hidden="true">
+                <span>Cash</span>
+                <span class="big">Paid</span>
+                <span>Fast</span>
+            </div>
+        </div>
+    </section>
+
+    <div class="rope" aria-hidden="true"></div>
+
     <section class="section" id="collections">
         <h2 class="section-title">The Collections</h2>
         <p class="section-kicker">Browse the categories — each links straight to that section in the shop.</p>
@@ -867,24 +960,6 @@
 
     <div class="rope" aria-hidden="true"></div>
 
-    <section class="we-buy-band">
-        <div class="we-buy-inner">
-            <div class="we-buy-copy">
-                <div class="we-buy-kicker">Got a Collection?</div>
-                <h2>We Pay Cash For Figures</h2>
-                <p>Old collection in the attic? Kid moved out and left a tub of Mattel Elites? Estate to clear out? Skip the platform fees and lowball DMs — <strong>we'll quote it, buy it, and pay you fast.</strong></p>
-                <a href="/we-buy.html" class="btn btn-money">See How It Works →</a>
-            </div>
-            <div class="we-buy-stamp" aria-hidden="true">
-                <span>Cash</span>
-                <span class="big">Paid</span>
-                <span>Fast</span>
-            </div>
-        </div>
-    </section>
-
-    <div class="rope" aria-hidden="true"></div>
-
     <section class="section" id="contact">
         <h2 class="section-title">Reach Out</h2>
         <p class="section-kicker">Looking for something specific? Hit me up.</p>
@@ -965,18 +1040,21 @@
                 </ul>
             </div>
             <div class="footer-col">
-                <h4>Buy From</h4>
+                <h4>Legal</h4>
                 <ul>
-                    <li><a href="https://www.ebay.com/usr/bubs960" target="_blank" rel="noopener">eBay Store</a></li>
-                    <li><a href="https://www.whatnot.com/user/bubs960" target="_blank" rel="noopener">Whatnot Live</a></li>
-                    <li><a href="/index.html#contact">Direct Inquiry</a></li>
+                    <li><a href="/shipping.html">Shipping</a></li>
+                    <li><a href="/returns.html">Returns &amp; Refunds</a></li>
+                    <li><a href="/privacy.html">Privacy</a></li>
+                    <li><a href="/terms.html">Terms of Service</a></li>
                 </ul>
             </div>
             <div class="footer-col">
-                <h4>Connect</h4>
+                <h4>Also From Bubs</h4>
                 <ul>
-                    <li><a href="mailto:Bubs960toys@gmail.com">Bubs960toys@gmail.com</a></li>
-                    <li><a href="/index.html#vip">Join VIP List</a></li>
+                    <li><a href="https://figurepinner.com" target="_blank" rel="noopener">Figure Pinner</a></li>
+                    <li><a href="https://www.ebay.com/usr/bubs960" target="_blank" rel="noopener">eBay Store</a></li>
+                    <li><a href="https://www.whatnot.com/user/bubs960" target="_blank" rel="noopener">Whatnot Live</a></li>
+                    <li><a href="mailto:Bubs960toys@gmail.com">Email Us</a></li>
                 </ul>
             </div>
         </div>
