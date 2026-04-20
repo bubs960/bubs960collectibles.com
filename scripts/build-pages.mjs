@@ -728,6 +728,7 @@ const HEAD = (title, description, options = {}) => {
   <meta name="twitter:description" content="${escapeHtml(description ?? '')}">
   <meta name="twitter:image" content="${escapeHtml(ogImage)}">
   <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/site.css">
   <style>${PAGE_CSS}</style>
 </head>
 <body>
