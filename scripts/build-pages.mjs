@@ -1232,6 +1232,8 @@ const staticEntries = [
   { path: '/',                     priority: '1.0', changefreq: 'daily'   },
   { path: '/we-buy.html',          priority: '1.0', changefreq: 'weekly'  },
   { path: '/collection-value.html',priority: '0.9', changefreq: 'monthly' },
+  { path: '/sell-wrestling-figures.html', priority: '0.8', changefreq: 'monthly' },
+  { path: '/vintage-value-guide.html',    priority: '0.8', changefreq: 'monthly' },
   { path: '/shop/',                priority: '0.9', changefreq: 'daily'   },
   { path: '/shop/sold.html',       priority: '0.7', changefreq: 'weekly'  },
   { path: '/live.html',            priority: '0.8', changefreq: 'weekly'  },
