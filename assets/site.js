@@ -5,7 +5,7 @@
 // Paste your GA4 Measurement ID below (Google Analytics -> Admin -> Data Streams
 // -> pick the web stream -> Measurement ID, format: G-XXXXXXXXXX).
 // Leaving as 'G-REPLACE' disables tracking cleanly; no network calls are made.
-const GA4_ID = 'G-REPLACE';
+const GA4_ID = 'G-QG8J17L0XS';
 
 (function () {
   if (GA4_ID && GA4_ID !== 'G-REPLACE') {
