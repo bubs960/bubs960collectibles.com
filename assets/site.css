@@ -193,6 +193,37 @@ select {
 textarea { min-height: 140px; resize: vertical; }
 input:focus, textarea:focus, select:focus { border-color: var(--primary-red); }
 
+/* Keyboard focus rings — accessibility */
+a:focus-visible,
+button:focus-visible,
+.btn:focus-visible,
+.chip:focus-visible,
+summary:focus-visible {
+  outline: 3px solid var(--accent-yellow);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+input:focus-visible, textarea:focus-visible, select:focus-visible {
+  border-color: var(--accent-yellow);
+  box-shadow: 0 0 0 3px rgba(241, 196, 15, 0.25);
+}
+
+/* Skip-to-content for screen readers / keyboard */
+.skip-link {
+  position: absolute;
+  left: -999px;
+  top: 0;
+  background: var(--primary-red);
+  color: white;
+  padding: 0.75rem 1.25rem;
+  font-weight: 800;
+  z-index: 100;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 0.85rem;
+}
+.skip-link:focus { left: 1rem; top: 1rem; outline: 3px solid var(--accent-yellow); }
+
 .form-status {
   min-height: 1.25rem;
   font-size: 0.9rem;
