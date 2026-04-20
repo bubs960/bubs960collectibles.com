@@ -666,6 +666,7 @@ a { color: inherit; text-decoration: none; }
 .card-title { font-family: 'Bangers', cursive; font-size: 1.45rem; color: var(--text-light); line-height: 1.1; letter-spacing: 1px; }
 .card-foot { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 0.75rem; border-top: 1px dashed #2a3142; }
 .card-price { font-family: 'Bangers', cursive; color: var(--accent-yellow); font-size: 1.5rem; }
+.card-savings { margin: -0.25rem 0 0.25rem; }
 .card-ribbon {
   position: absolute;
   top: 12px; right: -36px;
@@ -928,14 +929,18 @@ const HEAD = (title, description, options = {}) => {
   <style>${PAGE_CSS}</style>
 </head>
 <body>
+<a class="announce-bar" href="/we-buy.html#intake">💵 Selling a collection? <strong>Free quote in 24 hours</strong> <span class="arrow">→</span></a>
 ${NAV_HTML}
 <main class="page-wrap">
 `;
 };
 
+const TAIL_SCRIPT = `<script src="/assets/site.js" defer></script>`;
+
 const FOOT = `
 </main>
 ${FOOTER_HTML}
+${TAIL_SCRIPT}
 </body>
 </html>
 `;
@@ -1024,6 +1029,7 @@ function productPage(p, allProducts = []) {
     <div class="price-row">
       ${p.price != null ? `<span class="price${isSold ? ' struck' : ''}">${fmtPrice(p.price)}</span>` : ''}
       ${!isSold && p.compareAtPrice != null ? `<span class="compare-price">${fmtPrice(p.compareAtPrice)}</span>` : ''}
+      ${(() => { const s = savingsVsEbay(p); return s ? `<span class="savings-badge lg">Save $${s.toFixed(0)} vs eBay</span>` : ''; })()}
       ${statusBadge(p.status)}
     </div>
     <div class="description">${p.description ?? '<p>Details coming soon — reach out for photos and condition notes.</p>'}</div>
@@ -1055,6 +1061,16 @@ function groupByCollection(products) {
     .sort((a, b) => a[0].localeCompare(b[0]));
 }
 
+function savingsVsEbay(p) {
+  if ((p.status ?? '').toLowerCase() === 'sold') return null;
+  const price = Number(p.price);
+  const compare = Number(p.compareAtPrice);
+  if (!Number.isFinite(price) || !Number.isFinite(compare)) return null;
+  const saved = compare - price;
+  if (saved <= 0) return null;
+  return saved;
+}
+
 function renderCard(p) {
     const isSold = (p.status ?? '').toLowerCase() === 'sold';
     const imgs = resolveImages(p, LOCAL_IMG_PREFIX);
@@ -1067,8 +1083,10 @@ function renderCard(p) {
         ? `<div class="card-ribbon">Grail</div>`
         : (p.compareAtPrice ? `<div class="card-ribbon">Deal</div>` : '');
     const soldStamp = isSold ? `<div class="sold-stamp">Sold</div>` : '';
+    const saved = savingsVsEbay(p);
+    const savingsBadge = saved ? `<span class="savings-badge">Save $${saved.toFixed(0)} vs eBay</span>` : '';
     return `
-      <a class="card ${isSold ? 'is-sold' : ''}" href="/shop/${escapeHtml(p.handle)}.html">
+      <a class="card reveal ${isSold ? 'is-sold' : ''}" href="/shop/${escapeHtml(p.handle)}.html">
         ${ribbon}
         <div class="card-banner">
           <span>${escapeHtml(p.collection ?? 'Collectible')}</span>
@@ -1080,6 +1098,7 @@ function renderCard(p) {
         </div>
         <div class="card-body">
           <div class="card-title">${escapeHtml(p.title)}</div>
+          ${savingsBadge ? `<div class="card-savings">${savingsBadge}</div>` : ''}
           <div class="card-foot">
             ${p.price != null ? `<span class="card-price">${fmtPrice(p.price)}</span>` : '<span></span>'}
             ${statusBadge(p.status)}
@@ -1171,23 +1190,60 @@ for (const p of products) {
 }
 console.log(`[build] shop/index.html (${products.length} products)`);
 
+// Recently Sold — social proof page. Pulls every product tagged/stat sold,
+// shows the grid with SOLD stamps. Also drives sellers ("yours could be next").
+function soldPage(soldProducts) {
+  const count = soldProducts.length;
+  const cards = soldProducts.map(renderCard).join('\n');
+  const meta = 'See recent pieces that moved fast through Bubs960 Collectibles. Social proof for buyers, motivation for sellers — yours could be next.';
+  return `${HEAD('Recently Sold', meta, { ogUrl: `${SITE_URL}/shop/sold.html` })}
+<div class="catalog-header">
+  <h1 class="catalog-title">Recently Sold</h1>
+  <p class="catalog-sub">${count} piece${count === 1 ? '' : 's'} moved — want your collection to move this fast?</p>
+</div>
+<div class="rope" aria-hidden="true"></div>
+<div style="height:2rem"></div>
+${count > 0 ? `<div class="catalog-grid">${cards}</div>` : `
+<section class="empty-state reveal">
+  <h2>Sold Wall Starts Here</h2>
+  <p>This page fills up as pieces move. Want to be the reason it does? <strong>Sell us your collection</strong> and watch your pieces land here.</p>
+  <div class="empty-actions">
+    <a href="/we-buy.html#intake" class="btn btn-money">Sell Us Yours →</a>
+  </div>
+</section>`}
+<section style="padding: 4rem 2rem; text-align: center; background: linear-gradient(180deg, transparent, rgba(46,204,113,0.08) 50%, transparent); margin-top: 3rem;">
+  <div style="max-width: 640px; margin: 0 auto;">
+    <h2 style="font-family:'Bangers',cursive;font-size:2.5rem;letter-spacing:2px;color:var(--accent-yellow);text-shadow:2px 2px 0 var(--primary-red);margin-bottom:0.75rem;">Want Yours Here Next?</h2>
+    <p style="color:#dfe3ec;line-height:1.6;margin-bottom:1.5rem;">Every piece above moved because we priced it from real eBay sold comps. If you have a collection, we'll price yours the same way — fair and fast.</p>
+    <a href="/we-buy.html#intake" class="btn btn-money">💵 Get a Quote</a>
+  </div>
+</section>
+${FOOT}`;
+}
+
+const sold = products.filter((p) => (p.status ?? '').toLowerCase() === 'sold');
+await writeFile(join(SHOP_DIR, 'sold.html'), soldPage(sold));
+console.log(`[build] shop/sold.html (${sold.length} sold pieces)`);
+
 // Sitemap — regenerated each build. Priority + changefreq help search
 // engines crawl the most important pages more aggressively.
 const today = new Date().toISOString().slice(0, 10);
 const staticEntries = [
-  { path: '/',                  priority: '1.0', changefreq: 'daily'   },
-  { path: '/shop/',             priority: '0.9', changefreq: 'daily'   },
-  { path: '/we-buy.html',       priority: '0.9', changefreq: 'weekly'  },
-  { path: '/live.html',         priority: '0.8', changefreq: 'weekly'  },
-  { path: '/want-list.html',    priority: '0.7', changefreq: 'monthly' },
-  { path: '/about.html',        priority: '0.6', changefreq: 'monthly' },
-  { path: '/faq.html',          priority: '0.6', changefreq: 'monthly' },
-  { path: '/grading.html',      priority: '0.6', changefreq: 'monthly' },
-  { path: '/testimonials.html', priority: '0.6', changefreq: 'weekly'  },
-  { path: '/shipping.html',     priority: '0.4', changefreq: 'yearly'  },
-  { path: '/returns.html',      priority: '0.4', changefreq: 'yearly'  },
-  { path: '/privacy.html',      priority: '0.3', changefreq: 'yearly'  },
-  { path: '/terms.html',        priority: '0.3', changefreq: 'yearly'  },
+  { path: '/',                     priority: '1.0', changefreq: 'daily'   },
+  { path: '/we-buy.html',          priority: '1.0', changefreq: 'weekly'  },
+  { path: '/collection-value.html',priority: '0.9', changefreq: 'monthly' },
+  { path: '/shop/',                priority: '0.9', changefreq: 'daily'   },
+  { path: '/shop/sold.html',       priority: '0.7', changefreq: 'weekly'  },
+  { path: '/live.html',            priority: '0.8', changefreq: 'weekly'  },
+  { path: '/want-list.html',       priority: '0.7', changefreq: 'monthly' },
+  { path: '/about.html',           priority: '0.6', changefreq: 'monthly' },
+  { path: '/faq.html',             priority: '0.6', changefreq: 'monthly' },
+  { path: '/grading.html',         priority: '0.6', changefreq: 'monthly' },
+  { path: '/testimonials.html',    priority: '0.6', changefreq: 'weekly'  },
+  { path: '/shipping.html',        priority: '0.4', changefreq: 'yearly'  },
+  { path: '/returns.html',         priority: '0.4', changefreq: 'yearly'  },
+  { path: '/privacy.html',         priority: '0.3', changefreq: 'yearly'  },
+  { path: '/terms.html',           priority: '0.3', changefreq: 'yearly'  },
 ];
 const productEntries = products.map((p) => ({
   path: `/shop/${p.handle}.html`,

@@ -100,6 +100,68 @@ a { color: inherit; text-decoration: none; }
 .nav-links a { transition: color 0.2s ease, background-color 0.2s ease, transform 0.15s ease; }
 .nav-links a:hover { color: var(--accent-yellow); }
 
+/* Top announcement bar — global CTA above the marquee.
+   Drives sellers to the We Buy intake. Visible on every page load. */
+.announce-bar {
+  display: block;
+  background: linear-gradient(90deg, #1ea155 0%, var(--money-green) 50%, #3de87a 100%);
+  color: #000;
+  text-align: center;
+  padding: 0.55rem 1rem;
+  font-family: 'Bangers', cursive;
+  letter-spacing: 2px;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--accent-yellow);
+  transition: background-color 0.2s ease;
+  position: relative;
+  z-index: 52;
+}
+.announce-bar:hover { background: #3de87a; }
+.announce-bar strong { text-decoration: underline; text-underline-offset: 3px; }
+.announce-bar .arrow { display: inline-block; transition: transform 0.2s ease; }
+.announce-bar:hover .arrow { transform: translateX(4px); }
+@media (max-width: 500px) {
+  .announce-bar { font-size: 0.8rem; letter-spacing: 1.5px; padding: 0.5rem 0.75rem; }
+}
+
+/* Scroll-reveal utility — elements with .reveal start hidden and
+   fade/slide in when they enter the viewport. Zero-JS fallback: if
+   JS disabled or observer unavailable, content is visible. */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+.reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+}
+
+/* Save vs eBay savings badge — yellow pill, appears on cards and
+   product pages where compareAtPrice > price. */
+.savings-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--money-green);
+  color: #000;
+  font-family: 'Bangers', cursive;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  border: 2px solid var(--accent-yellow);
+  text-transform: uppercase;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.savings-badge::before { content: '💵'; font-size: 0.9rem; }
+.savings-badge.lg { font-size: 1rem; padding: 0.35rem 0.8rem; }
+
 /* Nav CTA — visually emphasized link (We Buy) */
 .nav-links a.nav-cta {
   background: var(--money-green);
