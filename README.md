@@ -37,13 +37,38 @@ works pre-Shopify and it's still a valid backup path.
 ## Local commands
 
 ```bash
-node scripts/build-pages.mjs   # regenerate shop/ HTML pages + sitemap
-node scripts/sync-shopify.mjs  # push local JSON shells INTO Shopify (migration tool)
+node scripts/build-pages.mjs                    # regenerate shop/ HTML pages + sitemap
+node scripts/sync-shopify.mjs                   # push local JSON shells INTO Shopify (migration tool)
+node scripts/ebay-to-shopify-csv.mjs IN.csv     # convert eBay export CSV -> Shopify import CSV (15% off)
 ```
 
 The sync script is a one-way push of local JSON into Shopify. It's
 useful for the initial migration if you ever want to bulk-import from
 JSON. It is NOT part of the default build flow.
+
+## eBay-first intake workflow
+
+For bulk migrating an existing eBay store into Shopify:
+
+1. eBay Seller Hub -> Reports -> Downloads -> "Active Listings Report".
+   Download the CSV.
+2. Run:
+   ```
+   node scripts/ebay-to-shopify-csv.mjs active-listings.csv shopify-import.csv 15
+   ```
+   The last argument is the direct-buyer discount percentage (default
+   15). eBay price becomes "Compare At Price" on Shopify, so the
+   savings render as a strikethrough on the site.
+3. Shopify admin -> Products -> Import -> upload `shopify-import.csv`.
+   Photos pull from eBay's CDN URLs automatically.
+4. GitHub Actions rebuilds the site on next cron (or manual dispatch).
+
+## eBay listing template (drive sellers, stay legal)
+
+`templates/ebay-listing-description.html` — copy/paste into the bottom
+of every eBay listing. Drives sellers (inventory, 100% eBay-allowed)
+and Whatnot viewers. Deliberately avoids URLs to bubs960collectibles.com
+and any buyer-poaching language (both forbidden by eBay).
 
 ## One-time Formspree setup (contact + VIP forms)
 
