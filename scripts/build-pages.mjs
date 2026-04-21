@@ -3,6 +3,7 @@
 //   shop/index.html              — catalog listing
 //   shop/<handle>.html           — one high-res page per product
 // Safe to re-run; output is fully overwritten.
+// (trigger: manual rebuild 2026-04-21)
 
 import { mkdir, writeFile, readdir, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
