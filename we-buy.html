@@ -130,6 +130,85 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
         .buy-hero-inner { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; }
+        .early-access-banner {
+            display: inline-block;
+            background: var(--accent-yellow);
+            color: #111;
+            font-family: 'Bangers', cursive;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            padding: 0.35rem 0.9rem;
+            border-radius: 999px;
+            border: 2px solid #111;
+            margin-bottom: 1.25rem;
+            text-transform: uppercase;
+            box-shadow: 0 0 20px rgba(241,196,15,0.4);
+        }
+        @media (max-width: 600px) {
+            .early-access-banner { font-size: 0.7rem; letter-spacing: 1.5px; padding: 0.3rem 0.7rem; }
+        }
+
+        /* Methodology / Setting Expectations */
+        .methodology {
+            max-width: 860px;
+            margin: 0 auto;
+            background: linear-gradient(180deg, var(--metal-light), var(--bg-panel) 60%);
+            border: 3px solid #000;
+            border-radius: 14px;
+            padding: 2rem 2rem 2.25rem;
+            box-shadow: inset 0 0 0 2px var(--accent-yellow), 0 8px 0 #000;
+        }
+        .methodology h3 {
+            font-family: 'Bangers', cursive;
+            font-size: 1.5rem;
+            letter-spacing: 1.5px;
+            color: var(--accent-yellow);
+            text-shadow: 2px 2px 0 var(--primary-red);
+            text-transform: uppercase;
+            margin: 1.5rem 0 0.5rem;
+        }
+        .methodology h3:first-child { margin-top: 0; }
+        .methodology p { color: #dfe3ec; line-height: 1.7; margin-bottom: 0.85rem; font-size: 1rem; }
+        .methodology p strong { color: var(--accent-yellow); }
+        .methodology ul { list-style: none; padding: 0; margin: 0.5rem 0 1.25rem; }
+        .methodology ul li {
+            color: #dfe3ec;
+            padding: 0.5rem 0 0.5rem 1.5rem;
+            position: relative;
+            line-height: 1.55;
+            font-size: 0.95rem;
+        }
+        .methodology ul li::before {
+            content: '•';
+            color: var(--money-green);
+            font-weight: 900;
+            position: absolute;
+            left: 0.25rem;
+            top: 0.35rem;
+            font-size: 1.3rem;
+        }
+        .money-math {
+            background: rgba(46, 204, 113, 0.08);
+            border-left: 4px solid var(--money-green);
+            border-radius: 6px;
+            padding: 1rem 1.25rem;
+            margin: 1rem 0 1.5rem;
+            color: #dfe3ec;
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+        .money-math strong { color: var(--money-green); }
+        .money-math .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.35rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .money-math .row:last-child { border-bottom: none; }
+        .money-math .row .label { color: var(--text-muted); }
+        .money-math .row .val { font-family: 'Bangers', cursive; color: var(--money-green); letter-spacing: 1px; }
 
         .money-stamp {
             position: absolute;
@@ -649,7 +728,7 @@
     </style>
 </head>
 <body>
-    <a class="announce-bar" href="/we-buy.html#intake">💵 Selling a collection? <strong>Free quote in 24 hours</strong> <span class="arrow">→</span></a>
+    <a class="announce-bar" href="/we-buy.html#methodology">⚡ Early Access · Selling a collection? <strong>Read how we price</strong> <span class="arrow">→</span></a>
 
     <div class="marquee" aria-hidden="true">
         <div class="marquee-track">
@@ -683,14 +762,15 @@
             <span>Fast</span>
         </div>
         <div class="buy-hero-inner">
+            <div class="early-access-banner">⚡ Early Access · Now Accepting Select Inquiries · Full Program Coming Soon</div>
             <div class="kicker">Sell Us Your Collection</div>
             <h1 class="buy-title">Got Figures?<br>We Got Cash.</h1>
             <p class="buy-lead">
-                Old collection in the attic? Estate to clear? Kid moved out and left a tub of Mattel Elites? <strong>Buy it outright or consign it</strong> — your call. Quotes priced from <span class="cash">real eBay sold comps</span>, so you know the number is fair and the piece will actually move.
+                Old collection in the attic? Estate to clear? <strong>Buy outright or consign</strong> — your call. Quotes priced from <span class="cash">real eBay sold comps</span>. <strong>Read how we price before submitting</strong> — our buy offers land around 40-60% of retail, consignment recovers more.
             </p>
             <div class="cta-row">
-                <a href="#intake" class="btn btn-money">Get a Quote →</a>
-                <a href="#two-ways" class="btn btn-ghost">Buy or Consign?</a>
+                <a href="#methodology" class="btn btn-money">How We Price First →</a>
+                <a href="#intake" class="btn btn-ghost">Skip to Intake</a>
             </div>
         </div>
     </section>
@@ -734,6 +814,64 @@
             </div>
         </div>
     </section>
+
+    <section class="section" id="methodology">
+        <h2 class="section-title">How We Price — Read First</h2>
+        <p class="section-kicker">Before you submit. This sets realistic expectations and saves everyone time.</p>
+
+        <div class="methodology">
+            <h3>We're Collectors Running a Business</h3>
+            <p>To offer what we do — fair quotes in 24 hours, no listing grind, both cash and consignment paths — we have to buy at a margin. <strong>We are not paying retail.</strong> If you need retail dollar for every piece, list them yourself on eBay — that's a totally valid choice.</p>
+
+            <h3>The Math on a Buy-Outright Offer</h3>
+            <p>Our typical cash-today offer lands around <strong>40-60% of the eBay sold-comp average</strong> for your pieces. That % covers what a reseller eats that a private seller doesn't:</p>
+            <ul>
+                <li><strong>Platform fees</strong> — eBay / Whatnot take 13-15% when we turn around and sell</li>
+                <li><strong>Payment processing</strong> — another 2-3%</li>
+                <li><strong>Inventory holding</strong> — some pieces sit 6-12 months before the right buyer shows up</li>
+                <li><strong>Shipping materials + labor</strong> — bubble wrap, boxes, corner protectors, labels, packing time</li>
+                <li><strong>Risk</strong> — returns, damage, mis-grades, the occasional chargeback</li>
+                <li><strong>Your time</strong> — the hours you skip photographing, listing, writing descriptions, answering buyer DMs</li>
+            </ul>
+
+            <div class="money-math">
+                <div class="row"><span class="label">eBay sold-comp average for your piece</span><span class="val">$100</span></div>
+                <div class="row"><span class="label">Platform + payment fees eBay takes from us on resale</span><span class="val">≈ −$16</span></div>
+                <div class="row"><span class="label">Shipping materials / labor per piece</span><span class="val">≈ −$5</span></div>
+                <div class="row"><span class="label">Inventory risk / hold cost</span><span class="val">≈ −$10</span></div>
+                <div class="row"><span class="label"><strong>Typical buy-outright offer to you</strong></span><span class="val">$40 – $60</span></div>
+            </div>
+
+            <h3>Consignment — You Get More</h3>
+            <p>On consignment we list, photograph, market, and ship your pieces. You get back <strong>65-80% of the eBay sold-comp</strong> after our commission. Trade-off: longer timeline — you get paid when the piece sells, not today.</p>
+            <div class="money-math">
+                <div class="row"><span class="label">Same $100 piece, sold on consignment</span><span class="val">$100</span></div>
+                <div class="row"><span class="label">Our commission (typically 25%)</span><span class="val">≈ −$25</span></div>
+                <div class="row"><span class="label"><strong>What you net</strong></span><span class="val">$70 – $80</span></div>
+            </div>
+
+            <h3>What This Means For You</h3>
+            <ul>
+                <li>Expect our outright quote on a $100 eBay piece to land around <strong>$40-$60</strong></li>
+                <li>Expect a consignment payout of around <strong>$70-$80</strong> (whenever it sells)</li>
+                <li>Rare grails, sealed cases, and case-fresh pieces get higher %</li>
+                <li>Bulk common pieces (common-wave Elites, loose modern figures) get lower %</li>
+                <li>If you're hoping for 90%+ of retail in cash, we're not your path — list it yourself</li>
+            </ul>
+
+            <h3>Still a Fair Deal?</h3>
+            <p>Depends on your math. Here's what you're trading:</p>
+            <ul>
+                <li>Time saved (no listings, no photos, no buyer messages, no shipping)</li>
+                <li>Zero platform fees or chargeback risk on your end</li>
+                <li>Cash in 24 hours (outright) or guaranteed market visibility (consignment)</li>
+                <li>One conversation vs fifty</li>
+            </ul>
+            <p>For some sellers that's worth it. For others it's not. We'd rather you know going in than be disappointed at the quote.</p>
+        </div>
+    </section>
+
+    <div class="rope" aria-hidden="true"></div>
 
     <section class="section" id="two-ways">
         <h2 class="section-title" style="color: var(--money-green); text-shadow: 2px 2px 0 #000;">Two Ways to Sell</h2>
