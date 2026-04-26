@@ -9,7 +9,75 @@ diff without guessing.
 
 ---
 
-## Phase 11 — Analytics sink wired to live POST endpoint (current)
+## Phase 12 — v1+v2 launch posture: single binary with sign-in on day one (current)
+
+Engineer 2026-04-26 confirmed all four v2 endpoints (devices / vault /
+wantlist / JWKS middleware) plus batch lookup are live in prod. Steve
+took the call: pull v2 into the launch binary instead of shipping v1
+read-only first.
+
+### Decision recorded
+- **Single launch binary, v2 ON.** App Store + Play Store first
+  submission ships with sign-in, vault, wantlist, and price alerts
+  enabled out of the box. Stronger first impression at the cost of
+  needing the App Privacy questionnaire to declare account / vault /
+  push data, plus a Clerk-JWT smoke test before TestFlight.
+- v1 read-only stays around as a **fallback profile** in case Apple
+  review trips on a v2-specific issue and we need to ship a quick
+  replacement binary.
+
+### Added
+- **`mobile/eas.json`** — three build profiles:
+  - `production`: launch posture. `EXPO_PUBLIC_V2_*=true`,
+    Clerk publishable key wired, prod Worker URL.
+  - `preview-v1`: read-only fallback. All v2 flags off, no Clerk.
+  - `preview-v2`: dev-Worker preview. Clerk dev key + dev Worker
+    URL for internal smoke testing.
+  Bundle identifier + Apple/Google submit credentials are TODO
+  placeholders — Steve fills in once Apple Developer + Play Console
+  enrollment is active.
+- **`mobile/scripts/smoke-v2-auth.sh`** — auth-path smoke test that
+  takes a Clerk JWT as a single arg and curls the four v2 endpoints
+  (vault / wantlist / devices / analytics-event) plus their
+  unauthenticated 401 paths. Engineer's "once a real Clerk JWT
+  smoke-tests positive, you're good" gate, scripted. Pass/fail
+  summary, exits non-zero on any failure so it can wire into a
+  future CI check.
+- **`mobile/store-listing/APPLE_REVIEW_PREP.md`** — App Privacy
+  questionnaire deltas for v2 (User ID + User Content + Device ID
+  toggle on, no Tracking, no Contact Info), Sign-in-with-Apple gate
+  per Apple guideline 4.8, account-deletion review path,
+  anonymous-browsing assertion, demo-account setup, suggested
+  Review-Notes copy, and a 7-item pre-submit smoke-test checklist.
+
+### Changed
+- **`mobile/.env.example`** — flips the v2 flags ON in the documented
+  posture. Profile naming updated (`production` / `preview-v1` /
+  `preview-v2`) to match `eas.json`. Dev Clerk pk_test_* baked in;
+  pk_live_* swap noted as a launch-day gate.
+
+### Not done (deliberate, listed for traceability)
+- **Bundle identifier / icon / adaptive icon / screenshots** — Steve's
+  side. `eas.json` carries `BUNDLE_ID_TBD` / `ANDROID_PACKAGE_TBD`
+  placeholders that the build will reject at upload until set, which
+  is the desired behavior (forces a deliberate decision).
+- **pk_live_* Clerk key** — production Clerk instance not spun up
+  yet. The `production` profile points at the dev `pk_test_*` for
+  now; swap is a one-line `eas.json` edit when the prod key arrives.
+- **Apple Team ID + ASC App ID + Play service-account JSON** —
+  populated via `eas credentials` once Apple Developer + Play Console
+  enrollment is active.
+- **Batch lookup wiring** — engineer mentioned "batch lookup live"
+  on 2026-04-26; awaiting route shape before wiring into vault /
+  wantlist screens. Not a launch blocker; current per-figure fetch
+  works.
+- **Sign-in with Apple toggle in Clerk** — depends on what social
+  providers (if any) are enabled in the prod Clerk dashboard.
+  Documented in APPLE_REVIEW_PREP.md §2.
+
+---
+
+## Phase 11 — Analytics sink wired to live POST endpoint
 
 Engineer's #88 landed in prod 2026-04-26 evening
 (`POST https://figurepinner-api.bubs960.workers.dev/api/v1/analytics/event`,
