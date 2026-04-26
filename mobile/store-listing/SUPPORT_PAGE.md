@@ -32,7 +32,7 @@ Two versions below — pick one.
 <p class="muted">Real eBay prices for action figures.</p>
 
 <h2>Get in touch</h2>
-<p>Email <a href="mailto:support@figurepinner.com">support@figurepinner.com</a>.
+<p>Email <a href="mailto:bubs960toys@gmail.com">bubs960toys@gmail.com</a>.
 We're a small team — usually a same-day reply, occasionally next-day if
 something's on fire.</p>
 
@@ -87,7 +87,7 @@ Real eBay prices for action figures.
 
 ## Get in touch
 
-Email **support@figurepinner.com**. Small team, usually same-day reply.
+Email **bubs960toys@gmail.com**. Small team, usually same-day reply.
 
 ## Common questions
 
@@ -128,7 +128,7 @@ Affiliate revenue from eBay Partner Network keeps the lights on.
 
 ## Things to verify before pushing live
 
-- [ ] `support@figurepinner.com` is a real, monitored inbox (or alias
+- [ ] `bubs960toys@gmail.com` is a real, monitored inbox (or alias
       that forwards somewhere monitored). Apple sometimes test-emails
       this address as part of review.
 - [ ] `/privacy` and `/terms` exist (you reference both). If they
