@@ -9,6 +9,18 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import AsyncStorage from './__mocks__/asyncStorage';
 import { useFigureDetail } from '../src/hooks/useFigureDetail';
+import { isFigureDetailMiss } from '../src/shared/types';
+import type { FigureDetailHit } from '../src/shared/types';
+
+// Hit-only narrowing helper. Tests assert against figure / price fields
+// which only exist on FigureDetailHit; the miss variant is exercised
+// separately in figureApi.test.ts.
+function asHit(d: unknown): FigureDetailHit {
+  if (!d || typeof d !== 'object' || isFigureDetailMiss(d as never)) {
+    throw new Error('expected FigureDetailHit');
+  }
+  return d as FigureDetailHit;
+}
 
 const store = AsyncStorage as { __reset: () => void };
 
@@ -43,6 +55,7 @@ function mockFigureDetailSuccess(overrides: { figure?: unknown; price?: unknown 
           exclusive_to: null,
           pack_size: 1,
           scale: null,
+          match_quality: 'direct',
         },
     })
     .mockResolvedValueOnce({
@@ -56,9 +69,10 @@ describe('useFigureDetail', () => {
     mockFigureDetailSuccess();
     const { result } = renderHook(() => useFigureDetail('f1'));
     await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(result.current.data?.figure.figure_id).toBe('f1');
-    expect(result.current.data?.price?.avgSold).toBe(20);
-    expect(result.current.data?.rarity_tier).toBeNull();
+    const hit = asHit(result.current.data);
+    expect(hit.figure.figure_id).toBe('f1');
+    expect(hit.price?.avgSold).toBe(20);
+    expect(hit.rarity_tier).toBeNull();
     expect(result.current.error).toBeNull();
   });
 
@@ -74,7 +88,7 @@ describe('useFigureDetail', () => {
       await result.current.refetch();
     });
     expect(fetchMock.mock.calls.length).toBeGreaterThan(firstFetchCount);
-    await waitFor(() => expect(result.current.data?.price?.avgSold).toBe(42));
+    await waitFor(() => expect(asHit(result.current.data).price?.avgSold).toBe(42));
   });
 
   it('marks data as stale when cache age exceeds the 24h threshold', async () => {
@@ -85,6 +99,7 @@ describe('useFigureDetail', () => {
       'fp:v1:figure:f1',
       JSON.stringify({
         data: {
+          match_quality: 'direct',
           figure: {
             figure_id: 'f1',
             name: 'Cached',
@@ -119,7 +134,7 @@ describe('useFigureDetail', () => {
     );
 
     const { result } = renderHook(() => useFigureDetail('f1'));
-    await waitFor(() => expect(result.current.data?.figure.name).toBe('Cached'));
+    await waitFor(() => expect(asHit(result.current.data).figure.name).toBe('Cached'));
     expect(result.current.isStale).toBe(true);
     expect(result.current.cacheAgeSeconds).toBeGreaterThan(47 * 3600);
   });
@@ -129,7 +144,7 @@ describe('useFigureDetail', () => {
     const { result, rerender } = renderHook(({ id }: { id: string }) => useFigureDetail(id), {
       initialProps: { id: 'f1' },
     });
-    await waitFor(() => expect(result.current.data?.figure.figure_id).toBe('f1'));
+    await waitFor(() => expect(asHit(result.current.data).figure.figure_id).toBe('f1'));
 
     mockFigureDetailSuccess({
       figure: {
@@ -144,11 +159,12 @@ describe('useFigureDetail', () => {
         exclusive_to: null,
         pack_size: 1,
         scale: null,
+        match_quality: 'direct',
       },
       price: null,
     });
     rerender({ id: 'f2' });
     await flush();
-    await waitFor(() => expect(result.current.data?.figure.figure_id).toBe('f2'));
+    await waitFor(() => expect(asHit(result.current.data).figure.figure_id).toBe('f2'));
   });
 });

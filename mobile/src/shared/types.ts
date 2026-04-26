@@ -5,25 +5,34 @@
 /**
  * Worker's resolution status on /api/v1/figure/:id.
  *
- * Per the backend decision doc (docs/v3/FIGURE-ID-MINT-CANONICAL-DECISION-2026-04-19.md §5):
- * the endpoint always returns HTTP 200 — never 404 — with one of:
- *   - 'exact'    → requested id is already the canonical Mint A
- *   - 'moved'    → requested id matched an alias row; figure_id in the
- *                  response is the canonical, cache it
- *   - 'cluster'  → sibling search matched multiple rows; figure_id is
- *                  the best guess — may want to disambiguate later
+ * Per the alias-aware response shapes confirmed live in production
+ * 2026-04-25:
+ *   - 'direct'    → requested id is already the canonical Mint A.
+ *                   Response carries the full figure record.
+ *   - 'moved'     → requested id matched an alias row; the response's
+ *                   `figure_id` is the canonical to re-key on, and
+ *                   `original_figure_id` echoes what mobile asked for.
+ *                   `alias_source` + `alias_confidence` describe the
+ *                   match for analytics.
+ *   - 'cluster'   → sibling search matched multiple rows; figure_id
+ *                   is the best guess. Tier-2 — not yet shipped.
  *   - 'not_found_but_logged' → no match; request logged to
- *                  figure_id_miss_log for the KB admin review /
- *                  eventual request-to-add flow (v3 mobile)
+ *                   figure_id_miss_log. Response carries ONLY
+ *                   { match_quality, original_figure_id,
+ *                     figure_id: null, canonical_image_url: null } —
+ *                   no name / brand / line / etc.
  *
- * Missing / undefined is treated as 'exact' for backward compat until
- * the alias-patch worker deploy lands (today mobile still hits a bare
- * 404 — client-side soft-recovery in FigureDetailError is the bridge).
+ * Missing / undefined match_quality is treated as 'direct' for
+ * backward compat with any pre-alias-patch responses still floating
+ * through caches.
  */
-export type FigureMatchQuality = 'exact' | 'moved' | 'cluster' | 'not_found_but_logged';
+export type FigureMatchQuality = 'direct' | 'moved' | 'cluster' | 'not_found_but_logged';
 
-/** GET /api/v1/figure/:figure_id */
-export interface ApiFigureV1 {
+/**
+ * Hit response — carries a real canonical figure record.
+ * Covers 'direct', 'moved', and (eventually) 'cluster'.
+ */
+export interface ApiFigureHit {
   figure_id: string;
   name: string;
   brand: string;
@@ -35,9 +44,42 @@ export interface ApiFigureV1 {
   exclusive_to: string | null;
   pack_size: number;
   scale: string | null;
-  /** Added by engineer later — optional for now. */
   series_total?: number;
-  match_quality?: FigureMatchQuality;
+  match_quality?: 'direct' | 'moved' | 'cluster';
+  /** Echo of what mobile sent — present on 'moved' / 'cluster'. */
+  original_figure_id?: string;
+  /** Where the alias resolved from (e.g. 'figure_id_alias', 'sibling_search'). */
+  alias_source?: string;
+  /** 0-1 confidence for cluster matches. */
+  alias_confidence?: number;
+}
+
+/**
+ * Miss response — the alias layer logged the request but found nothing.
+ * Response carries `original_figure_id` + nulled-out content fields.
+ * `name`, `brand`, etc. are simply absent. UI must branch on this
+ * variant before reading any content.
+ */
+export interface ApiFigureMiss {
+  match_quality: 'not_found_but_logged';
+  figure_id: null;
+  original_figure_id: string;
+  canonical_image_url: null;
+}
+
+/** GET /api/v1/figure/:figure_id — alias-aware union. */
+export type ApiFigureResponse = ApiFigureHit | ApiFigureMiss;
+
+/**
+ * Legacy alias retained so existing imports keep type-checking. New
+ * call sites should use `ApiFigureHit` (hit-only) or `ApiFigureResponse`
+ * (full union) explicitly.
+ */
+export type ApiFigureV1 = ApiFigureHit;
+
+/** Type guard so the screen can narrow safely. */
+export function isFigureMiss(r: ApiFigureResponse): r is ApiFigureMiss {
+  return r.match_quality === 'not_found_but_logged';
 }
 
 export interface ApiSoldComp {
@@ -101,12 +143,19 @@ export interface CharacterThreadEntry {
 }
 
 /**
- * Merged view used by the mobile UI. Populate from `ApiFigureV1` + `ApiPriceV1`;
- * leave aspirational fields null until the backend supplies them. The null-matrix
- * in FigureDetailScreen is responsible for hiding zones with no signal.
+ * Merged view used by the mobile UI. Discriminated union mirroring the
+ * Worker's alias-aware response: a `hit` carries the full figure +
+ * pricing + aspirational fields, a `miss` carries just the original id
+ * the user requested (so the screen can render "we don't have this yet —
+ * your query was logged").
+ *
+ * Always check `match_quality === 'not_found_but_logged'` (or use the
+ * isFigureDetailMiss helper) BEFORE reading `data.figure` — TypeScript
+ * narrows correctly so the read is safe inside the hit branch.
  */
-export interface FigureDetail {
-  figure: ApiFigureV1;
+export interface FigureDetailHit {
+  match_quality: 'direct' | 'moved' | 'cluster';
+  figure: ApiFigureHit;
   price: ApiPriceV1 | null;
 
   rarity_tier: RarityTier;
@@ -116,4 +165,16 @@ export interface FigureDetail {
   social: SocialStats | null;
   series_siblings: SeriesSibling[] | null;
   character_thread: CharacterThreadEntry[] | null;
+}
+
+export interface FigureDetailMiss {
+  match_quality: 'not_found_but_logged';
+  /** What the user / route requested — the only id we have for this view. */
+  original_figure_id: string;
+}
+
+export type FigureDetail = FigureDetailHit | FigureDetailMiss;
+
+export function isFigureDetailMiss(d: FigureDetail): d is FigureDetailMiss {
+  return d.match_quality === 'not_found_but_logged';
 }

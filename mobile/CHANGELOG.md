@@ -9,7 +9,92 @@ diff without guessing.
 
 ---
 
-## Phase 9 — Handoff update post-engineer-standdown (current)
+## Phase 10 — Worker P0s LIVE: alias-aware /figure/:id + search projection (current)
+
+Engineer's 2026-04-25 "update big" confirmed both backend P0s are live in
+production. Mobile is now realigned to the actual contract.
+
+### Worker contract changes absorbed
+- **Match quality literal is `'direct'`, not `'exact'`.** Earlier mobile
+  copies guessed at `'exact'`; the worker has shipped with `'direct'`
+  since the alias patch deployed. This is a string-only rename in
+  responses, but the type system propagates it through every analytics
+  payload, fixture, and test.
+- **`/figure/:id` returns one of three discriminated shapes:**
+  - `direct` → canonical hit; full figure record.
+  - `moved` → alias resolved; carries `original_figure_id`,
+    `alias_source`, `alias_confidence` so analytics can describe HOW
+    the request was matched.
+  - `not_found_but_logged` → ONLY `{ match_quality, original_figure_id,
+    figure_id: null, canonical_image_url: null }`; no name / brand /
+    line / etc. The miss must be branched BEFORE any code reads
+    `figure.*`.
+- **`/api/v1/search` returns `figure_id` + `image` in the public
+  projection.** No mobile code change needed (search already routed
+  through the Worker's projection); the `buildFigureId` synthesizer is
+  retained as a defensive fallback only.
+
+### Changed
+- **`src/shared/types.ts`** — `ApiFigureV1` split into a discriminated
+  union (`ApiFigureHit | ApiFigureMiss`) under the umbrella
+  `ApiFigureResponse`. `FigureDetail` likewise becomes
+  `FigureDetailHit | FigureDetailMiss`. `isFigureMiss` and
+  `isFigureDetailMiss` type guards added. `ApiFigureV1` is kept as a
+  backward-compat alias for `ApiFigureHit` so consumer call sites
+  (Hero, DetailsCard, CollectionBar, share, useCollection, localStore,
+  collectionApi) keep type-checking unchanged — those surfaces only
+  ever receive the hit variant after the screen narrows.
+- **`src/api/figureApi.ts`**
+  - `fetchFigure` now returns `ApiFigureResponse` (the union).
+  - `fetchFigureDetail` branches: a miss returns
+    `FigureDetailMiss` and SKIPS the price call entirely (no canonical
+    id to key by); a hit keys the price call off the canonical id the
+    worker resolved to (correct for `'moved'` — the requested id may
+    have been an alias).
+- **`src/screens/FigureDetailScreen.tsx`** — early returns on
+  `isFigureDetailMiss(data)` to render a Search-only nav + the miss
+  banner, NEVER reaching code that reads `figure.*` / `price.*`. The
+  `figure_id_resolved` analytics event now also carries
+  `alias_source` / `alias_confidence` on `'moved'` / `'cluster'`, and
+  fires with `canonical_id: null` on a miss. Route-param swap is
+  skipped on a miss (no canonical to swap to).
+- **`src/components/figure/FigureMissBanner.tsx`** — accepts
+  `originalFigureId` prop and renders it as a copyable "Reference:"
+  line so support tickets can quote the exact id we logged. VoiceOver
+  reads it as part of the alert.
+- **`src/analytics/events.ts`** — `figure_id_resolved`'s
+  `canonical_id` is now `string | null`; new optional
+  `alias_source` / `alias_confidence` fields.
+- **`src/api/collectionApi.ts`** — `match_quality_at_insert` literal
+  union renamed `'exact'` → `'direct'`.
+
+### Test fixture rotation
+- **The-Miz alias pair** replaces the obsolete Ultimate Warrior pair.
+  Engineer flagged the original pair direction was reversed AND that
+  the pair is no longer a valid canary post Tier-5 ship. The new
+  fixture (`__tests__/fixtures/aliasPairs.ts`) exposes two scenarios:
+  `THE_MIZ_DIRECT_FIXTURE` (canonical → `'direct'`) and
+  `THE_MIZ_ALIAS_FIXTURE` (`miz` alias → `the-miz` canonical, expected
+  `'moved'`, `alias_source: 'figure_id_alias'`).
+  `__tests__/aliasPair.test.ts` rewritten to lock both.
+- **`figureApi.test.ts`** — added explicit `direct`, `moved` (price
+  keyed off canonical), and `miss` (skips the price call) cases.
+- **`FigureDetailScreen.matchQuality.test.tsx`** rewritten: every
+  `'exact'` → `'direct'`; `'moved'` case asserts the new alias_source +
+  alias_confidence payload; `'not_found_but_logged'` case asserts
+  `canonical_id: null`.
+- **`renderLoreBand.test.ts`** + **`useFigureDetail.test.ts`** updated
+  to construct `FigureDetailHit` (with `match_quality: 'direct'`)
+  rather than the old flat shape.
+
+### Sandbox suite
+- **32 / 32 suites green, 227 / 227 tests passing** post-rewrite (up
+  from 221 — 6 new assertions covering the moved-keyed-by-canonical
+  pricing path and the miss-skips-price-call branch).
+
+---
+
+## Phase 9 — Handoff update post-engineer-standdown
 
 Engineer's 2026-04-19 standdown note brought four decisions. Mobile-side
 actions below; most were no-ops.

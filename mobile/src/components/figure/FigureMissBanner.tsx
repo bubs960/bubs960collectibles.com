@@ -3,6 +3,16 @@ import { StyleSheet, Text, View } from 'react-native';
 import { colors, radii, spacing } from '@/theme/tokens';
 import { type } from '@/theme/typography';
 
+interface FigureMissBannerProps {
+  /**
+   * The id the user originally requested — exposed for assistive tech
+   * (VoiceOver reads it as part of the alert) and for support tickets:
+   * collectors emailing "this figure is missing" can point at the exact
+   * id we logged.
+   */
+  originalFigureId?: string;
+}
+
 /**
  * Renders when /figure/:id returns match_quality='not_found_but_logged'
  * — the alias layer miss that was logged to figure_id_miss_log on the
@@ -13,7 +23,7 @@ import { type } from '@/theme/typography';
  * wiring is deferred). For v1/v2 we render a factual placeholder that
  * sets the right expectation without faking a feature.
  */
-export function FigureMissBanner() {
+export function FigureMissBanner({ originalFigureId }: FigureMissBannerProps = {}) {
   return (
     <View style={styles.wrap} accessible accessibilityRole="alert">
       <Text style={styles.title}>We don't have this figure yet</Text>
@@ -21,6 +31,11 @@ export function FigureMissBanner() {
         Your query was logged — our team reviews new requests and adds figures as they come in.
         Tap Search to try a related figure.
       </Text>
+      {originalFigureId ? (
+        <Text style={styles.idHint} selectable>
+          Reference: {originalFigureId}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -43,5 +58,11 @@ const styles = StyleSheet.create({
   body: {
     ...type.body,
     color: colors.muted,
+  },
+  idHint: {
+    ...type.meta,
+    color: colors.muted,
+    marginTop: spacing.xs,
+    fontFamily: 'Menlo',
   },
 });

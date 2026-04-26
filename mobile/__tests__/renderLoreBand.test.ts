@@ -1,7 +1,7 @@
 import { renderLoreBand } from '../src/shared/renderLoreBand';
-import type { ApiFigureV1, FigureDetail } from '../src/shared/types';
+import type { ApiFigureHit, FigureDetailHit } from '../src/shared/types';
 
-function apiFig(overrides: Partial<ApiFigureV1> = {}): ApiFigureV1 {
+function apiFig(overrides: Partial<ApiFigureHit> = {}): ApiFigureHit {
   return {
     figure_id: 'f1',
     name: 'Spider-Man',
@@ -18,8 +18,9 @@ function apiFig(overrides: Partial<ApiFigureV1> = {}): ApiFigureV1 {
   };
 }
 
-function detail(overrides: Partial<FigureDetail> = {}): FigureDetail {
+function detail(overrides: Partial<FigureDetailHit> = {}): FigureDetailHit {
   return {
+    match_quality: 'direct',
     figure: apiFig(),
     price: null,
     rarity_tier: null,

@@ -14,14 +14,20 @@ export interface EventProps {
   pro_waitlist_tapped: { figure_id: string };
   app_error: { message: string; component_stack: string };
   /**
-   * Emitted when /figure/:id returns a canonical figure_id different
-   * from what mobile requested (moved / cluster / not_found_but_logged).
+   * Emitted when /figure/:id returns anything other than 'direct' —
+   * i.e. the worker resolved through alias / cluster / miss layers.
    * Lets us measure KB↔DB drift in the wild.
+   *
+   * - moved / cluster: canonical_id is the canonical Mint A; the
+   *   alias_source + alias_confidence fields describe the match.
+   * - not_found_but_logged: canonical_id is null (no figure record).
    */
   figure_id_resolved: {
     requested_id: string;
-    canonical_id: string;
+    canonical_id: string | null;
     match_quality: 'moved' | 'cluster' | 'not_found_but_logged';
+    alias_source?: string | null;
+    alias_confidence?: number | null;
   };
 }
 

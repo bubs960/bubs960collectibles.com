@@ -100,7 +100,7 @@ export async function deleteWantlistItem(itemId: string, token: string): Promise
  *   - removed_at tracks when status flipped to 'removed' so the
  *     90-day TTL cleanup job deletes from-remove, not from-add
  *   - match_quality_at_insert preserves how the insert-time id was
- *     resolved (exact / moved / cluster) for later badges / analytics
+ *     resolved (direct / moved / cluster) for later badges / analytics
  */
 export interface ServerCollectionItem {
   id: string;
@@ -115,7 +115,7 @@ export interface ServerCollectionItem {
   /** Timestamp set when status transitions to 'removed'. Null for active rows. */
   removed_at?: number | null;
   /** How figure_id was resolved at insert — see FigureMatchQuality. */
-  match_quality_at_insert?: 'exact' | 'moved' | 'cluster';
+  match_quality_at_insert?: 'direct' | 'moved' | 'cluster';
   paid?: number;
   condition?: string;
   target_price?: number;

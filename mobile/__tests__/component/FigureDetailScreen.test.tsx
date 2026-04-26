@@ -72,6 +72,7 @@ function TestHost() {
 
 function baseDetail(): FigureDetail {
   return {
+    match_quality: 'direct',
     figure: {
       figure_id: 'f1',
       name: 'Rey Mysterio (Elite Series 11)',

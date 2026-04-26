@@ -38,6 +38,7 @@ import { FigureDetailSkeleton } from '@/components/figure/FigureDetailSkeleton';
 import { FigureDetailError } from '@/components/figure/FigureDetailError';
 import { FigureMissBanner } from '@/components/figure/FigureMissBanner';
 import { FEATURES } from '@/config/features';
+import { isFigureDetailMiss } from '@/shared/types';
 import type { RootStackParamList } from '@/navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'FigureDetail'>;
@@ -58,26 +59,39 @@ export function FigureDetailScreen() {
   const emittedDepthsRef = useRef<Set<number>>(new Set());
   const dims = useWindowDimensions();
 
-  const lore = useMemo(() => (data ? renderLoreBand(data) : null), [data]);
+  const lore = useMemo(
+    () => (data && !isFigureDetailMiss(data) ? renderLoreBand(data) : null),
+    [data],
+  );
 
-  // Emit figure_viewed once per figure_id load. If the worker resolved the
-  // requested id to a different canonical (match_quality !== 'exact') we
-  // also log figure_id_resolved so the drift is observable in the wild.
+  // Emit figure_viewed once per figure_id load. On a 'moved' resolution we
+  // also log figure_id_resolved so the drift is observable. On a miss we
+  // log the miss separately so search/discovery analytics can correlate.
   useEffect(() => {
     if (!data) return;
+    if (isFigureDetailMiss(data)) {
+      track('figure_id_resolved', {
+        requested_id: figureId,
+        canonical_id: null,
+        match_quality: 'not_found_but_logged',
+      });
+      return;
+    }
     const canonical = data.figure.figure_id;
-    const quality = data.figure.match_quality ?? 'exact';
+    const quality = data.match_quality;
     track('figure_viewed', { figure_id: canonical });
-    if (quality !== 'exact') {
+    if (quality !== 'direct') {
       track('figure_id_resolved', {
         requested_id: figureId,
         canonical_id: canonical,
         match_quality: quality,
+        alias_source: data.figure.alias_source ?? null,
+        alias_confidence: data.figure.alias_confidence ?? null,
       });
       // Swap the route param to the canonical id so a back-gesture-then-
       // -deep-link cycle doesn't re-resolve from the stale id. The
       // navigation noop-dedupes if params are already equal.
-      if (canonical !== figureId && quality !== 'not_found_but_logged') {
+      if (canonical !== figureId) {
         navigation.setParams({ figureId: canonical });
       }
     }
@@ -93,13 +107,36 @@ export function FigureDetailScreen() {
 
   // Network / server errors still take the old error screen. The alias
   // patch deploys HTTP 200 for miss (match_quality='not_found_but_logged'),
-  // which is handled below via the zone-layer CTAs rather than as an error.
+  // which is handled below via a dedicated miss-only render rather than as
+  // an error.
   if ((error && !data) || !data) {
     return <FigureDetailError error={error} onRetry={refetch} retrying={revalidating} />;
   }
 
-  const matchQuality = data.figure.match_quality ?? 'exact';
-  const isLoggedMiss = matchQuality === 'not_found_but_logged';
+  // Miss branch: alias layer logged the request but found nothing. We have
+  // no figure record to render — show the search-recovery banner only and
+  // bail out before any code that reads figure.* / price.*. The early
+  // return also narrows `data` to FigureDetailHit for the remainder.
+  if (isFigureDetailMiss(data)) {
+    return (
+      <SafeAreaView style={styles.root} edges={['top']}>
+        <View style={styles.missNav}>
+          <Pressable
+            onPress={() => navigation.navigate('Search')}
+            accessibilityRole="button"
+            accessibilityLabel="Search figures"
+            hitSlop={12}
+            style={({ pressed }) => [styles.searchBtn, pressed && { opacity: 0.7 }]}
+          >
+            <Text style={styles.searchBtnText}>Search</Text>
+          </Pressable>
+        </View>
+        <View style={styles.missBody}>
+          <FigureMissBanner originalFigureId={data.original_figure_id} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const { figure, price, series_siblings, character_thread, rarity_tier } = data;
   const name = cleanFigureName(figure.name);
@@ -264,12 +301,6 @@ export function FigureDetailScreen() {
       >
         <Hero figure={figure} rarity={rarity_tier} />
 
-        {isLoggedMiss && (
-          <View style={styles.section}>
-            <FigureMissBanner />
-          </View>
-        )}
-
         {isStale && (
           <View style={styles.stalePill}>
             <Text style={styles.staleText}>
@@ -422,6 +453,17 @@ const styles = StyleSheet.create({
   staleText: {
     ...type.eyebrow,
     color: colors.accentWarm,
+  },
+  missNav: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.xs,
+  },
+  missBody: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingBottom: spacing.xl,
   },
 });
 

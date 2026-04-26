@@ -1,4 +1,10 @@
-import type { ApiFigureV1, ApiPriceV1, FigureDetail } from '@/shared/types';
+import type {
+  ApiFigureHit,
+  ApiFigureResponse,
+  ApiPriceV1,
+  FigureDetail,
+} from '@/shared/types';
+import { isFigureMiss } from '@/shared/types';
 
 // Cloudflare Worker endpoint — NOT the marketing site at figurepinner.com.
 // The bare domain serves HTML; the API lives on a .workers.dev route.
@@ -26,11 +32,14 @@ function commonHeaders(opts: FigureFetchOptions): Record<string, string> {
   return h;
 }
 
-export async function fetchFigure(figureId: string, opts: FigureFetchOptions = {}): Promise<ApiFigureV1> {
+export async function fetchFigure(
+  figureId: string,
+  opts: FigureFetchOptions = {},
+): Promise<ApiFigureResponse> {
   const url = `${apiBase()}/api/v1/figure/${encodeURIComponent(figureId)}`;
   const res = await fetch(url, { headers: commonHeaders(opts), signal: opts.signal });
   if (!res.ok) throw new FigureFetchError(res.status, await res.text().catch(() => ''));
-  return (await res.json()) as ApiFigureV1;
+  return (await res.json()) as ApiFigureResponse;
 }
 
 export async function fetchFigurePrice(
@@ -46,18 +55,31 @@ export async function fetchFigurePrice(
 }
 
 /**
- * Fetch the merged figure detail view the mobile UI consumes. Figure metadata
- * is required; pricing + aspirational fields degrade gracefully to null.
+ * Fetch the merged figure detail view the mobile UI consumes. Returns a
+ * discriminated union mirroring the Worker's alias-aware response: a hit
+ * carries the full figure record + pricing + aspirational nulls; a miss
+ * carries only the original id the user requested so the screen can render
+ * the "we don't have this yet — your query was logged" banner.
+ *
+ * Pricing is only fetched on the hit branch — there's no figure_id to key
+ * /api/v1/figure-price by on a miss.
  */
 export async function fetchFigureDetail(
   figureId: string,
   opts: FigureFetchOptions = {},
 ): Promise<FigureDetail> {
-  const [figure, price] = await Promise.all([
-    fetchFigure(figureId, opts),
-    fetchFigurePrice(figureId, opts),
-  ]);
+  const figure = await fetchFigure(figureId, opts);
+  if (isFigureMiss(figure)) {
+    return {
+      match_quality: 'not_found_but_logged',
+      original_figure_id: figure.original_figure_id,
+    };
+  }
+  // Hit: key pricing off the canonical id the worker resolved to (handles
+  // the 'moved' case correctly — original id may have been an alias).
+  const price = await fetchFigurePrice(figure.figure_id, opts);
   return {
+    match_quality: figure.match_quality ?? 'direct',
     figure,
     price,
     rarity_tier: null,
@@ -97,7 +119,7 @@ export class FigureFetchError extends Error {
 const DEFAULT_EBAY_CAMPAIGN_ID = '5339147406';
 const EBAY_CUSTOM_ID = 'figurepinner-mobile';
 
-export function buildEbayUrl(figure: ApiFigureV1): string {
+export function buildEbayUrl(figure: ApiFigureHit): string {
   const campaignId = process.env.EXPO_PUBLIC_EBAY_CAMPAIGN_ID || DEFAULT_EBAY_CAMPAIGN_ID;
   const terms = encodeURIComponent(`${figure.brand} ${figure.line} ${figure.series} ${figure.name}`);
   return (
