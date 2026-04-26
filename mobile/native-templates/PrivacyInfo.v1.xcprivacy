@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  v1 (read-only browser) — privacy manifest.
+
+  Scope of v1: search figures, view figure detail with prices, share
+  links, open eBay in an in-app browser. No sign-in. No vault, wantlist,
+  or alerts. No analytics provider beyond `console.log`. No Clerk
+  publishable key in the build.
+
+  When to update: replace this with `PrivacyInfo.v2.xcprivacy` (sibling
+  file) before building any EAS profile that flips
+  EXPO_PUBLIC_V2_COLLECTION_SYNC=true. Apple requires the manifest to
+  match what the binary actually does at submission time.
+-->
+<plist version="1.0">
+<dict>
+
+  <!-- ─── Tracking ────────────────────────────────────────────────────
+       We do not track users. We generate eBay affiliate links the user
+       taps (outbound), but do not record their behaviour after they
+       leave the app. eBay's own tracking is governed by eBay's policies,
+       not ours, and Apple treats outbound clicks as the destination's
+       responsibility. -->
+  <key>NSPrivacyTracking</key>
+  <false/>
+  <key>NSPrivacyTrackingDomains</key>
+  <array/>
+
+  <!-- ─── Data collected ──────────────────────────────────────────────
+       v1 collects no data linked to user identity.
+       AsyncStorage entries (cached figures, search history,
+       preferences) live entirely on-device, never transmitted. -->
+  <key>NSPrivacyCollectedDataTypes</key>
+  <array/>
+
+  <!-- ─── Required-reason APIs ────────────────────────────────────────
+       Apple requires declaring why we touch certain APIs even when
+       we're not collecting data with them. Categories + reason codes
+       per https://developer.apple.com/documentation/bundleresources/privacy_manifest_files/describing_use_of_required_reason_api -->
+  <key>NSPrivacyAccessedAPITypes</key>
+  <array>
+    <!-- AsyncStorage writes through NSUserDefaults under the hood.
+         Used for: SWR figure cache, search history, onboarding prefs. -->
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <string>CA92.1</string>
+      </array>
+    </dict>
+
+    <!-- expo-image's disk cache uses file timestamps for LRU eviction.
+         Used for: hero + thumbnail caching. -->
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <string>C617.1</string>
+      </array>
+    </dict>
+
+    <!-- Disk space inspection for cache eviction decisions.
+         Reason: 85F4.1 (write to disk space within app's container). -->
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategoryDiskSpace</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <string>85F4.1</string>
+      </array>
+    </dict>
+
+    <!-- System boot time — used by various Expo modules for cache
+         keying / session identification. Reason 35F9.1 covers
+         "performance measurement" within the app. -->
+    <dict>
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategorySystemBootTime</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <string>35F9.1</string>
+      </array>
+    </dict>
+  </array>
+
+</dict>
+</plist>
