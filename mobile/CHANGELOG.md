@@ -9,7 +9,86 @@ diff without guessing.
 
 ---
 
-## Phase 10 — Worker P0s LIVE: alias-aware /figure/:id + search projection (current)
+## Phase 11 — Analytics sink wired to live POST endpoint (current)
+
+Engineer's #88 landed in prod 2026-04-26 evening
+(`POST https://figurepinner-api.bubs960.workers.dev/api/v1/analytics/event`,
+smoke-tested 200 OK against real D1). Mobile now flushes batched
+analytics events to it.
+
+### Added
+- **`src/analytics/uuid.ts`** — RFC 4122 v4 generator backed by
+  `crypto.getRandomValues` with a `Math.random` fallback for the test
+  environment. The uid is the server's PK dedup mechanism.
+- **`src/analytics/deviceId.ts`** — anonymous device id, generated
+  once on first launch, persisted to `expo-secure-store`,
+  module-cached. In-flight reads dedupe via a shared promise so
+  three concurrent `getDeviceId()` callers do exactly one
+  secure-store round-trip. The id is uuid v4 — no IDFA, no Ad ID,
+  no PII.
+- **`src/analytics/httpSink.ts`** — batched HTTP analytics sink with:
+  - Three flush triggers: 30s timer, 50-event ceiling (well under
+    the engineer-confirmed 200 batch cap), `AppState → background`.
+  - **Atomic buffer swap** — at flush time the buffer is replaced
+    with `[]` in the same tick the snapshot is taken, BEFORE any
+    `await`. Events fired during the in-flight POST land in the
+    fresh buffer and ride the next flush. Locked by
+    `httpSink.test.ts` "atomic buffer swap" assertion.
+  - **Drop-on-failure** — engineer-confirmed semantic. No retry
+    buffer, no backpressure, no idempotency contract beyond the
+    server's uid PK dedup. A failed POST silently drops the batch.
+  - **Shared in-flight promise** — concurrent `flush()` callers all
+    return the same promise, so `await sink.flush()` is honest about
+    when the POST actually settles. Matters for the
+    AppState→background flush path.
+  - Per-event metadata (`uid`, `event_name`, `ts`, `props`,
+    `app_version`, `platform`) snapshots at `track()` time;
+    `device_id` attached at flush time (it's stable per-install so
+    snapshot timing doesn't matter).
+  - Optional `getAuthToken` hook attaches a Bearer JWT on flush —
+    works anonymous today (v1 is read-only) and is ready for v2's
+    Clerk integration to plug in via a single options change.
+
+### Wired
+- **`App.tsx`** — calls `setAnalyticsSink(createHttpSink(...).track)`
+  at module load. Endpoint defaults to the prod Worker; honors
+  `EXPO_PUBLIC_FIGUREPINNER_API` for staging/dev preview overrides.
+  `app_version` reads from `app.json` so a release-bump
+  automatically tags new events.
+
+### Tests (15 new, 242 total / 34 suites green)
+- **`__tests__/deviceId.test.ts`** (4 tests):
+  - Generates uuid v4 + persists on first call.
+  - Returns same id across subsequent calls.
+  - Reads from secure-store when in-memory cache is cold.
+  - Concurrent reads dedupe to a single store round-trip.
+- **`__tests__/httpSink.test.ts`** (11 tests):
+  - No flush until a trigger fires.
+  - 30s timer trigger flushes.
+  - 50-event ceiling triggers immediate flush.
+  - AppState → background triggers flush.
+  - Drop-on-failure (thrown TypeError + non-ok status, both paths).
+  - Atomic buffer swap: events fired during in-flight POST end up
+    in the next batch, never lost.
+  - Bearer JWT attaches when `getAuthToken` returns one.
+  - device_id from secure-store stamps every event in a batch.
+  - Empty-buffer flush is a no-op.
+  - Trailing-slash on endpoint normalizes correctly.
+- **`__tests__/__mocks__/reactNativeShim.ts`** — extended with
+  `AppState` so the sandbox harness can drive the
+  background-trigger code path.
+
+### Cross-cutting impact
+- Every existing `track(...)` call site now actually flushes events
+  to the Worker. `figure_id_resolved` (the §14 Gate #6 measurement)
+  is the immediate beneficiary — moved/cluster/miss rates start
+  accumulating as soon as v1 ships to TestFlight / Play Internal
+  Track. Drop-on-failure means a Worker outage is invisible to the
+  user but observable as a gap in the analytics stream.
+
+---
+
+## Phase 10 — Worker P0s LIVE: alias-aware /figure/:id + search projection
 
 Engineer's 2026-04-25 "update big" confirmed both backend P0s are live in
 production. Mobile is now realigned to the actual contract.

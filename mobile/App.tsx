@@ -16,9 +16,25 @@ import { AuthProvider } from '@/auth/AuthProvider';
 import { CollectionSyncDriver } from '@/auth/CollectionSyncDriver';
 import { NotificationsDriver } from '@/notifications/NotificationsDriver';
 import { FEATURES } from '@/config/features';
-import { track } from '@/analytics/dispatch';
+import { track, setAnalyticsSink } from '@/analytics/dispatch';
+import { createHttpSink } from '@/analytics/httpSink';
 import { colors } from '@/theme/tokens';
 import { type } from '@/theme/typography';
+import appJson from './app.json';
+
+// Wire the batched HTTP analytics sink at module load. The route is
+// engineer-confirmed live in prod (POST /api/v1/analytics/event,
+// 2026-04-26). v1 ships anonymous-by-device_id; the optional Bearer
+// JWT hookup lands when v2 sign-in flows are real (see CHANGELOG
+// Phase 11). Drop-on-failure: a downed worker silently drops events
+// rather than building backpressure.
+const ANALYTICS_API =
+  process.env.EXPO_PUBLIC_FIGUREPINNER_API ?? 'https://figurepinner-api.bubs960.workers.dev';
+const analyticsSink = createHttpSink({
+  endpoint: ANALYTICS_API,
+  appVersion: appJson.expo.version,
+});
+setAnalyticsSink(analyticsSink.track);
 
 export default function App() {
   const [bebasReady] = useBebas({

@@ -33,6 +33,19 @@ export const AccessibilityInfo = {
   },
 };
 
+export type AppStateStatus = 'active' | 'background' | 'inactive' | 'unknown' | 'extension';
+
+type AppStateListener = (s: AppStateStatus) => void;
+const appStateListeners = new Set<AppStateListener>();
+
+export const AppState = {
+  currentState: 'active' as AppStateStatus,
+  addEventListener(_event: 'change', cb: AppStateListener): { remove: () => void } {
+    appStateListeners.add(cb);
+    return { remove: () => appStateListeners.delete(cb) };
+  },
+};
+
 export const __mock = {
   setOS(v: 'ios' | 'android' | 'web'): void {
     osName = v;
@@ -40,10 +53,17 @@ export const __mock = {
   resetA11y(): void {
     a11yListeners.clear();
   },
+  fireAppState(s: AppStateStatus): void {
+    for (const cb of appStateListeners) cb(s);
+  },
+  resetAppState(): void {
+    appStateListeners.clear();
+  },
 };
 
 // Re-export a default for `import RN from 'react-native'` if anyone tries it.
 export default {
   Platform,
   AccessibilityInfo,
+  AppState,
 };
