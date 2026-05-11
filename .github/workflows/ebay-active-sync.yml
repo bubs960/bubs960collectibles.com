@@ -1,0 +1,63 @@
+name: Sync eBay Active Listings to Shopify
+
+# One-shot, re-runnable seeder. Manually triggered only — no cron.
+# Pulls all of your active eBay listings via the Browse API and creates
+# matching Shopify products. Skips listings whose SKU already exists
+# (BUBS-EB-<eBayItemId>), so re-runs are safe after listing new items.
+#
+# Run from Actions tab → "Sync eBay Active Listings to Shopify" → Run workflow.
+#
+# Required secrets:
+#   EBAY_APP_ID, EBAY_CERT_ID, EBAY_SELLER_USERNAME
+#   SHOPIFY_STORE, SHOPIFY_ADMIN_TOKEN
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (no Shopify writes — just print plan)'
+        required: false
+        type: boolean
+        default: true
+      max_items:
+        description: 'Max items to process (blank = all). Use 5 for first test.'
+        required: false
+        default: '5'
+      discount_pct:
+        description: 'Direct-buyer discount % off eBay price'
+        required: false
+        default: '15'
+      product_status:
+        description: 'Shopify product status'
+        required: false
+        type: choice
+        default: 'draft'
+        options:
+          - draft
+          - active
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Sync eBay active listings to Shopify
+        env:
+          EBAY_APP_ID:          ${{ secrets.EBAY_APP_ID }}
+          EBAY_CERT_ID:         ${{ secrets.EBAY_CERT_ID }}
+          EBAY_SELLER_USERNAME: ${{ secrets.EBAY_SELLER_USERNAME }}
+          SHOPIFY_STORE:        ${{ secrets.SHOPIFY_STORE }}
+          SHOPIFY_ADMIN_TOKEN:  ${{ secrets.SHOPIFY_ADMIN_TOKEN }}
+          DRY_RUN:        ${{ github.event.inputs.dry_run == 'true' && '1' || '' }}
+          MAX_ITEMS:      ${{ github.event.inputs.max_items }}
+          DISCOUNT_PCT:   ${{ github.event.inputs.discount_pct }}
+          PRODUCT_STATUS: ${{ github.event.inputs.product_status }}
+        run: node scripts/sync-ebay-active.mjs
