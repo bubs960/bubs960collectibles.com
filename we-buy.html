@@ -703,6 +703,50 @@
         .form-status.err { color: #ff6b6b; }
         form.intake[data-submitting="true"] button[type="submit"] { opacity: 0.6; cursor: wait; }
 
+        /* Pre-submit checklist */
+        .pre-submit {
+            max-width: 700px;
+            margin: 0 auto 1.5rem;
+            background: #0e1626;
+            border: 2px dashed var(--accent-yellow);
+            border-radius: 10px;
+            padding: 1.25rem 1.5rem;
+        }
+        .pre-submit h4 {
+            font-family: 'Bangers', cursive;
+            font-size: 1.25rem;
+            letter-spacing: 1.5px;
+            color: var(--accent-yellow);
+            margin-bottom: 0.6rem;
+            text-transform: uppercase;
+        }
+        .pre-submit ul { list-style: none; padding: 0; margin: 0 0 0.85rem; }
+        .pre-submit ul li {
+            color: #dfe3ec;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            padding: 0.2rem 0 0.2rem 1.6rem;
+            position: relative;
+        }
+        .pre-submit ul li::before {
+            content: "☑";
+            position: absolute;
+            left: 0;
+            color: var(--money-green);
+            font-weight: 800;
+        }
+        .pre-submit .methodology-link {
+            display: inline-block;
+            font-weight: 800;
+            color: var(--accent-yellow);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.85rem;
+            border-bottom: 2px solid var(--accent-yellow);
+            padding-bottom: 2px;
+        }
+        .pre-submit .methodology-link:hover { color: #fff; border-color: #fff; }
+
         /* Footer */
         .site-footer { border-top: 3px solid var(--primary-red); background: var(--bg-panel); padding: 3rem 2rem 1.5rem; margin-top: 2rem; }
         .footer-grid { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1.5fr repeat(3, 1fr); gap: 2rem; }
@@ -1019,7 +1063,18 @@
     <section class="section" id="intake">
         <div class="intake-wrap">
             <h3>Tell Us What You Got</h3>
-            <p class="help">Fill it out, hit send, and expect a quote within 24 hours. Photos are huge — even phone snaps help a ton.</p>
+            <p class="help">Fill it out, hit send, and we'll get back to you. Photos are huge — even phone snaps help a ton.</p>
+
+            <div class="pre-submit">
+                <h4>Before You Submit</h4>
+                <ul>
+                    <li>Read <a href="#methodology" class="methodology-link" style="border:none;padding:0;font-size:inherit;letter-spacing:0;text-transform:none;">how we price</a> — buy-outright lands ~40-60% of eBay retail, consignment nets ~65-80% after commission.</li>
+                    <li>Include condition notes (loose/MOC, damage, completeness) and rough quantity or a list.</li>
+                    <li>Attach photos — phone pics are fine. Group shots + close-ups on anything notable.</li>
+                    <li>Targeting full retail? eBay direct is the right call — we won't match it, no dealer will.</li>
+                </ul>
+                <a href="#methodology" class="methodology-link">Read How We Price First →</a>
+            </div>
 
             <form class="intake js-remote-form" data-formspree="xykljadr" action="mailto:Bubs960toys@gmail.com" method="POST" enctype="text/plain">
                 <div class="grid-2">
