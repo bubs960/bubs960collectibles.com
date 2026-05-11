@@ -81,7 +81,8 @@ async function fetchAllSellerItems(token) {
   let offset = 0;
 
   while (true) {
-    const url = `${EBAY_SEARCH_URL}?filter=${encodeURIComponent(filter)}&limit=${limit}&offset=${offset}`;
+    // Browse API requires q/category_ids/etc. even with a seller filter — use a wildcard.
+    const url = `${EBAY_SEARCH_URL}?q=*&filter=${encodeURIComponent(filter)}&limit=${limit}&offset=${offset}`;
     const res = await fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,
