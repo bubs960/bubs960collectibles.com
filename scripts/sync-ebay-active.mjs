@@ -79,32 +79,42 @@ async function getEbayAppToken() {
 }
 
 // ---------- eBay: page through seller's active listings ----------
+// Browse API constraint: when combined with a seller filter, only ONE
+// category_id is allowed per call (errorId 12030 otherwise). So we loop
+// each top-level category, paginate within it, dedupe by item id.
 async function fetchAllSellerItems(token) {
-  const items = [];
+  const seen = new Map(); // itemId -> summary
   const filter = `sellers:{${EBAY_SELLER_USERNAME}}`;
   const limit = 200;
-  let offset = 0;
+  const categories = EBAY_CATEGORIES.split(',').map((s) => s.trim()).filter(Boolean);
 
-  while (true) {
-    // Browse API requires q/category_ids/etc. even with a seller filter — use top-level categories.
-    const url = `${EBAY_SEARCH_URL}?category_ids=${encodeURIComponent(EBAY_CATEGORIES)}&filter=${encodeURIComponent(filter)}&limit=${limit}&offset=${offset}`;
-    const res = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US',
-      },
-    });
-    if (!res.ok) throw new Error(`eBay search failed (${res.status}): ${await res.text()}`);
-    const data = await res.json();
-    const batch = data.itemSummaries ?? [];
-    items.push(...batch);
-    const total = data.total ?? items.length;
-    console.log(`[sync-ebay-active] eBay page offset=${offset} got=${batch.length} total=${total}`);
-    if (batch.length === 0 || items.length >= total) break;
-    offset += batch.length;
-    if (items.length >= MAX) break;
+  outer:
+  for (const cat of categories) {
+    let offset = 0;
+    while (true) {
+      const url = `${EBAY_SEARCH_URL}?category_ids=${encodeURIComponent(cat)}&filter=${encodeURIComponent(filter)}&limit=${limit}&offset=${offset}`;
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US',
+        },
+      });
+      if (!res.ok) throw new Error(`eBay search failed cat=${cat} (${res.status}): ${await res.text()}`);
+      const data = await res.json();
+      const batch = data.itemSummaries ?? [];
+      for (const it of batch) {
+        const id = String(it.itemId ?? '');
+        if (!seen.has(id)) seen.set(id, it);
+      }
+      const total = data.total ?? batch.length;
+      console.log(`[sync-ebay-active] eBay cat=${cat} offset=${offset} got=${batch.length} total=${total} uniq=${seen.size}`);
+      if (batch.length === 0 || offset + batch.length >= total) break;
+      offset += batch.length;
+      if (seen.size >= MAX) break outer;
+    }
+    if (seen.size >= MAX) break;
   }
-  return items.slice(0, MAX);
+  return [...seen.values()].slice(0, MAX);
 }
 
 // ---------- eBay: fetch one item's full detail (for description + all images) ----------
