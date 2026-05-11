@@ -38,6 +38,11 @@ const {
   DISCOUNT_PCT = '15',
   PRODUCT_STATUS = 'active',
   DRY_RUN, MAX_ITEMS,
+  // Browse API requires q/category_ids/etc. alongside seller filter. Default
+  // covers Toys & Hobbies (220), Collectibles (1), Sports Mem (64482),
+  // Coins & Paper Money (11116), Video Games (1249). Override per run with
+  // EBAY_CATEGORIES env var (comma-separated top-level eBay category IDs).
+  EBAY_CATEGORIES = '220,1,64482,11116,1249',
 } = process.env;
 
 const REQUIRED = ['EBAY_APP_ID', 'EBAY_CERT_ID', 'EBAY_SELLER_USERNAME', 'SHOPIFY_STORE', 'SHOPIFY_ADMIN_TOKEN'];
@@ -81,8 +86,8 @@ async function fetchAllSellerItems(token) {
   let offset = 0;
 
   while (true) {
-    // Browse API requires q/category_ids/etc. even with a seller filter — use a wildcard.
-    const url = `${EBAY_SEARCH_URL}?q=*&filter=${encodeURIComponent(filter)}&limit=${limit}&offset=${offset}`;
+    // Browse API requires q/category_ids/etc. even with a seller filter — use top-level categories.
+    const url = `${EBAY_SEARCH_URL}?category_ids=${encodeURIComponent(EBAY_CATEGORIES)}&filter=${encodeURIComponent(filter)}&limit=${limit}&offset=${offset}`;
     const res = await fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,
