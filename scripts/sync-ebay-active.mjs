@@ -223,9 +223,35 @@ function collectImages(detail, summary) {
   return [...urls];
 }
 
+// ---------- diagnostics ----------
+async function diagnoseShopifyAuth() {
+  const tokenLen = (SHOPIFY_ADMIN_TOKEN ?? '').length;
+  const tokenPrefix = (SHOPIFY_ADMIN_TOKEN ?? '').slice(0, 6);
+  const storeHost = (SHOPIFY_STORE ?? '').trim();
+  console.log(`[diag] SHOPIFY_STORE host=${storeHost.replace(/^.{0,3}/, '***')} len=${storeHost.length}`);
+  console.log(`[diag] SHOPIFY_ADMIN_TOKEN prefix=${tokenPrefix.replace(/./g, (c, i) => i < 4 ? c : '*')} len=${tokenLen}`);
+
+  const url = `https://${storeHost}/admin/api/${SHOPIFY_API_VERSION}/shop.json`;
+  const res = await fetch(url, {
+    headers: {
+      'X-Shopify-Access-Token': SHOPIFY_ADMIN_TOKEN,
+      Accept: 'application/json',
+    },
+  });
+  const body = await res.text();
+  console.log(`[diag] GET /shop.json -> ${res.status} ${res.statusText}`);
+  console.log(`[diag] response body: ${body.slice(0, 400)}`);
+  if (!res.ok) {
+    throw new Error(`Shopify /shop.json auth check failed — see diagnostic above. Most common causes: (1) token is not the Admin API token, (2) token's app isn't installed on this store, (3) SHOPIFY_STORE host is wrong, (4) app's scopes don't include read_products.`);
+  }
+}
+
 // ---------- main ----------
 async function main() {
   console.log(`[sync-ebay-active] seller=${EBAY_SELLER_USERNAME} discount=${DISCOUNT_PCT}% dry-run=${DRY} max=${MAX === Infinity ? 'all' : MAX}`);
+
+  // Sanity-check Shopify auth BEFORE doing eBay work, so failures are fast and obvious.
+  await diagnoseShopifyAuth();
 
   const token = await getEbayAppToken();
   const summaries = await fetchAllSellerItems(token);
