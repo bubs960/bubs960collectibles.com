@@ -1,12 +1,61 @@
-// Fetches products from the Shopify Admin REST API and normalizes them
+// Fetches products from the Shopify Admin GraphQL API and normalizes them
 // into the same shape the build script expects from local JSON shells.
 // Returns:
 //   - an array of normalized products (possibly empty) on success
 //   - null if credentials are missing or the API call fails
 // Empty array is a valid result (brand new store with no products) and
 // the build script should NOT fall back to JSON in that case.
+//
+// GraphQL (not REST) because Shopify's modern app tokens won't authenticate
+// against the legacy /products.json REST endpoint on new-platform stores.
 
-const API_VERSION = '2024-01';
+const API_VERSION = '2024-10';
+
+const PRODUCTS_QUERY = `
+  query Products($cursor: String) {
+    products(first: 100, after: $cursor) {
+      pageInfo { hasNextPage endCursor }
+      nodes {
+        id
+        handle
+        title
+        descriptionHtml
+        vendor
+        productType
+        tags
+        status
+        featuredImage { url }
+        images(first: 20) { nodes { url } }
+        variants(first: 1) {
+          nodes {
+            sku
+            price
+            compareAtPrice
+            inventoryQuantity
+          }
+        }
+      }
+    }
+  }
+`;
+
+async function shopifyGql(query, variables = {}) {
+  const { SHOPIFY_STORE, SHOPIFY_ADMIN_TOKEN } = process.env;
+  const res = await fetch(`https://${SHOPIFY_STORE}/admin/api/${API_VERSION}/graphql.json`, {
+    method: 'POST',
+    headers: {
+      'X-Shopify-Access-Token': SHOPIFY_ADMIN_TOKEN,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({ query, variables }),
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`Shopify GraphQL HTTP ${res.status}: ${text.slice(0, 400)}`);
+  const data = JSON.parse(text);
+  if (data.errors) throw new Error(`Shopify GraphQL errors: ${JSON.stringify(data.errors).slice(0, 400)}`);
+  return data.data;
+}
 
 export async function fetchShopifyProducts() {
   const { SHOPIFY_STORE, SHOPIFY_ADMIN_TOKEN } = process.env;
@@ -14,22 +63,18 @@ export async function fetchShopifyProducts() {
     return null;
   }
 
-  const url = `https://${SHOPIFY_STORE}/admin/api/${API_VERSION}/products.json?limit=250&status=any`;
   try {
-    const res = await fetch(url, {
-      headers: {
-        'X-Shopify-Access-Token': SHOPIFY_ADMIN_TOKEN,
-        'Accept': 'application/json',
-      },
-    });
-    if (!res.ok) {
-      console.error(`[shopify-source] fetch failed ${res.status}: ${await res.text()}`);
-      return null;
+    const all = [];
+    let cursor = null;
+    while (true) {
+      const data = await shopifyGql(PRODUCTS_QUERY, { cursor });
+      const conn = data.products;
+      all.push(...conn.nodes);
+      if (!conn.pageInfo.hasNextPage) break;
+      cursor = conn.pageInfo.endCursor;
     }
-    const data = await res.json();
-    const normalized = (data.products ?? [])
-      .map((p) => normalize(p, SHOPIFY_STORE))
-      .filter(Boolean);
+
+    const normalized = all.map((p) => normalize(p, SHOPIFY_STORE)).filter(Boolean);
 
     // Drafts stay hidden from the public site, matching Shopify's own
     // storefront behavior. Log the split so workflow runs still show
@@ -45,38 +90,41 @@ export async function fetchShopifyProducts() {
 }
 
 function normalize(p, storeDomain) {
-  // Skip archived — they shouldn't render on the site.
-  if (p.status === 'archived') return null;
+  // GraphQL returns status uppercase (ACTIVE/DRAFT/ARCHIVED). Normalize.
+  const statusRaw = (p.status || 'DRAFT').toLowerCase();
+  if (statusRaw === 'archived') return null;
 
-  const tags = (p.tags ?? '')
-    .split(',')
-    .map((t) => t.trim())
-    .filter(Boolean);
+  const tags = Array.isArray(p.tags) ? p.tags : (p.tags ?? '').split(',').map((t) => t.trim()).filter(Boolean);
   const isSold = tags.some((t) => t.toLowerCase() === 'sold');
 
-  const variant = p.variants?.[0] ?? {};
+  const variant = p.variants?.nodes?.[0] ?? {};
+  const imageUrls = [
+    p.featuredImage?.url,
+    ...(p.images?.nodes ?? []).map((img) => img.url),
+  ].filter(Boolean);
+  // Dedupe (featuredImage usually duplicates first image)
+  const uniqueImages = [...new Set(imageUrls)];
 
   return {
     handle: p.handle,
     title: p.title,
-    description: p.body_html ?? '',
+    description: p.descriptionHtml ?? '',
     vendor: p.vendor,
-    productType: p.product_type || undefined,
-    collection: p.product_type || undefined,
+    productType: p.productType || undefined,
+    collection: p.productType || undefined,
     tags,
-    status: isSold ? 'sold' : (p.status || 'draft'),
+    status: isSold ? 'sold' : statusRaw,
     price: variant.price,
-    compareAtPrice: variant.compare_at_price || undefined,
+    compareAtPrice: variant.compareAtPrice || undefined,
     sku: variant.sku || undefined,
-    inventory: variant.inventory_quantity,
-    images: (p.images ?? []).map((img) => img.src),
+    inventory: variant.inventoryQuantity,
+    images: uniqueImages,
     buyLinks: {
       shopify: `https://${storeDomain}/products/${p.handle}`,
       ebay: null,
       whatnot: null,
     },
     featured: tags.some((t) => t.toLowerCase() === 'featured' || t.toLowerCase() === 'grail'),
-    // No local-image auto-discovery for Shopify products — images come from Shopify CDN.
     _localImages: [],
     _file: 'shopify',
     _source: 'shopify',
