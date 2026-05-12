@@ -205,9 +205,32 @@ async function getPrimaryLocationId() {
   return active[0].id;
 }
 
+// Resolve the Shopify Standard Product Taxonomy category id for "Action Figures".
+// Returns a gid like "gid://shopify/TaxonomyCategory/tg-..." or null if not found.
+async function findCategoryIdByName(name) {
+  const QUERY = `
+    query SearchTax($search: String!) {
+      taxonomy {
+        categories(search: $search, first: 10) {
+          nodes { id name fullName isLeaf isArchived }
+        }
+      }
+    }`;
+  try {
+    const data = await shopifyGql(QUERY, { search: name });
+    const nodes = data?.taxonomy?.categories?.nodes ?? [];
+    // Prefer a non-archived leaf whose fullName ends with the requested name.
+    const leaf = nodes.find((c) => !c.isArchived && c.isLeaf && new RegExp(`${name}$`, 'i').test(c.fullName));
+    return leaf?.id || nodes.find((c) => !c.isArchived)?.id || null;
+  } catch (err) {
+    console.warn(`[sync-ebay-active] taxonomy lookup failed for "${name}": ${err.message}`);
+    return null;
+  }
+}
+
 // Create product (no variants in input — GraphQL creates a default variant we then update).
 // Returns { productId, variantId, inventoryItemId, handle }.
-async function shopifyCreateProduct({ title, descriptionHtml, vendor, productType, handle, tags, status, imageUrls }) {
+async function shopifyCreateProduct({ title, descriptionHtml, vendor, productType, handle, tags, status, imageUrls, categoryId }) {
   const MUT = `
     mutation ProductCreate($input: ProductInput!, $media: [CreateMediaInput!]) {
       productCreate(input: $input, media: $media) {
@@ -228,6 +251,7 @@ async function shopifyCreateProduct({ title, descriptionHtml, vendor, productTyp
     tags,
     status: status.toUpperCase(), // ACTIVE | DRAFT | ARCHIVED
   };
+  if (categoryId) input.category = categoryId;
   const media = (imageUrls || []).map((u) => ({
     originalSource: u,
     mediaContentType: 'IMAGE',
@@ -364,6 +388,12 @@ async function main() {
   const locationId = DRY ? null : await getPrimaryLocationId();
   if (!DRY) console.log(`[sync-ebay-active] Shopify primary location id: ${locationId}`);
 
+  // Resolve a default Shopify taxonomy category for imports. Bubs960 is an
+  // action-figure store, so default to "Action Figures". Manual override on
+  // non-figure items in Shopify admin after import.
+  const defaultCategoryId = DRY ? null : await findCategoryIdByName('Action Figures');
+  if (!DRY) console.log(`[sync-ebay-active] default Shopify category: ${defaultCategoryId || '(not found — leaving blank)'}`);
+
   let created = 0, skipped = 0, failed = 0;
 
   for (const summary of summaries) {
@@ -415,6 +445,7 @@ async function main() {
         tags: tagList,
         status: PRODUCT_STATUS,
         imageUrls,
+        categoryId: defaultCategoryId,
       });
 
       // 2. Update the default variant with sku/price/compareAt/track-inventory
