@@ -43,6 +43,9 @@ const {
   // Coins & Paper Money (11116), Video Games (1249). Override per run with
   // EBAY_CATEGORIES env var (comma-separated top-level eBay category IDs).
   EBAY_CATEGORIES = '220,1,64482,11116,1249',
+  // Filter out auctions (only import Buy It Now / fixed-price listings).
+  // "1"/"true" excludes auctions, anything else includes them.
+  EXCLUDE_AUCTIONS = '1',
 } = process.env;
 
 const REQUIRED = ['EBAY_APP_ID', 'EBAY_CERT_ID', 'EBAY_SELLER_USERNAME', 'SHOPIFY_STORE', 'SHOPIFY_ADMIN_TOKEN'];
@@ -60,6 +63,7 @@ if (!Number.isFinite(DISCOUNT_MULT) || DISCOUNT_MULT <= 0 || DISCOUNT_MULT > 1) 
 }
 const DRY = DRY_RUN === '1' || DRY_RUN === 'true';
 const MAX = MAX_ITEMS ? Number(MAX_ITEMS) : Infinity;
+const FILTER_AUCTIONS = EXCLUDE_AUCTIONS === '1' || EXCLUDE_AUCTIONS === 'true';
 
 // ---------- eBay app token (client_credentials) ----------
 async function getEbayAppToken() {
@@ -104,7 +108,12 @@ async function fetchAllSellerItems(token) {
       const batch = data.itemSummaries ?? [];
       for (const it of batch) {
         const id = String(it.itemId ?? '');
-        if (!seen.has(id)) seen.set(id, it);
+        if (seen.has(id)) continue;
+        if (FILTER_AUCTIONS) {
+          const opts = it.buyingOptions ?? [];
+          if (!opts.includes('FIXED_PRICE')) continue; // skip auction-only listings
+        }
+        seen.set(id, it);
       }
       const total = data.total ?? batch.length;
       console.log(`[sync-ebay-active] eBay cat=${cat} offset=${offset} got=${batch.length} total=${total} uniq=${seen.size}`);
@@ -332,7 +341,7 @@ async function diagnoseShopifyAuth() {
 
 // ---------- main ----------
 async function main() {
-  console.log(`[sync-ebay-active] seller=${EBAY_SELLER_USERNAME} discount=${DISCOUNT_PCT}% dry-run=${DRY} max=${MAX === Infinity ? 'all' : MAX}`);
+  console.log(`[sync-ebay-active] seller=${EBAY_SELLER_USERNAME} discount=${DISCOUNT_PCT}% dry-run=${DRY} max=${MAX === Infinity ? 'all' : MAX} exclude-auctions=${FILTER_AUCTIONS}`);
 
   // Sanity-check Shopify auth BEFORE doing eBay work, so failures are fast and obvious.
   await diagnoseShopifyAuth();

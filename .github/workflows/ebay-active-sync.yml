@@ -39,6 +39,11 @@ on:
         description: 'eBay top-level category IDs (comma-separated). Default covers Toys, Collectibles, Sports Mem, Coins, Video Games.'
         required: false
         default: '220,1,64482,11116,1249'
+      exclude_auctions:
+        description: 'Skip eBay auctions (only import Buy It Now / fixed-price)'
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -65,4 +70,5 @@ jobs:
           DISCOUNT_PCT:   ${{ github.event.inputs.discount_pct }}
           PRODUCT_STATUS: ${{ github.event.inputs.product_status }}
           EBAY_CATEGORIES: ${{ github.event.inputs.ebay_categories }}
+          EXCLUDE_AUCTIONS: ${{ github.event.inputs.exclude_auctions == 'true' && '1' || '0' }}
         run: node scripts/sync-ebay-active.mjs
