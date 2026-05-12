@@ -20,9 +20,9 @@ on:
         type: boolean
         default: true
       max_items:
-        description: 'Max items to process (blank = all). Use 5 for first test.'
+        description: 'Max items to process (blank = all, recommended for full sync)'
         required: false
-        default: '5'
+        default: ''
       discount_pct:
         description: 'Direct-buyer discount % off eBay price'
         required: false
