@@ -1,0 +1,66 @@
+name: Export eBay Listings to Shopify CSV
+
+# Pulls all of your active eBay listings via the Browse API and writes
+# a Shopify-format product-import CSV. CSV is uploaded as a workflow
+# artifact you can download. No Shopify token needed — you upload the
+# CSV manually via Shopify admin -> Products -> Import.
+#
+# Required secrets:
+#   EBAY_APP_ID, EBAY_CERT_ID, EBAY_SELLER_USERNAME
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_items:
+        description: 'Max items to export (blank = all)'
+        required: false
+        default: ''
+      discount_pct:
+        description: 'Direct-buyer discount % off eBay price'
+        required: false
+        default: '15'
+      product_status:
+        description: 'Shopify product status in CSV'
+        required: false
+        type: choice
+        default: 'draft'
+        options:
+          - draft
+          - active
+      ebay_categories:
+        description: 'eBay top-level category IDs (comma-separated)'
+        required: false
+        default: '220,1,64482,11116,1249'
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build Shopify-import CSV from eBay
+        env:
+          EBAY_APP_ID:          ${{ secrets.EBAY_APP_ID }}
+          EBAY_CERT_ID:         ${{ secrets.EBAY_CERT_ID }}
+          EBAY_SELLER_USERNAME: ${{ secrets.EBAY_SELLER_USERNAME }}
+          MAX_ITEMS:        ${{ github.event.inputs.max_items }}
+          DISCOUNT_PCT:     ${{ github.event.inputs.discount_pct }}
+          PRODUCT_STATUS:   ${{ github.event.inputs.product_status }}
+          EBAY_CATEGORIES:  ${{ github.event.inputs.ebay_categories }}
+          OUT_PATH: shopify-import.csv
+        run: node scripts/sync-ebay-to-csv.mjs
+
+      - name: Upload CSV artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: shopify-import-csv
+          path: shopify-import.csv
+          if-no-files-found: error
+          retention-days: 14
