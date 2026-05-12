@@ -30,7 +30,7 @@ const EBAY_TOKEN_URL  = 'https://api.ebay.com/identity/v1/oauth2/token';
 const EBAY_SEARCH_URL = 'https://api.ebay.com/buy/browse/v1/item_summary/search';
 const EBAY_ITEM_URL   = 'https://api.ebay.com/buy/browse/v1/item';
 const EBAY_SCOPE      = 'https://api.ebay.com/oauth/api_scope';
-const SHOPIFY_API_VERSION = '2024-01';
+const SHOPIFY_API_VERSION = '2024-10';
 
 const {
   EBAY_APP_ID, EBAY_CERT_ID, EBAY_SELLER_USERNAME,
@@ -133,48 +133,141 @@ async function fetchItemDetail(token, itemId) {
   return res.json();
 }
 
-// ---------- Shopify helpers ----------
-async function shopify(method, path, body) {
-  const res = await fetch(`https://${SHOPIFY_STORE}/admin/api/${SHOPIFY_API_VERSION}${path}`, {
-    method,
+// ---------- Shopify GraphQL helpers ----------
+// New-style Shopify apps (Dev Dashboard / atkn_ tokens) speak GraphQL Admin API,
+// not REST. Header X-Shopify-Access-Token is unchanged.
+async function shopifyGql(query, variables = {}) {
+  const res = await fetch(`https://${SHOPIFY_STORE}/admin/api/${SHOPIFY_API_VERSION}/graphql.json`, {
+    method: 'POST',
     headers: {
       'X-Shopify-Access-Token': SHOPIFY_ADMIN_TOKEN,
       'Content-Type': 'application/json',
       Accept: 'application/json',
     },
-    body: body ? JSON.stringify(body) : undefined,
+    body: JSON.stringify({ query, variables }),
   });
   const text = await res.text();
-  if (!res.ok) throw new Error(`Shopify ${method} ${path} failed (${res.status}): ${text}`);
-  return text ? JSON.parse(text) : {};
+  if (!res.ok) throw new Error(`Shopify GraphQL HTTP ${res.status}: ${text.slice(0, 500)}`);
+  let data;
+  try { data = JSON.parse(text); } catch { throw new Error(`Shopify GraphQL non-JSON: ${text.slice(0, 500)}`); }
+  if (data.errors) throw new Error(`Shopify GraphQL errors: ${JSON.stringify(data.errors).slice(0, 800)}`);
+  return data.data;
 }
 
 async function indexShopifyBySku() {
   const index = new Map();
-  let pageUrl = `/products.json?limit=250&fields=id,handle,variants`;
-  while (pageUrl) {
-    const res = await fetch(`https://${SHOPIFY_STORE}/admin/api/${SHOPIFY_API_VERSION}${pageUrl}`, {
-      headers: { 'X-Shopify-Access-Token': SHOPIFY_ADMIN_TOKEN, Accept: 'application/json' },
-    });
-    if (!res.ok) throw new Error(`Shopify index failed (${res.status}): ${await res.text()}`);
-    const data = await res.json();
-    for (const p of data.products ?? []) {
-      for (const v of p.variants ?? []) {
+  let cursor = null;
+  let pages = 0;
+  const QUERY = `
+    query Products($cursor: String) {
+      products(first: 250, after: $cursor) {
+        pageInfo { hasNextPage endCursor }
+        nodes {
+          id
+          handle
+          variants(first: 10) { nodes { sku } }
+        }
+      }
+    }`;
+  while (true) {
+    const data = await shopifyGql(QUERY, { cursor });
+    const conn = data.products;
+    for (const p of conn.nodes) {
+      for (const v of p.variants.nodes) {
         if (v.sku) index.set(v.sku, p);
       }
     }
-    const link = res.headers.get('Link') || '';
-    const next = link.match(/<([^>]+)>;\s*rel="next"/);
-    pageUrl = next ? next[1].replace(`https://${SHOPIFY_STORE}/admin/api/${SHOPIFY_API_VERSION}`, '') : null;
+    pages++;
+    if (!conn.pageInfo.hasNextPage) break;
+    cursor = conn.pageInfo.endCursor;
   }
+  console.log(`[sync-ebay-active] Shopify indexed (gql): ${index.size} SKUs across ${pages} page(s).`);
   return index;
 }
 
 async function getPrimaryLocationId() {
-  const data = await shopify('GET', '/locations.json');
-  const active = (data.locations ?? []).filter((l) => l.active);
+  const QUERY = `{ locations(first: 5) { nodes { id name isActive } } }`;
+  const data = await shopifyGql(QUERY);
+  const active = (data.locations.nodes ?? []).filter((l) => l.isActive);
   if (active.length === 0) throw new Error('No active Shopify locations found.');
   return active[0].id;
+}
+
+// Create product (no variants in input — GraphQL creates a default variant we then update).
+// Returns { productId, variantId, inventoryItemId, handle }.
+async function shopifyCreateProduct({ title, descriptionHtml, vendor, productType, handle, tags, status, imageUrls }) {
+  const MUT = `
+    mutation ProductCreate($input: ProductInput!, $media: [CreateMediaInput!]) {
+      productCreate(input: $input, media: $media) {
+        product {
+          id
+          handle
+          variants(first: 1) { nodes { id inventoryItem { id } } }
+        }
+        userErrors { field message }
+      }
+    }`;
+  const input = {
+    title,
+    descriptionHtml,
+    vendor,
+    productType: productType || null,
+    handle,
+    tags,
+    status: status.toUpperCase(), // ACTIVE | DRAFT | ARCHIVED
+  };
+  const media = (imageUrls || []).map((u) => ({
+    originalSource: u,
+    mediaContentType: 'IMAGE',
+  }));
+  const data = await shopifyGql(MUT, { input, media });
+  const errs = data.productCreate.userErrors;
+  if (errs.length) throw new Error(`productCreate userErrors: ${JSON.stringify(errs)}`);
+  const p = data.productCreate.product;
+  const v = p.variants.nodes[0];
+  return {
+    productId: p.id,
+    variantId: v.id,
+    inventoryItemId: v.inventoryItem.id,
+    handle: p.handle,
+  };
+}
+
+async function shopifyUpdateVariant({ productId, variantId, sku, price, compareAtPrice }) {
+  const MUT = `
+    mutation BulkUpdate($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
+      productVariantsBulkUpdate(productId: $productId, variants: $variants) {
+        productVariants { id }
+        userErrors { field message }
+      }
+    }`;
+  const variants = [{
+    id: variantId,
+    price: String(price),
+    compareAtPrice: String(compareAtPrice),
+    inventoryItem: { sku, tracked: true },
+  }];
+  const data = await shopifyGql(MUT, { productId, variants });
+  const errs = data.productVariantsBulkUpdate.userErrors;
+  if (errs.length) throw new Error(`variantsBulkUpdate userErrors: ${JSON.stringify(errs)}`);
+}
+
+async function shopifySetInventory({ inventoryItemId, locationId, quantity }) {
+  const MUT = `
+    mutation InvSet($input: InventorySetQuantitiesInput!) {
+      inventorySetQuantities(input: $input) {
+        userErrors { field message }
+      }
+    }`;
+  const input = {
+    name: 'available',
+    reason: 'correction',
+    ignoreCompareQuantity: true,
+    quantities: [{ inventoryItemId, locationId, quantity }],
+  };
+  const data = await shopifyGql(MUT, { input });
+  const errs = data.inventorySetQuantities.userErrors;
+  if (errs.length) throw new Error(`inventorySetQuantities userErrors: ${JSON.stringify(errs)}`);
 }
 
 // ---------- mapping helpers ----------
@@ -230,20 +323,11 @@ async function diagnoseShopifyAuth() {
   const storeHost = (SHOPIFY_STORE ?? '').trim();
   console.log(`[diag] SHOPIFY_STORE host=${storeHost.replace(/^.{0,3}/, '***')} len=${storeHost.length}`);
   console.log(`[diag] SHOPIFY_ADMIN_TOKEN prefix=${tokenPrefix.replace(/./g, (c, i) => i < 4 ? c : '*')} len=${tokenLen}`);
+  console.log(`[diag] Shopify API: GraphQL Admin ${SHOPIFY_API_VERSION}`);
 
-  const url = `https://${storeHost}/admin/api/${SHOPIFY_API_VERSION}/shop.json`;
-  const res = await fetch(url, {
-    headers: {
-      'X-Shopify-Access-Token': SHOPIFY_ADMIN_TOKEN,
-      Accept: 'application/json',
-    },
-  });
-  const body = await res.text();
-  console.log(`[diag] GET /shop.json -> ${res.status} ${res.statusText}`);
-  console.log(`[diag] response body: ${body.slice(0, 400)}`);
-  if (!res.ok) {
-    throw new Error(`Shopify /shop.json auth check failed — see diagnostic above. Most common causes: (1) token is not the Admin API token, (2) token's app isn't installed on this store, (3) SHOPIFY_STORE host is wrong, (4) app's scopes don't include read_products.`);
-  }
+  // Minimum-scope auth probe via GraphQL.
+  const data = await shopifyGql(`{ shop { name primaryDomain { url } } }`);
+  console.log(`[diag] shop.name="${data.shop.name}" primaryDomain=${data.shop.primaryDomain?.url}`);
 }
 
 // ---------- main ----------
@@ -294,64 +378,60 @@ async function main() {
     const condition = summary.condition || detail?.condition || '';
     const productType = guessProductType(title);
     const handle = slugify(`${title}-${itemId}`);
-    const images = collectImages(detail, summary).map((src, i) => ({
-      src, position: i + 1, alt: `${title}${i === 0 ? '' : ' photo ' + (i + 1)}`,
-    }));
+    const imageUrls = collectImages(detail, summary);
     const tagList = [
       productType && productType.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       condition && `condition-${condition.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
       'from-ebay',
     ].filter(Boolean);
-
-    const productPayload = {
-      product: {
-        title,
-        body_html: buildBodyHtml(detail, summary, summary.itemWebUrl),
-        vendor: 'Bubs960 Collectibles',
-        product_type: productType,
-        handle,
-        tags: tagList.join(', '),
-        status: PRODUCT_STATUS,
-        published: PRODUCT_STATUS === 'active',
-        variants: [{
-          sku,
-          price: shopifyPrice.toFixed(2),
-          compare_at_price: ebayPrice.toFixed(2),
-          inventory_management: 'shopify',
-          inventory_policy: 'deny',
-          requires_shipping: true,
-          taxable: true,
-        }],
-        images,
-      },
-    };
+    const descriptionHtml = buildBodyHtml(detail, summary, summary.itemWebUrl);
 
     if (DRY) {
-      console.log(`[sync-ebay-active] DRY would create: ${sku} — ${title.slice(0, 60)} — $${shopifyPrice.toFixed(2)} (was $${ebayPrice.toFixed(2)}) — ${images.length} img`);
+      console.log(`[sync-ebay-active] DRY would create: ${sku} — ${title.slice(0, 60)} — $${shopifyPrice.toFixed(2)} (was $${ebayPrice.toFixed(2)}) — ${imageUrls.length} img`);
       created++;
       continue;
     }
 
     try {
-      const res = await shopify('POST', '/products.json', productPayload);
-      const newProduct = res.product;
-      const variant = newProduct?.variants?.[0];
-      if (variant?.inventory_item_id && locationId) {
-        await shopify('POST', '/inventory_levels/set.json', {
-          location_id: locationId,
-          inventory_item_id: variant.inventory_item_id,
-          available: 1,
+      // 1. Create the product (default variant + media in one shot)
+      const { productId, variantId, inventoryItemId, handle: newHandle } = await shopifyCreateProduct({
+        title,
+        descriptionHtml,
+        vendor: 'Bubs960 Collectibles',
+        productType,
+        handle,
+        tags: tagList,
+        status: PRODUCT_STATUS,
+        imageUrls,
+      });
+
+      // 2. Update the default variant with sku/price/compareAt/track-inventory
+      await shopifyUpdateVariant({
+        productId,
+        variantId,
+        sku,
+        price: shopifyPrice.toFixed(2),
+        compareAtPrice: ebayPrice.toFixed(2),
+      });
+
+      // 3. Set inventory to 1 at primary location
+      if (locationId && inventoryItemId) {
+        await shopifySetInventory({
+          inventoryItemId,
+          locationId,
+          quantity: 1,
         });
       }
+
       created++;
-      console.log(`[sync-ebay-active] CREATED ${sku} — ${title.slice(0, 60)} — $${shopifyPrice.toFixed(2)}`);
+      console.log(`[sync-ebay-active] CREATED ${sku} (${newHandle}) — ${title.slice(0, 60)} — $${shopifyPrice.toFixed(2)}`);
     } catch (err) {
       failed++;
       console.error(`[sync-ebay-active] FAIL ${sku}: ${err.message}`);
     }
 
-    // light rate-limit pause (Shopify REST is 2/sec on standard plans)
-    await new Promise((r) => setTimeout(r, 600));
+    // Light rate-limit pause. GraphQL Admin is cost-based — we do ~3 calls per item.
+    await new Promise((r) => setTimeout(r, 500));
   }
 
   console.log(`[sync-ebay-active] Done. created=${created} skipped=${skipped} failed=${failed}`);
