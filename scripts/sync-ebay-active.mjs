@@ -111,7 +111,10 @@ async function fetchAllSellerItems(token) {
         if (seen.has(id)) continue;
         if (FILTER_AUCTIONS) {
           const opts = it.buyingOptions ?? [];
-          if (!opts.includes('FIXED_PRICE')) continue; // skip auction-only listings
+          // Skip anything where AUCTION is even an option — including mixed
+          // auction-with-Buy-It-Now listings, since the eBay listing is still
+          // primarily an auction that can end at any time.
+          if (opts.includes('AUCTION')) continue;
         }
         seen.set(id, it);
       }
