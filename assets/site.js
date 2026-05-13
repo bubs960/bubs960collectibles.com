@@ -42,3 +42,56 @@ const GA4_ID = 'G-QG8J17L0XS';
     watch();
   }
 })();
+
+// ---------- Floating "Shop Everywhere" widget ----------
+// Bottom-right pill with three quick links: Direct shop, eBay, Whatnot.
+// Lets buyers jump to whichever platform they prefer without hunting menus.
+(function () {
+  const PLATFORMS = [
+    { key: 'direct',  label: 'Shop Direct',      href: '/shop/index.html',                           icon: '🛒' },
+    { key: 'ebay',    label: 'My eBay Store',    href: 'https://www.ebay.com/usr/bubs960',           icon: '🅴' },
+    { key: 'whatnot', label: 'Live on Whatnot',  href: 'https://www.whatnot.com/user/bubs960',       icon: '🎥' },
+  ];
+
+  function inject() {
+    if (document.getElementById('shop-everywhere')) return;
+    const root = document.createElement('div');
+    root.id = 'shop-everywhere';
+    root.innerHTML = `
+      <button type="button" class="se-toggle" aria-expanded="false" aria-controls="se-panel" aria-label="Shop Bubs960 on other platforms">
+        <span class="se-toggle-icon">🛍️</span>
+        <span class="se-toggle-label">Shop Bubs960</span>
+      </button>
+      <div class="se-panel" id="se-panel" hidden>
+        <div class="se-heading">Shop Anywhere</div>
+        ${PLATFORMS.map((p) => `
+          <a class="se-link" href="${p.href}"${/^https?:/.test(p.href) ? ' target="_blank" rel="noopener"' : ''}>
+            <span class="se-icon" aria-hidden="true">${p.icon}</span>
+            <span class="se-label">${p.label}</span>
+          </a>
+        `).join('')}
+      </div>
+    `;
+    document.body.appendChild(root);
+
+    const btn = root.querySelector('.se-toggle');
+    const panel = root.querySelector('.se-panel');
+    btn.addEventListener('click', () => {
+      const open = panel.hasAttribute('hidden') ? true : false;
+      if (open) { panel.removeAttribute('hidden'); btn.setAttribute('aria-expanded', 'true'); }
+      else      { panel.setAttribute('hidden', '');  btn.setAttribute('aria-expanded', 'false'); }
+    });
+    document.addEventListener('click', (e) => {
+      if (!root.contains(e.target) && !panel.hasAttribute('hidden')) {
+        panel.setAttribute('hidden', '');
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', inject);
+  } else {
+    inject();
+  }
+})();

@@ -516,3 +516,85 @@ form.js-remote-form[data-submitting="true"] button[type="submit"] {
 @media (max-width: 500px) {
   .footer-grid { grid-template-columns: 1fr; }
 }
+
+/* ---------- Floating "Shop Everywhere" widget ---------- */
+#shop-everywhere {
+  position: fixed;
+  bottom: 1.25rem;
+  right: 1.25rem;
+  z-index: 900;
+  font-family: 'Montserrat', sans-serif;
+}
+#shop-everywhere .se-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--primary-red, #e62429);
+  color: #fff;
+  border: 3px solid var(--accent-yellow, #f1c40f);
+  border-radius: 999px;
+  padding: 0.7rem 1.15rem;
+  font-family: 'Bangers', cursive;
+  font-size: 1rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+#shop-everywhere .se-toggle:hover {
+  background: #c01e22;
+  transform: translateY(-2px);
+}
+#shop-everywhere .se-toggle-icon { font-size: 1.2rem; }
+#shop-everywhere .se-panel {
+  position: absolute;
+  bottom: calc(100% + 0.6rem);
+  right: 0;
+  min-width: 230px;
+  background: #101827;
+  border: 2px solid var(--accent-yellow, #f1c40f);
+  border-radius: 12px;
+  padding: 0.6rem;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+#shop-everywhere .se-panel[hidden] { display: none; }
+#shop-everywhere .se-heading {
+  font-family: 'Bangers', cursive;
+  font-size: 0.95rem;
+  letter-spacing: 2px;
+  color: var(--accent-yellow, #f1c40f);
+  text-transform: uppercase;
+  padding: 0.35rem 0.6rem 0.5rem;
+  border-bottom: 1px solid rgba(241, 196, 15, 0.25);
+  margin-bottom: 0.3rem;
+}
+#shop-everywhere .se-link {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 0.7rem;
+  border-radius: 8px;
+  color: #f4f4f4;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.92rem;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+#shop-everywhere .se-link:hover {
+  background: rgba(241, 196, 15, 0.12);
+  color: var(--accent-yellow, #f1c40f);
+}
+#shop-everywhere .se-icon {
+  width: 1.5rem; text-align: center; font-size: 1.1rem;
+}
+@media (max-width: 500px) {
+  #shop-everywhere { bottom: 0.75rem; right: 0.75rem; }
+  #shop-everywhere .se-toggle-label { display: none; }
+  #shop-everywhere .se-toggle { padding: 0.65rem 0.9rem; }
+  #shop-everywhere .se-toggle-icon { font-size: 1.35rem; }
+  #shop-everywhere .se-panel { min-width: 200px; }
+}

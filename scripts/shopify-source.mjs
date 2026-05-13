@@ -126,7 +126,7 @@ function normalize(p, storeDomain) {
         const m = (variant.sku ?? '').match(/^BUBS-EB-(\d+)$/);
         return m ? `https://www.ebay.com/itm/${m[1]}` : null;
       })(),
-      whatnot: null,
+      whatnot: 'https://www.whatnot.com/user/bubs960',
     },
     featured: tags.some((t) => t.toLowerCase() === 'featured' || t.toLowerCase() === 'grail'),
     _localImages: [],
