@@ -652,13 +652,15 @@
             <div class="actions">
                 <button class="btn-secondary" id="btn-play">▶ Auto-spin</button>
                 <button class="btn-secondary" id="btn-reverse">↻ Reverse direction</button>
-                <button class="btn-green" id="btn-zip">⬇ Download ZIP</button>
+                <button class="btn-green"     id="btn-zip">⬇ Spin frames ZIP</button>
+                <button class="btn-green"     id="btn-video" hidden>🎬 Spin video</button>
                 <button id="btn-restart">↺ Start over</button>
             </div>
 
             <p class="tip" style="margin-top: 0.9rem;">
-                The ZIP contains numbered <code>frame_001.jpg … frame_NNN.jpg</code> — the format eBay's
-                360° image uploader and most Shopify spin apps expect.
+                <strong>ZIP</strong> = numbered <code>frame_001.jpg…</code>, the format eBay's 360° uploader
+                and Shopify spin apps expect. <strong>Video</strong> = one looping MP4/WebM you can post
+                straight to Whatnot announcements, Instagram, or TikTok.
             </p>
         </section>
 
@@ -1174,8 +1176,8 @@
         const zipBlob = await zip.generateAsync({ type: 'blob' });
         const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
         const suffix = useWatermark ? '-wm' : '';
-        triggerDownload(zipBlob, `bubs960-listing-photos${suffix}-${stamp}.zip`);
-        toast(`${ordered.length} photos ready ✓`);
+        const result = await shareOrDownload(zipBlob, `bubs960-listing-photos${suffix}-${stamp}.zip`, 'application/zip');
+        toast(result === 'shared' ? 'Shared ✓' : result === 'cancelled' ? 'Cancelled' : `${ordered.length} photos ready ✓`);
     }
 
     // ---------- recent-takes history (IndexedDB) ----------
@@ -1624,9 +1626,11 @@
         const zipBlob = await zip.generateAsync({ type: 'blob' });
         const stampedSlug = (d.character || 'listing').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
         const stamp = new Date().toISOString().slice(0, 10);
-        triggerDownload(zipBlob, `bubs960-listing-${stampedSlug || 'untitled'}-${stamp}.zip`);
+        const filename = `bubs960-listing-${stampedSlug || 'untitled'}-${stamp}.zip`;
+        const result = await shareOrDownload(zipBlob, filename, 'application/zip');
         saveDefaults();
-        toast('Bundle ready ✓');
+        await persistCurrentTake(); // snapshot the final form state when user "ships" a take
+        toast(result === 'shared' ? 'Bundle shared ✓' : result === 'cancelled' ? 'Cancelled' : 'Bundle ready ✓');
     }
 
     // ---------- spin viewer ----------
@@ -1699,6 +1703,96 @@
     }
 
     // ---------- ZIP download ----------
+    // ---------- animated spin video ----------
+    // Renders the 36 frames into a looping video via MediaRecorder over a
+    // canvas captureStream. Feature-detected; the button is hidden if the
+    // browser can't do it (e.g., iOS Safari < 16.4 or anything without
+    // canvas.captureStream support).
+    function videoExportSupported() {
+        if (typeof MediaRecorder === 'undefined') return null;
+        if (!('captureStream' in HTMLCanvasElement.prototype)) return null;
+        // Prefer MP4 (universal share, iOS Photos compatible). Fall back to WebM.
+        const candidates = [
+            { mime: 'video/mp4;codecs=avc1.42E01E', ext: 'mp4' },
+            { mime: 'video/mp4',                    ext: 'mp4' },
+            { mime: 'video/webm;codecs=vp9',        ext: 'webm' },
+            { mime: 'video/webm;codecs=vp8',        ext: 'webm' },
+            { mime: 'video/webm',                   ext: 'webm' },
+        ];
+        for (const c of candidates) {
+            if (MediaRecorder.isTypeSupported(c.mime)) return c;
+        }
+        return null;
+    }
+
+    async function exportSpinVideo() {
+        const support = videoExportSupported();
+        if (!support) {
+            showError('This browser can\'t encode video. Use Safari 16.4+, Chrome, or Firefox.');
+            return;
+        }
+        if (state.frames.length === 0) return;
+        clearError();
+
+        const fps = 24;
+        const rotations = 2;          // two full revolutions = ~3s loop, plenty for IG/Whatnot
+        const totalFrames = state.frames.length * rotations;
+
+        // Decode every frame once, up front. Faster than re-decoding inside the draw loop.
+        toast('Decoding frames…');
+        const imgs = [];
+        for (let i = 0; i < state.frames.length; i++) {
+            imgs.push(await blobToImage(state.frames[i]));
+        }
+
+        const c = document.createElement('canvas');
+        c.width  = imgs[0].naturalWidth;
+        c.height = imgs[0].naturalHeight;
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, c.width, c.height);
+
+        const stream = c.captureStream(0); // 0 = manual frame pump
+        const track = stream.getVideoTracks()[0];
+        const recorder = new MediaRecorder(stream, {
+            mimeType: support.mime,
+            videoBitsPerSecond: 5_000_000,
+        });
+        const chunks = [];
+        recorder.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+        const stopped = new Promise((res) => { recorder.onstop = res; });
+
+        recorder.start();
+
+        // Show progress in step-extract panel (viewer stays visible).
+        show($('step-extract'));
+        $('progress').value = 0;
+        $('progress-label').textContent = 'Encoding video…';
+
+        const frameMs = 1000 / fps;
+        for (let i = 0; i < totalFrames; i++) {
+            const img = imgs[i % imgs.length];
+            ctx.fillRect(0, 0, c.width, c.height); // clear (in case of transparency)
+            ctx.drawImage(img, 0, 0);
+            if (track.requestFrame) track.requestFrame();
+            // Wait one frame interval so the encoder picks it up.
+            await new Promise((r) => setTimeout(r, frameMs));
+
+            const pct = Math.round(((i + 1) / totalFrames) * 100);
+            $('progress').value = pct;
+            $('progress-pct').textContent = pct + '%';
+        }
+        recorder.stop();
+        await stopped;
+        hide($('step-extract'));
+
+        const blob = new Blob(chunks, { type: support.mime });
+        const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+        const filename = `bubs960-spin-${stamp}.${support.ext}`;
+        const result = await shareOrDownload(blob, filename, support.mime.split(';')[0]);
+        toast(result === 'shared' ? 'Shared ✓' : result === 'cancelled' ? 'Cancelled' : `Video (${support.ext.toUpperCase()}) ready ✓`);
+    }
+
     async function downloadZip() {
         if (typeof JSZip === 'undefined') {
             showError('ZIP library failed to load (offline?). Frames are still viewable — try again with internet.');
@@ -1716,8 +1810,28 @@
             $('progress-pct').textContent = Math.round(meta.percent) + '%';
         });
         const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
-        triggerDownload(zipBlob, `bubs960-spin-${stamp}.zip`);
-        toast('ZIP ready ✓');
+        const result = await shareOrDownload(zipBlob, `bubs960-spin-${stamp}.zip`, 'application/zip');
+        toast(result === 'shared' ? 'Shared ✓' : result === 'cancelled' ? 'Cancelled' : 'ZIP ready ✓');
+    }
+
+    // On iPhone, navigator.share opens the native share sheet (AirDrop /
+    // Save to Files / Messages / Mail) so the user doesn't have to dig
+    // through the Files app. Falls back to a normal download anywhere
+    // that can't share files (most desktop browsers, older iOS).
+    async function shareOrDownload(blob, name, mime) {
+        const file = new File([blob], name, { type: mime || blob.type || 'application/octet-stream' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({ files: [file], title: name });
+                return 'shared';
+            } catch (err) {
+                if (err && err.name === 'AbortError') return 'cancelled';
+                // Any other error → fall through to download fallback.
+                console.warn('navigator.share failed, falling back:', err);
+            }
+        }
+        triggerDownload(blob, name);
+        return 'downloaded';
     }
 
     function triggerDownload(blob, name) {
@@ -1814,6 +1928,9 @@
         $('btn-play'   ).addEventListener('click', () => state.autoSpin ? stopAutoSpin() : startAutoSpin());
         $('btn-reverse').addEventListener('click', () => { state.direction *= -1; toast(state.direction > 0 ? 'Forward' : 'Reverse'); });
         $('btn-zip'    ).addEventListener('click', downloadZip);
+        $('btn-video'  ).addEventListener('click', exportSpinVideo);
+        // Show the video button only if MediaRecorder + canvas.captureStream work in this browser.
+        if (videoExportSupported()) $('btn-video').hidden = false;
         $('btn-restart').addEventListener('click', () => {
             // Don't delete the take — just clear the active session. The
             // user can come back to it via the Recent strip.
