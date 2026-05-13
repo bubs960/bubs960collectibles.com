@@ -1,0 +1,67 @@
+name: Deploy to GitHub Pages
+
+# Migrated from Cloudflare Pages — see notes in repo top-level comment
+# in this file. Triggers on every push to main, plus manually via the
+# Actions tab. Free tier, no overage risk:
+#   - Public repo: unlimited GitHub Actions minutes
+#   - GitHub Pages bandwidth soft cap is 100 GB/month (you'd never hit
+#     it on a static-site, and overages just get a polite email — they
+#     don't auto-bill)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one Pages deploy at a time; let the in-flight one finish so
+# we don't half-publish on a fast double-push.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Stage site (exclude repo internals, server scripts, the CF Worker)
+        run: |
+          set -e
+          mkdir -p _site
+          # Copy every top-level entry except things that shouldn't be public:
+          #   .git/.github  → repo plumbing, secrets references, CI configs
+          #   scripts/      → eBay/Shopify sync code, reads env-var secrets
+          #   oauth-helper/ → the Cloudflare Worker source for eBay OAuth
+          #   node_modules/ → just in case
+          shopt -s dotglob
+          for f in *; do
+            case "$f" in
+              .git|.github|_site|node_modules|scripts|oauth-helper) continue ;;
+              *) cp -r "$f" _site/ ;;
+            esac
+          done
+          # Tell GitHub Pages this is plain HTML — don't run Jekyll on it.
+          touch _site/.nojekyll
+          ls -la _site/ | head -40
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
