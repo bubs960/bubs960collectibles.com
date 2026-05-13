@@ -36,15 +36,9 @@ function buyButtons(p) {
   const links = p.buyLinks ?? {};
   const out = [];
   if (links.shopify) {
-    out.push(`<a class="btn btn-primary" href="${escapeHtml(links.shopify)}" target="_blank" rel="noopener">Buy on Shopify</a>`);
+    out.push(`<a class="btn btn-primary" href="${escapeHtml(links.shopify)}" target="_blank" rel="noopener">Buy Here · Save 15%</a>`);
   }
-  if (links.ebay) {
-    out.push(`<a class="btn btn-yellow" href="${escapeHtml(links.ebay)}" target="_blank" rel="noopener">Buy on eBay</a>`);
-  }
-  if (links.whatnot) {
-    out.push(`<a class="btn btn-ghost" href="${escapeHtml(links.whatnot)}" target="_blank" rel="noopener">Catch on Whatnot</a>`);
-  }
-  out.push(`<a class="btn btn-ghost" href="/index.html#contact">Inquire Direct</a>`);
+  out.push(`<a class="btn btn-ghost" href="/index.html#contact">Ask a Question</a>`);
   return out.join('\n');
 }
 
@@ -1030,7 +1024,7 @@ function productPage(p, allProducts = []) {
     <div class="price-row">
       ${p.price != null ? `<span class="price${isSold ? ' struck' : ''}">${fmtPrice(p.price)}</span>` : ''}
       ${!isSold && p.compareAtPrice != null ? `<span class="compare-price">${fmtPrice(p.compareAtPrice)}</span>` : ''}
-      ${(() => { const s = savingsVsEbay(p); return s ? `<span class="savings-badge lg">Save $${s.toFixed(0)} vs eBay</span>` : ''; })()}
+      ${(() => { const s = savingsVsEbay(p); return s ? `<span class="savings-badge lg">Save $${s.toFixed(0)}</span>` : ''; })()}
       ${statusBadge(p.status)}
     </div>
     <div class="description">${p.description ?? '<p>Details coming soon — reach out for photos and condition notes.</p>'}</div>
@@ -1085,7 +1079,7 @@ function renderCard(p) {
         : (p.compareAtPrice ? `<div class="card-ribbon">Deal</div>` : '');
     const soldStamp = isSold ? `<div class="sold-stamp">Sold</div>` : '';
     const saved = savingsVsEbay(p);
-    const savingsBadge = saved ? `<span class="savings-badge">Save $${saved.toFixed(0)} vs eBay</span>` : '';
+    const savingsBadge = saved ? `<span class="savings-badge">Save $${saved.toFixed(0)}</span>` : '';
     return `
       <a class="card reveal ${isSold ? 'is-sold' : ''}" href="/shop/${escapeHtml(p.handle)}.html">
         ${ribbon}
@@ -1118,10 +1112,9 @@ function renderEmptyState() {
     <span>The Vault</span>
   </div>
   <h2>The Shop Is Loading Up</h2>
-  <p>New drops land every week. <strong>VIP list gets first crack</strong> before pieces hit the catalog. In the meantime, plenty live on eBay and Whatnot — and the live show is fire.</p>
+  <p>New drops land every week. <strong>VIP list gets first crack</strong> before pieces hit the catalog. Live shows are fire too.</p>
   <div class="empty-actions">
     <a href="/index.html#vip" class="btn btn-primary">Join VIP List</a>
-    <a href="https://www.ebay.com/usr/bubs960" target="_blank" rel="noopener" class="btn btn-yellow">Shop on eBay</a>
     <a href="/live.html" class="btn btn-ghost">Catch the Live Show</a>
   </div>
 </section>
