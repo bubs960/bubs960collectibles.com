@@ -1,0 +1,46 @@
+name: Refresh Shopify Images (high-res)
+
+# Walks every Shopify product tagged "from-ebay" and replaces its
+# images with high-resolution (s-l1600) versions re-fetched from
+# eBay. Safe to re-run — only products whose SKU matches the
+# BUBS-EB-<itemId> pattern are touched, and the new images are
+# uploaded before the old ones are removed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (print plan, no writes)'
+        required: false
+        type: boolean
+        default: true
+      max_products:
+        description: 'Max products to process (blank = all)'
+        required: false
+        default: '3'
+      tag:
+        description: 'Shopify tag to target'
+        required: false
+        default: 'from-ebay'
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Refresh images
+        env:
+          EBAY_APP_ID:         ${{ secrets.EBAY_APP_ID }}
+          EBAY_CERT_ID:        ${{ secrets.EBAY_CERT_ID }}
+          SHOPIFY_STORE:       ${{ secrets.SHOPIFY_STORE }}
+          SHOPIFY_ADMIN_TOKEN: ${{ secrets.SHOPIFY_ADMIN_TOKEN }}
+          DRY_RUN:      ${{ github.event.inputs.dry_run == 'true' && '1' || '' }}
+          MAX_PRODUCTS: ${{ github.event.inputs.max_products }}
+          TAG:          ${{ github.event.inputs.tag }}
+        run: node scripts/refresh-shopify-images.mjs
