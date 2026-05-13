@@ -12,6 +12,7 @@ import { resetOnboarding } from '@/onboarding/preferences';
 import { FEATURES } from '@/config/features';
 import { Section, Row, LinkRow } from './settings/primitives';
 import { AccountSection } from './settings/AccountSection';
+import { usePwaInstall } from '@/web/usePwaInstall';
 import type { RootStackParamList } from '@/navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Settings'>;
@@ -29,12 +30,20 @@ const APP_VERSION = '0.1.0';
  */
 export function SettingsScreen() {
   const navigation = useNavigation<Nav>();
+  const pwa = usePwaInstall();
 
   const openExternal = (url: string) =>
     WebBrowser.openBrowserAsync(url, {
       toolbarColor: colors.bg,
       controlsColor: colors.accent,
     });
+
+  const onInstallPwa = async () => {
+    const outcome = await pwa.promptInstall();
+    if (outcome === 'accepted') {
+      // appinstalled listener flips state; nothing to do here.
+    }
+  };
 
   const onResetOnboarding = async () => {
     await Promise.all([resetOnboarding(), clearCache(), AsyncStorage.clear().catch(() => {})]);
@@ -55,6 +64,13 @@ export function SettingsScreen() {
 
         <Section title="App">
           <Row label="Version" value={APP_VERSION} />
+          {pwa.installable && (
+            <LinkRow
+              label="Install as desktop app"
+              onPress={onInstallPwa}
+            />
+          )}
+          {pwa.installed && <Row label="Install state" value="Installed" />}
         </Section>
 
         <Section title="Support">

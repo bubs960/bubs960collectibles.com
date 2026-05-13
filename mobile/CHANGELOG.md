@@ -92,16 +92,53 @@ build a desktop surface during the gap rather than wait. Decision matrix
   download / Microsoft Store / Mac App Store), CSP pitfalls. Steve
   reads this when he's ready to do the Day-4 Tauri wrap step.
 
+### Cloudflare Pages + install banner + CORS smoke (this commit)
+- **`wrangler.toml`** — Pages project config for the deploy target
+  (default `app.figurepinner.com`). Comments document the subdomain
+  vs path-mount tradeoff and the `wrangler pages deploy ./dist` flow.
+- **`public/_headers`** — security headers (CSP, HSTS, X-Frame,
+  Permissions-Policy) + cache-control for the hashed `_expo/*`
+  bundles and the service worker. CSP mirrors `tauri.conf.json`
+  so the same allowlist works in both shells.
+- **`public/_redirects`** — SPA fallback (`/* → /index.html 200`)
+  so deep links like `/open/:id` survive direct navigation.
+- **`src/web/usePwaInstall.{ts,web.ts}`** — hook that captures the
+  Chrome / Edge / Brave `beforeinstallprompt` event and exposes a
+  trigger. Native variant returns a stable no-op so the Settings
+  tree stays platform-agnostic.
+- **`SettingsScreen.tsx`** — new "Install as desktop app" row
+  inside the App section. Appears only when the browser has fired
+  the install event AND we're not already running standalone.
+  Tauri's webview never fires it; iOS/Android never reach the .web
+  variant. Pure additive surface.
+- **`scripts/smoke-web.sh`** — preflight CORS probe to run AFTER
+  the PWA deploys. Checks: OPTIONS on /search + /vault + /analytics,
+  Access-Control-Allow-Origin echoes our origin, Allow-Headers
+  includes Authorization on signed routes, GET preserves the body.
+  Catches the "Network request failed" CORS-misconfig failure
+  before real users see it.
+
+### Audit of remaining native imports — all clear
+- `expo-haptics`, `expo-web-browser`, `expo-linking` all ship Expo
+  SDK 51 web stubs (haptics silently no-ops, web-browser falls back
+  to `window.open`, linking maps onto the URL API). No `.web.ts`
+  shims required.
+- React Native primitives (Pressable / Text / View / Image /
+  Animated / Alert / StatusBar / SafeAreaView) all flow through
+  `react-native-web`. No callers found that need patching.
+- The only native-only gesture surface was `ZoomableImage`, which
+  got a web variant in the previous chunk.
+
 ### What's still to do this week
 1. Local smoke pass: boot `npx expo start --web`, walk each surface
    (onboarding, search, figure detail with moved/miss branches,
    sign-in, vault, wantlist, alerts UI, settings). Fix whatever
    breaks on first contact with reality.
 2. Clerk dashboard — add allowed origins for the web SDK.
-3. Cloudflare Pages config (`wrangler.toml`) if we want CI deploys
-   from this branch.
-4. Source icon generation — `npx tauri icon assets/icon-1024.png`
+3. Source icon generation — `npx tauri icon assets/icon-1024.png`
    once the mobile icon lands.
+4. Cloudflare Pages first deploy — `wrangler login` + `wrangler
+   pages deploy ./dist --project-name figurepinner-app`.
 
 ### Blockers needing Steve action
 - `npm install` locally to fetch the new web deps (declared in this

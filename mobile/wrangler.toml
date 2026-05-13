@@ -1,0 +1,42 @@
+name = "figurepinner-app"
+compatibility_date = "2026-04-26"
+pages_build_output_dir = "./dist"
+
+# Deploys the Expo Web build (`npm run web:build` → `dist/`) to
+# Cloudflare Pages.
+#
+# To deploy from your laptop:
+#   1. npm install -g wrangler  (if not already installed)
+#   2. wrangler login
+#   3. npm run web:build         # produces ./dist
+#   4. wrangler pages deploy ./dist --project-name figurepinner-app
+#
+# Custom domain (recommended): app.figurepinner.com
+#   - In Cloudflare dashboard: Pages → figurepinner-app → Custom
+#     domains → Set up a custom domain → app.figurepinner.com.
+#   - Cloudflare auto-creates the CNAME record if figurepinner.com is
+#     on its DNS. Otherwise add a CNAME at your DNS provider pointing
+#     `app` → `figurepinner-app.pages.dev`.
+#
+# If you'd rather mount under figurepinner.com/app/* instead of a
+# subdomain, you keep the same Pages project but add a "transform
+# rule" in the figurepinner.com zone to proxy /app/* to
+# figurepinner-app.pages.dev. The cost is asset-base-path complexity
+# in Metro's output, so subdomain is the cheaper call.
+
+[env.production]
+# Production deploy target.
+#   - Workers/Pages env vars override what's baked into the bundle at
+#     build time. EXPO_PUBLIC_* vars are read by Metro AT BUILD TIME,
+#     not at runtime, so the EAS-style env vars you see in eas.json
+#     should be passed through `wrangler pages deploy --commit-dirty
+#     --branch main --build-output-dir dist --binding ENV=production`
+#     wrappers OR (cleaner) via the Cloudflare dashboard's
+#     "Environment variables" UI for the production deploy.
+
+[env.preview]
+# Preview deploys (any non-main branch).
+#   - Each branch gets a *.pages.dev URL (e.g.
+#     claude-figure-pinner-mobile-app-rpgzu.figurepinner-app.pages.dev).
+#   - Use these for Clerk allowed-origin smoke testing before
+#     promoting to production.

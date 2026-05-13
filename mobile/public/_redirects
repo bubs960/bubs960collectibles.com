@@ -1,0 +1,9 @@
+# Cloudflare Pages SPA fallback. Any URL that isn't a built asset
+# falls back to index.html so client-side routing (React Navigation)
+# can handle the path. Without this, /open/:id deep links 404 on
+# direct navigation.
+#
+# 200 status code (not 301/302) so the browser sees the SPA URL as
+# authoritative — bookmarks + share-links to /open/:id behave correctly.
+
+/*    /index.html    200
