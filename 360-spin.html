@@ -424,6 +424,33 @@
             font-weight: 700;
         }
 
+        /* "Lead photo" star — visible only on currently-selected thumbs.
+           Tapping it promotes that photo to be photo_01 in any ZIP/bundle. */
+        .thumb .lead-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.55);
+            color: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: none;
+            place-items: center;
+            line-height: 1;
+            padding: 0;
+        }
+        .thumb.selected .lead-btn { display: grid; }
+        .thumb.lead { border-color: var(--accent-gold); }
+        .thumb.lead .lead-btn {
+            background: var(--accent-gold);
+            color: #1a1f2c;
+            border-color: var(--accent-gold);
+        }
+
         .thumb .badge {
             position: absolute;
             top: 4px;
@@ -1080,6 +1107,7 @@
         scores: [],          // Array<number>  Laplacian-variance sharpness per frame
         selected: new Set(), // Set<number>    indices currently chosen for listing
         autoPicked: [],      // Array<number>  the original auto-pick (for reset)
+        leadIdx: null,       // number|null    user-promoted lead photo (becomes photo_01)
     };
 
     function resetFrames() {
@@ -1091,7 +1119,17 @@
         state.scores = [];
         state.selected = new Set();
         state.autoPicked = [];
+        state.leadIdx = null;
         stopAutoSpin();
+    }
+
+    // Final order of selected photos for any ZIP/bundle: user's chosen lead
+    // first, everything else in rotation order. Used everywhere we render or
+    // export the listing-photo set so all paths stay in sync.
+    function selectedInOrder() {
+        const base = [...state.selected].sort((a, b) => a - b);
+        if (state.leadIdx == null || !state.selected.has(state.leadIdx)) return base;
+        return [state.leadIdx, ...base.filter((i) => i !== state.leadIdx)];
     }
 
     // ---------- video helpers ----------
@@ -1364,28 +1402,51 @@
         const maxScore = Math.max(1e-6, ...state.scores);
 
         state.frames.forEach((_, i) => {
+            const isSel  = state.selected.has(i);
+            const isLead = state.leadIdx === i && isSel;
             const el = document.createElement('div');
-            el.className = 'thumb' + (state.selected.has(i) ? ' selected' : '');
+            el.className = 'thumb' + (isSel ? ' selected' : '') + (isLead ? ' lead' : '');
             el.dataset.idx = i;
             const norm = Math.min(1, state.scores[i] / maxScore);
+            const leadLabel = isLead ? '★' : '☆';
+            const leadTitle = isLead ? 'Lead photo (photo_01)' : 'Make this the lead photo';
             el.innerHTML = `
                 <img src="${state.frameURLs[i]}" alt="Frame ${i + 1}">
                 <span class="badge">#${String(i + 1).padStart(2, '0')}</span>
+                <button class="lead-btn" type="button" aria-label="${leadTitle}" title="${leadTitle}">${leadLabel}</button>
                 <div class="score-bar"><span style="width:${(norm * 100).toFixed(1)}%"></span></div>
             `;
             el.addEventListener('click', () => toggleListingFrame(i));
+            el.querySelector('.lead-btn').addEventListener('click', (e) => {
+                e.stopPropagation(); // don't deselect when starring
+                setLeadPhoto(i);
+            });
             grid.appendChild(el);
         });
         updateSelectionSummary();
     }
 
     function toggleListingFrame(i) {
-        if (state.selected.has(i)) state.selected.delete(i);
-        else state.selected.add(i);
-        const el = document.querySelector(`#thumb-grid .thumb[data-idx="${i}"]`);
-        if (el) el.classList.toggle('selected', state.selected.has(i));
-        updateSelectionSummary();
+        if (state.selected.has(i)) {
+            state.selected.delete(i);
+            // If we just dropped the lead, clear it so ZIPs don't reference a stale index.
+            if (state.leadIdx === i) state.leadIdx = null;
+        } else {
+            state.selected.add(i);
+        }
+        renderListingGrid(); // simpler than diffing classes when lead state may have changed
         scheduleSave();
+    }
+
+    function setLeadPhoto(i) {
+        if (!state.selected.has(i)) {
+            // Auto-select if the user starred an unselected thumb — they obviously want it in.
+            state.selected.add(i);
+        }
+        state.leadIdx = (state.leadIdx === i) ? null : i; // tap again to unset
+        renderListingGrid();
+        scheduleSave();
+        toast(state.leadIdx === i ? 'Lead photo set ★' : 'Lead photo cleared');
     }
 
     function updateSelectionSummary() {
@@ -1526,7 +1587,7 @@
         }
         const useEnhance   = $('opt-enhance').checked;
         const useWatermark = $('opt-watermark').checked;
-        const ordered = [...state.selected].sort((a, b) => a - b);
+        const ordered = selectedInOrder();
         const pad = String(ordered.length).length;
 
         toast((useEnhance || useWatermark) ? 'Processing & zipping…' : 'Building ZIP…');
@@ -1639,6 +1700,7 @@
                 frames: state.frames,
                 scores: state.scores,
                 selected: [...state.selected],
+                leadIdx: state.leadIdx,
                 form: {
                     vendor: form.vendor, series: form.series, character: form.character,
                     year: form.year, variant: form.variant,
@@ -1670,6 +1732,7 @@
         state.scores    = rec.scores || [];
         state.autoPicked = state.scores.length ? pickBestPerWedge(state.scores, 8) : [];
         state.selected  = new Set(rec.selected || state.autoPicked);
+        state.leadIdx   = (typeof rec.leadIdx === 'number') ? rec.leadIdx : null;
         currentTakeId   = rec.id;
 
         // Restore form fields
@@ -1852,7 +1915,7 @@
         }
         clearError();
         // Use the user's first selected photo as the starting point.
-        const ordered = [...state.selected].sort((a, b) => a - b);
+        const ordered = selectedInOrder();
         measure.photoIdx = ordered.indexOf(state.autoPicked[0] ?? ordered[0]);
         if (measure.photoIdx < 0) measure.photoIdx = 0;
         measure.open = true;
@@ -1870,7 +1933,7 @@
     }
 
     function loadMeasurePhoto() {
-        const ordered = [...state.selected].sort((a, b) => a - b);
+        const ordered = selectedInOrder();
         if (ordered.length === 0) return;
         const idx = ordered[measure.photoIdx % ordered.length];
         $('measure-img').src = state.frameURLs[idx];
@@ -1885,7 +1948,7 @@
     }
 
     function cycleMeasurePhoto() {
-        const ordered = [...state.selected].sort((a, b) => a - b);
+        const ordered = selectedInOrder();
         measure.photoIdx = (measure.photoIdx + 1) % ordered.length;
         measure.ref = [];
         measure.fig = [];
@@ -2383,7 +2446,7 @@
         const descHtml = buildDescriptionHtml(d);
         const useEnhance   = $('opt-enhance').checked;
         const useWatermark = $('opt-watermark').checked;
-        const ordered = [...state.selected].sort((a, b) => a - b);
+        const ordered = selectedInOrder();
         const pad = String(ordered.length).length;
 
         toast('Building bundle…');
@@ -2801,6 +2864,24 @@
         stage.addEventListener('touchend',   onStagePointerUp);
         loadDefaults();
         updateListingPreview();
+
+        // Sticky toggles. Most users will pick a setting once and want it to
+        // persist across sessions. Wrapped in try/catch for private browsing.
+        const TOGGLE_IDS = ['opt-trim', 'opt-enhance', 'opt-watermark'];
+        const TOGGLE_KEY = 'bubs960-toggles-v1';
+        const saveToggles = () => {
+            try {
+                const snap = Object.fromEntries(TOGGLE_IDS.map((id) => [id, $(id).checked]));
+                localStorage.setItem(TOGGLE_KEY, JSON.stringify(snap));
+            } catch (_) {}
+        };
+        try {
+            const snap = JSON.parse(localStorage.getItem(TOGGLE_KEY) || 'null');
+            if (snap) TOGGLE_IDS.forEach((id) => {
+                if (typeof snap[id] === 'boolean') $(id).checked = snap[id];
+            });
+        } catch (_) {}
+        TOGGLE_IDS.forEach((id) => $(id).addEventListener('change', saveToggles));
 
         // Render the recent-takes strip on load (hidden if there are none).
         renderRecent().catch((err) => console.warn('renderRecent failed:', err));
