@@ -55,16 +55,53 @@ build a desktop surface during the gap rather than wait. Decision matrix
   click-drag pans when zoomed, Esc resets. Honours
   `prefers-reduced-motion` to skip the CSS transition.
 
+### PWA + service worker (this commit)
+- **`public/manifest.json`** — Chrome / Edge / Safari install banner
+  source. Standalone display, dark theme color, portrait orientation,
+  maskable icon variants for Android's adaptive icon mask.
+- **`public/sw.js`** — minimal cache-first shell + network-first
+  `/api/*`. GETs cache; analytics POSTs and other writes skip the
+  cache by design. `CACHE_VERSION` bump invalidates all old shells
+  on release. Background sync + web push intentionally NOT here
+  (deferred to v3 once we have a VAPID route).
+- **`src/web/swRegister.ts`** — JS-side registration. Self-gates on
+  navigator so it's a no-op on native. Injects the manifest `<link>`
+  and `theme-color` meta if not already present (Chrome's
+  install-banner heuristic reads these).
+- **`App.tsx`** — calls `registerServiceWorker()` at module load.
+  Pre-render order: SW registration → analytics sink wiring →
+  fonts → render.
+
+### Tauri desktop shell scaffold (this commit)
+- **`src-tauri/tauri.conf.json`** — Tauri v2 config. Window 1100×800
+  with 420×600 min, dark background matching the React tree.
+  `beforeDevCommand: npm run web` boots `expo start --web` on 8081;
+  `beforeBuildCommand: npm run web:build` produces `dist/` which
+  `frontendDist` points at. CSP allows the prod + dev Workers,
+  Clerk, Google Fonts.
+- **`src-tauri/Cargo.toml`** — pre-baked Rust manifest so
+  `npm run tauri:dev` works the moment the Rust toolchain is
+  installed (no `npx tauri init` interactive step).
+- **`src-tauri/src/{main,lib}.rs`** — thin entry + bootstrap. No
+  custom commands (the React app is the whole UI).
+- **`src-tauri/capabilities/default.json`** — Tauri v2 capability
+  set. Currently just default + window controls; add more here
+  when the app needs new Rust-side permissions.
+- **`src-tauri/README.md`** — first-time-setup instructions per
+  platform, dev/build commands, distribution options (direct
+  download / Microsoft Store / Mac App Store), CSP pitfalls. Steve
+  reads this when he's ready to do the Day-4 Tauri wrap step.
+
 ### What's still to do this week
-1. PWA manifest fine-tuning + service worker for offline cache +
-   install prompt.
-2. Tauri scaffold (`src-tauri/Cargo.toml`, `tauri.conf.json`, build
-   integration).
-3. Smoke pass: boot `expo start --web`, walk each surface
-   (onboarding, search, figure detail with the moved/miss branches,
-   sign-in, vault, wantlist, alerts UI, settings).
-4. Clerk dashboard: add allowed origins for the web SDK.
-5. Cloudflare Pages config (`wrangler.toml` if we want CI deploys).
+1. Local smoke pass: boot `npx expo start --web`, walk each surface
+   (onboarding, search, figure detail with moved/miss branches,
+   sign-in, vault, wantlist, alerts UI, settings). Fix whatever
+   breaks on first contact with reality.
+2. Clerk dashboard — add allowed origins for the web SDK.
+3. Cloudflare Pages config (`wrangler.toml`) if we want CI deploys
+   from this branch.
+4. Source icon generation — `npx tauri icon assets/icon-1024.png`
+   once the mobile icon lands.
 
 ### Blockers needing Steve action
 - `npm install` locally to fetch the new web deps (declared in this

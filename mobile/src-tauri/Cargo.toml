@@ -1,0 +1,24 @@
+[package]
+name = "figurepinner"
+version = "0.1.0"
+description = "Real eBay prices for action figures."
+authors = ["Bubs960 Collectibles"]
+edition = "2021"
+
+# A binary crate — the desktop window shell that hosts the Expo Web bundle.
+# Tauri v2's CLI generates this scaffold; we pre-bake it so `npx tauri init`
+# isn't required and Steve can `npm run tauri:build` immediately after
+# installing the Rust toolchain.
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[features]
+# This is a "custom protocol" build (the only mode that supports
+# packaging into a .dmg / .msi / .deb). Don't disable.
+custom-protocol = ["tauri/custom-protocol"]

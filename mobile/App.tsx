@@ -18,9 +18,16 @@ import { NotificationsDriver } from '@/notifications/NotificationsDriver';
 import { FEATURES } from '@/config/features';
 import { track, setAnalyticsSink } from '@/analytics/dispatch';
 import { createHttpSink } from '@/analytics/httpSink';
+import { registerServiceWorker } from '@/web/swRegister';
 import { colors } from '@/theme/tokens';
 import { type } from '@/theme/typography';
 import appJson from './app.json';
+
+// PWA / service-worker registration. Self-gates on navigator so it's
+// a no-op on iOS / Android (where document + serviceWorker don't
+// exist). Injects the manifest <link> + theme-color meta on first
+// run for Chrome's install-banner heuristic.
+registerServiceWorker();
 
 // Wire the batched HTTP analytics sink at module load. The route is
 // engineer-confirmed live in prod (POST /api/v1/analytics/event,

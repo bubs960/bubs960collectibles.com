@@ -1,0 +1,12 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Capability set for the main window. v1 just needs the default window controls + a shell.open permission to launch the eBay outbound URL in the user's default browser (matching mobile's WebBrowser.openBrowserAsync behaviour).",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-close",
+    "core:window:allow-minimize",
+    "core:window:allow-set-title"
+  ]
+}

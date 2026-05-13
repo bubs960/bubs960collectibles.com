@@ -1,0 +1,65 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "FigurePinner",
+  "version": "0.1.0",
+  "identifier": "com.bubs960.figurepinner",
+  "build": {
+    "_comment": "Tauri loads the Expo Web build output. `npm run web:build` produces dist/ which is what frontendDist points at. For tauri:dev, devUrl points at `expo start --web` (default port 8081).",
+    "beforeDevCommand": "npm run web",
+    "devUrl": "http://localhost:8081",
+    "beforeBuildCommand": "npm run web:build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "FigurePinner",
+        "width": 1100,
+        "height": 800,
+        "minWidth": 420,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true,
+        "transparent": false,
+        "center": true,
+        "backgroundColor": "#0a0d1c"
+      }
+    ],
+    "security": {
+      "_comment": "CSP allows the prod + dev Workers (analytics, figure, vault, wantlist, devices), Clerk (sign-in), and Google Fonts (Inter / Bebas Neue). 'self' covers the bundled web build. The two `unsafe-inline` allowances are required for react-native-web's runtime style injection and Expo's font loader respectively.",
+      "csp": "default-src 'self'; connect-src 'self' https://figurepinner-api.bubs960.workers.dev https://figurepinner-api-dev.bubs960.workers.dev https://*.clerk.accounts.dev https://*.clerk.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'wasm-unsafe-eval' https://*.clerk.accounts.dev https://*.clerk.com; frame-src https://*.clerk.accounts.dev https://*.clerk.com"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Reference",
+    "shortDescription": "Real eBay prices for action figures.",
+    "longDescription": "FigurePinner shows real eBay sold prices for action figures. Search anything, see comps, no fluff.",
+    "copyright": "© 2026 Bubs960 Collectibles",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "_comment": "WiX installer for Windows. Replace certificateThumbprint with the SHA-1 of an EV cert once one is purchased — without it the .msi installer ships with a SmartScreen warning until enough users accept it.",
+      "wix": {
+        "language": "en-US"
+      }
+    },
+    "macOS": {
+      "_comment": "minimumSystemVersion gates the .dmg to macOS 10.15+ (Catalina), which is what Tauri's webview2/wkwebview baseline supports. signingIdentity stays empty until the Apple Developer cert is wired — unsigned .dmg works via right-click → Open for users who accept the prompt.",
+      "minimumSystemVersion": "10.15",
+      "signingIdentity": null
+    },
+    "linux": {
+      "deb": {
+        "depends": ["libwebkit2gtk-4.1-0", "libgtk-3-0"]
+      }
+    }
+  }
+}
