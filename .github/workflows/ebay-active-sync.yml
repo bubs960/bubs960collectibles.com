@@ -28,13 +28,13 @@ on:
         required: false
         default: '15'
       product_status:
-        description: 'Shopify product status'
+        description: 'Shopify product status (active = live immediately, draft = stage for review)'
         required: false
         type: choice
-        default: 'draft'
+        default: 'active'
         options:
-          - draft
           - active
+          - draft
       ebay_categories:
         description: 'eBay top-level category IDs (comma-separated). Default covers Toys, Collectibles, Sports Mem, Coins, Video Games.'
         required: false

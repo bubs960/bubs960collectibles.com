@@ -205,6 +205,33 @@ async function getPrimaryLocationId() {
   return active[0].id;
 }
 
+// Find the "Online Store" publication so we can auto-publish each new product
+// to the public-facing sales channel. Without this, products appear in admin
+// as Active but /products/<handle> on the storefront redirects to home.
+async function getOnlineStorePublicationId() {
+  const QUERY = `{ publications(first: 25) { nodes { id name } } }`;
+  const data = await shopifyGql(QUERY);
+  const nodes = data?.publications?.nodes ?? [];
+  const onlineStore = nodes.find((p) => p.name === 'Online Store')
+                   || nodes.find((p) => /online store/i.test(p.name));
+  return onlineStore?.id || null;
+}
+
+async function shopifyPublishToOnlineStore(productId, publicationId) {
+  const MUT = `
+    mutation Publish($id: ID!, $input: [PublicationInput!]!) {
+      publishablePublish(id: $id, input: $input) {
+        userErrors { field message }
+      }
+    }`;
+  const data = await shopifyGql(MUT, {
+    id: productId,
+    input: [{ publicationId }],
+  });
+  const errs = data.publishablePublish.userErrors;
+  if (errs.length) throw new Error(`publishablePublish userErrors: ${JSON.stringify(errs)}`);
+}
+
 // Resolve the Shopify Standard Product Taxonomy category id for "Action Figures".
 // Returns a gid like "gid://shopify/TaxonomyCategory/tg-..." or null if not found.
 async function findCategoryIdByName(name) {
@@ -394,6 +421,10 @@ async function main() {
   const defaultCategoryId = DRY ? null : await findCategoryIdByName('Action Figures');
   if (!DRY) console.log(`[sync-ebay-active] default Shopify category: ${defaultCategoryId || '(not found — leaving blank)'}`);
 
+  // Resolve Online Store publication id so we can auto-publish actives.
+  const onlineStorePublicationId = DRY ? null : await getOnlineStorePublicationId();
+  if (!DRY) console.log(`[sync-ebay-active] Online Store publication id: ${onlineStorePublicationId || '(not found — products will need manual Online Store publish)'}`);
+
   let created = 0, skipped = 0, failed = 0;
 
   for (const summary of summaries) {
@@ -466,8 +497,18 @@ async function main() {
         });
       }
 
+      // 4. Publish to Online Store sales channel — without this, /products/<handle>
+      //    redirects to homepage even when status=ACTIVE. Only publish actives.
+      if (PRODUCT_STATUS === 'active' && onlineStorePublicationId) {
+        try {
+          await shopifyPublishToOnlineStore(productId, onlineStorePublicationId);
+        } catch (err) {
+          console.warn(`[sync-ebay-active]   ${sku} created but publish failed: ${err.message}`);
+        }
+      }
+
       created++;
-      console.log(`[sync-ebay-active] CREATED ${sku} (${newHandle}) — ${title.slice(0, 60)} — $${shopifyPrice.toFixed(2)}`);
+      console.log(`[sync-ebay-active] CREATED ${sku} (${newHandle}) — ${title.slice(0, 60)} — $${shopifyPrice.toFixed(2)}${PRODUCT_STATUS === 'active' ? ' [published]' : ' [draft]'}`);
     } catch (err) {
       failed++;
       console.error(`[sync-ebay-active] FAIL ${sku}: ${err.message}`);
