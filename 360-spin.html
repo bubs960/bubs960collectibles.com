@@ -247,6 +247,81 @@
         .actions button { width: 100%; }
         @media (max-width: 380px) { .actions { grid-template-columns: 1fr; } }
 
+        /* Listing-photo grid */
+        .thumb-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+            margin-top: 0.25rem;
+        }
+        @media (max-width: 480px) { .thumb-grid { grid-template-columns: repeat(2, 1fr); } }
+
+        .thumb {
+            position: relative;
+            aspect-ratio: 1 / 1;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border-color 0.15s ease, transform 0.05s ease;
+        }
+        .thumb:active { transform: scale(0.97); }
+        .thumb img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+
+        .thumb.selected { border-color: var(--money-green); }
+        .thumb:not(.selected) img { opacity: 0.45; }
+        .thumb:not(.selected)::after {
+            content: '+';
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            color: var(--text-muted);
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+
+        .thumb .badge {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            font-size: 0.65rem;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-variant-numeric: tabular-nums;
+        }
+        .thumb .score-bar {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 3px;
+            background: rgba(255,255,255,0.08);
+        }
+        .thumb .score-bar > span {
+            display: block;
+            height: 100%;
+            background: var(--accent-gold);
+        }
+
+        .listing-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.6rem;
+            margin-top: 1rem;
+        }
+        @media (max-width: 380px) { .listing-actions { grid-template-columns: 1fr; } }
+
+        .selection-summary {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+        }
+        .selection-summary strong { color: var(--text-light); }
+
         .hidden { display: none !important; }
 
         .toast {
@@ -385,12 +460,33 @@
             </p>
         </section>
 
+        <!-- STEP 4: Best listing photos ----------------------------- -->
+        <section class="panel hidden" id="step-listing">
+            <h2>4. Best listing photos</h2>
+            <p class="tip">
+                Picked automatically: one sharpest frame per <strong>45° wedge</strong>, so you get
+                front / side / back / 3-4 angles with the least blur. Tap any thumb to add or drop it.
+            </p>
+
+            <div class="thumb-grid" id="thumb-grid"></div>
+
+            <div class="selection-summary">
+                <span><strong id="sel-count">0</strong> selected</span>
+                <span id="sel-tip">Tap to toggle. Aim for 8–12.</span>
+            </div>
+
+            <div class="listing-actions">
+                <button class="btn-secondary" id="btn-reset-pick">↺ Reset to auto-picked</button>
+                <button class="btn-green" id="btn-listing-zip">⬇ Download listing photos</button>
+            </div>
+        </section>
+
         <section class="panel">
             <h2>What's next</h2>
             <p class="tip">
-                Phase 2 (separate page) will take these same frames + your eBay OAuth and create a <strong>draft
-                listing</strong> with AI-suggested title, description, category, and price — you review on your
-                phone, then publish.
+                Phase 2 (separate page) will take the photos you select above + your eBay OAuth and create a
+                <strong>draft listing</strong> with AI-suggested title, description, category, and price — you
+                review on your phone, then publish.
             </p>
         </section>
     </main>
@@ -431,6 +527,9 @@
         currentFrame: 0,
         autoSpin: null,      // requestAnimationFrame id
         direction: 1,
+        scores: [],          // Array<number>  Laplacian-variance sharpness per frame
+        selected: new Set(), // Set<number>    indices currently chosen for listing
+        autoPicked: [],      // Array<number>  the original auto-pick (for reset)
     };
 
     function resetFrames() {
@@ -439,6 +538,9 @@
         state.frameURLs = [];
         state.currentFrame = 0;
         state.direction = 1;
+        state.scores = [];
+        state.selected = new Set();
+        state.autoPicked = [];
         stopAutoSpin();
     }
 
@@ -516,6 +618,147 @@
             // Clamp to a hair before the end to avoid EOS issues on some decoders.
             video.currentTime = Math.min(time, Math.max(0, video.duration - 0.001));
         });
+    }
+
+    // ---------- sharpness scoring ----------
+    // Laplacian-variance estimator: blurrier images have less edge energy, so the
+    // variance of a 4-neighbor Laplacian drops. We downsample to ~200px wide for
+    // speed (~10ms per frame on a phone), which is plenty accurate for ranking.
+    const SCORE_W = 200;
+    const scoreCanvas = document.createElement('canvas');
+    const scoreCtx = scoreCanvas.getContext('2d', { willReadFrequently: true });
+
+    function scoreSharpness(blob) {
+        return new Promise((resolve, reject) => {
+            const url = URL.createObjectURL(blob);
+            const img = new Image();
+            img.onload = () => {
+                const w = SCORE_W;
+                const h = Math.max(1, Math.round(img.height * (w / img.width)));
+                scoreCanvas.width = w;
+                scoreCanvas.height = h;
+                scoreCtx.drawImage(img, 0, 0, w, h);
+                URL.revokeObjectURL(url);
+
+                const px = scoreCtx.getImageData(0, 0, w, h).data;
+                // Pre-flatten to a grayscale Float32Array for cache-friendly access.
+                const gray = new Float32Array(w * h);
+                for (let i = 0, j = 0; i < px.length; i += 4, j++) {
+                    gray[j] = (px[i] + px[i + 1] + px[i + 2]) * (1 / 3);
+                }
+                let sum = 0, sumSq = 0, n = 0;
+                for (let y = 1; y < h - 1; y++) {
+                    for (let x = 1; x < w - 1; x++) {
+                        const c = gray[y * w + x];
+                        const lap = gray[y * w + (x - 1)] + gray[y * w + (x + 1)]
+                                  + gray[(y - 1) * w + x] + gray[(y + 1) * w + x] - 4 * c;
+                        sum += lap;
+                        sumSq += lap * lap;
+                        n++;
+                    }
+                }
+                const mean = sum / n;
+                resolve(sumSq / n - mean * mean); // variance
+            };
+            img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not decode a frame for scoring.')); };
+            img.src = url;
+        });
+    }
+
+    async function scoreAllFrames(blobs) {
+        const scores = new Array(blobs.length);
+        for (let i = 0; i < blobs.length; i++) {
+            scores[i] = await scoreSharpness(blobs[i]);
+            const pct = Math.round(((i + 1) / blobs.length) * 100);
+            $('progress').value = pct;
+            $('progress-pct').textContent = pct + '%';
+            $('progress-label').textContent = `Scoring frame ${i + 1} / ${blobs.length}`;
+        }
+        return scores;
+    }
+
+    // Split the frame ring into N equal angular wedges and return the index of the
+    // sharpest frame in each. Guarantees angular spread without duplicates.
+    function pickBestPerWedge(scores, wedges = 8) {
+        const n = scores.length;
+        const picked = [];
+        for (let b = 0; b < wedges; b++) {
+            const start = Math.floor((b / wedges) * n);
+            const end   = Math.max(start + 1, Math.floor(((b + 1) / wedges) * n));
+            let bestIdx = start, bestScore = -Infinity;
+            for (let i = start; i < end; i++) {
+                if (scores[i] > bestScore) { bestScore = scores[i]; bestIdx = i; }
+            }
+            picked.push(bestIdx);
+        }
+        return picked;
+    }
+
+    // ---------- listing-photo grid ----------
+    function renderListingGrid() {
+        const grid = $('thumb-grid');
+        grid.innerHTML = '';
+        const maxScore = Math.max(1e-6, ...state.scores);
+
+        state.frames.forEach((_, i) => {
+            const el = document.createElement('div');
+            el.className = 'thumb' + (state.selected.has(i) ? ' selected' : '');
+            el.dataset.idx = i;
+            const norm = Math.min(1, state.scores[i] / maxScore);
+            el.innerHTML = `
+                <img src="${state.frameURLs[i]}" alt="Frame ${i + 1}">
+                <span class="badge">#${String(i + 1).padStart(2, '0')}</span>
+                <div class="score-bar"><span style="width:${(norm * 100).toFixed(1)}%"></span></div>
+            `;
+            el.addEventListener('click', () => toggleListingFrame(i));
+            grid.appendChild(el);
+        });
+        updateSelectionSummary();
+    }
+
+    function toggleListingFrame(i) {
+        if (state.selected.has(i)) state.selected.delete(i);
+        else state.selected.add(i);
+        const el = document.querySelector(`#thumb-grid .thumb[data-idx="${i}"]`);
+        if (el) el.classList.toggle('selected', state.selected.has(i));
+        updateSelectionSummary();
+    }
+
+    function updateSelectionSummary() {
+        const n = state.selected.size;
+        $('sel-count').textContent = String(n);
+        $('btn-listing-zip').disabled = n === 0;
+    }
+
+    function resetToAutoPicked() {
+        state.selected = new Set(state.autoPicked);
+        document.querySelectorAll('#thumb-grid .thumb').forEach(el => {
+            const idx = parseInt(el.dataset.idx, 10);
+            el.classList.toggle('selected', state.selected.has(idx));
+        });
+        updateSelectionSummary();
+        toast('Restored auto-pick');
+    }
+
+    async function downloadListingZip() {
+        if (state.selected.size === 0) return;
+        if (typeof JSZip === 'undefined') {
+            showError('ZIP library failed to load. Try again with internet.');
+            return;
+        }
+        const zip = new JSZip();
+        // Renumber selection to photo_01.jpg, photo_02.jpg ... in frame order.
+        const ordered = [...state.selected].sort((a, b) => a - b);
+        const pad = String(ordered.length).length;
+        ordered.forEach((idx, i) => {
+            const name = `photo_${String(i + 1).padStart(pad, '0')}.jpg`;
+            zip.file(name, state.frames[idx]);
+        });
+        toast('Building ZIP…');
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+        triggerDownload(zipBlob, `bubs960-listing-photos-${stamp}.zip`);
+        toast(`${ordered.length} photos ready ✓`);
     }
 
     // ---------- spin viewer ----------
@@ -648,6 +891,17 @@
             hide($('step-extract'));
             show($('step-viewer'));
             $('step-viewer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // Score frames for sharpness and auto-pick 8 across the rotation.
+            // Show the progress panel again — the viewer stays visible above it.
+            show($('step-extract'));
+            $('progress').value = 0;
+            state.scores = await scoreAllFrames(blobs);
+            state.autoPicked = pickBestPerWedge(state.scores, 8);
+            state.selected = new Set(state.autoPicked);
+            renderListingGrid();
+            hide($('step-extract'));
+            show($('step-listing'));
         } catch (err) {
             console.error(err);
             hide($('step-extract'));
@@ -678,10 +932,14 @@
             resetFrames();
             hide($('step-viewer'));
             hide($('step-extract'));
+            hide($('step-listing'));
             $('file-camera').value = '';
             $('file-pick').value   = '';
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
+
+        $('btn-reset-pick' ).addEventListener('click', resetToAutoPicked);
+        $('btn-listing-zip').addEventListener('click', downloadListingZip);
     }
 
     document.addEventListener('DOMContentLoaded', init);
