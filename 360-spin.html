@@ -254,6 +254,75 @@
         .actions button { width: 100%; }
         @media (max-width: 380px) { .actions { grid-template-columns: 1fr; } }
 
+        /* Recent-takes strip */
+        .recent-strip {
+            display: flex;
+            gap: 0.6rem;
+            overflow-x: auto;
+            padding: 0.25rem 0 0.5rem;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+        }
+        .recent-strip::-webkit-scrollbar { height: 6px; }
+        .recent-strip::-webkit-scrollbar-thumb { background: var(--metal-light); border-radius: 3px; }
+
+        .recent-card {
+            flex: 0 0 130px;
+            background: var(--bg-dark);
+            border: 1px solid var(--metal-light);
+            border-radius: 10px;
+            padding: 0.5rem;
+            cursor: pointer;
+            scroll-snap-align: start;
+            position: relative;
+            transition: border-color 0.15s ease, transform 0.05s ease;
+        }
+        .recent-card:hover { border-color: var(--accent-gold); }
+        .recent-card:active { transform: scale(0.97); }
+        .recent-card.current { border-color: var(--money-green); }
+
+        .recent-card img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: 6px;
+            background: #000;
+            pointer-events: none;
+        }
+        .recent-card .name {
+            margin-top: 0.4rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-light);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .recent-card .date {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 0.1rem;
+        }
+        .recent-card .delete {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.75);
+            color: #fff;
+            display: grid;
+            place-items: center;
+            font-size: 0.95rem;
+            line-height: 1;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+        }
+        .recent-card .delete:hover { background: var(--primary-red); }
+
         /* Toggle row in step 1 */
         .toggle-row { flex-direction: column; align-items: stretch; gap: 0.5rem; }
         .toggle {
@@ -484,6 +553,15 @@
     </header>
 
     <main>
+        <!-- RECENT TAKES (hidden until at least one save) ----------- -->
+        <section class="panel hidden" id="step-recent">
+            <h2>Recent</h2>
+            <p class="tip" style="margin-bottom: 0.6rem;">
+                Tap any take to restore its photos, picks, and form. Capped at 12; oldest drop off.
+            </p>
+            <div class="recent-strip" id="recent-strip"></div>
+        </section>
+
         <!-- STEP 1: Pick a video ----------------------------------- -->
         <section class="panel" id="step-pick">
             <h2>1. Film the figure</h2>
@@ -1006,6 +1084,7 @@
         const el = document.querySelector(`#thumb-grid .thumb[data-idx="${i}"]`);
         if (el) el.classList.toggle('selected', state.selected.has(i));
         updateSelectionSummary();
+        scheduleSave();
     }
 
     function updateSelectionSummary() {
@@ -1097,6 +1176,214 @@
         const suffix = useWatermark ? '-wm' : '';
         triggerDownload(zipBlob, `bubs960-listing-photos${suffix}-${stamp}.zip`);
         toast(`${ordered.length} photos ready ✓`);
+    }
+
+    // ---------- recent-takes history (IndexedDB) ----------
+    // Stores every extracted take so the user can come back to it later —
+    // even after closing the tab, restarting the phone, or backgrounding
+    // Safari for an hour. Blobs go in directly; IndexedDB handles them
+    // natively without base64 inflation. Capped at MAX_TAKES (~12) by
+    // auto-pruning oldest. All local; no Cloudflare, no sync.
+
+    const DB_NAME = 'bubs960-spins';
+    const DB_VERSION = 1;
+    const STORE = 'takes';
+    const MAX_TAKES = 12;
+
+    let _dbPromise = null;
+    let currentTakeId = null;
+    let saveDebounceTimer = null;
+
+    function openDB() {
+        if (_dbPromise) return _dbPromise;
+        _dbPromise = new Promise((resolve, reject) => {
+            if (!('indexedDB' in window)) return reject(new Error('IndexedDB not available'));
+            const req = indexedDB.open(DB_NAME, DB_VERSION);
+            req.onupgradeneeded = () => {
+                const db = req.result;
+                if (!db.objectStoreNames.contains(STORE)) {
+                    const store = db.createObjectStore(STORE, { keyPath: 'id' });
+                    store.createIndex('createdAt', 'createdAt');
+                }
+            };
+            req.onsuccess = () => resolve(req.result);
+            req.onerror  = () => reject(req.error);
+        });
+        return _dbPromise;
+    }
+
+    async function dbRun(mode, fn) {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE, mode);
+            const store = tx.objectStore(STORE);
+            let result;
+            Promise.resolve(fn(store)).then((r) => { result = r; }).catch(reject);
+            tx.oncomplete = () => resolve(result);
+            tx.onerror    = () => reject(tx.error);
+            tx.onabort    = () => reject(tx.error);
+        });
+    }
+
+    const dbGet    = (id) => dbRun('readonly',  (s) => new Promise((res, rej) => {
+        const r = s.get(id); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    }));
+    const dbDelete = (id) => dbRun('readwrite', (s) => { s.delete(id); });
+    const dbGetAllSorted = () => dbRun('readonly', (s) => new Promise((res, rej) => {
+        const r = s.getAll();
+        r.onsuccess = () => res(r.result.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+        r.onerror   = () => rej(r.error);
+    }));
+    const dbPut = (record) => dbRun('readwrite', (s) => { s.put(record); });
+
+    async function pruneOldTakes() {
+        const all = await dbGetAllSorted();
+        const old = all.slice(MAX_TAKES);
+        for (const t of old) await dbDelete(t.id);
+    }
+
+    // Generate a small JPEG preview of the auto-picked "best front" frame.
+    async function makeThumbnail(blob) {
+        const img = await blobToImage(blob);
+        const dim = 300;
+        const scale = dim / Math.max(img.naturalWidth, img.naturalHeight);
+        const w = Math.max(1, Math.round(img.naturalWidth  * scale));
+        const h = Math.max(1, Math.round(img.naturalHeight * scale));
+        const c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        return new Promise((res) => c.toBlob(res, 'image/jpeg', 0.8));
+    }
+
+    // Build the on-disk record from current in-memory state.
+    function deriveTakeName(form) {
+        const raw = (form.character || form.vendor || '').trim();
+        return raw ? raw.slice(0, 40) : 'Untitled';
+    }
+
+    async function persistCurrentTake() {
+        if (!currentTakeId || state.frames.length === 0) return;
+        try {
+            const form = readListingForm();
+            const thumbIdx = state.autoPicked[0] ?? 0;
+            const thumbnail = await makeThumbnail(state.frames[thumbIdx]);
+            const record = {
+                id: currentTakeId,
+                name: deriveTakeName(form),
+                createdAt: currentTakeId,
+                frames: state.frames,
+                scores: state.scores,
+                selected: [...state.selected],
+                form: {
+                    vendor: form.vendor, series: form.series, character: form.character,
+                    year: form.year, variant: form.variant,
+                    conditionShort: form.conditionShort, conditionLong: form.conditionLong,
+                    notes: form.notes, price: form.price, qty: form.qty,
+                },
+                thumbnail,
+            };
+            await dbPut(record);
+            await pruneOldTakes();
+            await renderRecent();
+        } catch (err) {
+            console.warn('persistCurrentTake failed:', err);
+        }
+    }
+
+    function scheduleSave(delay = 1200) {
+        if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
+        saveDebounceTimer = setTimeout(() => persistCurrentTake(), delay);
+    }
+
+    async function restoreTake(id) {
+        const rec = await dbGet(id);
+        if (!rec) return;
+        resetFrames();
+        state.frames    = rec.frames;
+        state.frameURLs = rec.frames.map((b) => URL.createObjectURL(b));
+        state.scores    = rec.scores || [];
+        state.autoPicked = state.scores.length ? pickBestPerWedge(state.scores, 8) : [];
+        state.selected  = new Set(rec.selected || state.autoPicked);
+        currentTakeId   = rec.id;
+
+        // Restore form fields
+        const f = rec.form || {};
+        const setVal = (id, v) => { $('f-' + id).value = v ?? ''; };
+        setVal('vendor',    f.vendor);
+        setVal('series',    f.series);
+        setVal('character', f.character);
+        setVal('year',      f.year);
+        setVal('variant',   f.variant);
+        if (f.conditionShort) {
+            const target = `${f.conditionShort}|${f.conditionLong || ''}`;
+            for (const opt of $('f-condition').options) {
+                if (opt.value === target) { $('f-condition').value = target; break; }
+            }
+        }
+        setVal('notes', f.notes);
+        setVal('price', f.price);
+        setVal('qty',   f.qty || '1');
+
+        // Repaint UI
+        renderFrame(0);
+        renderListingGrid();
+        updateListingPreview();
+        hide($('step-extract'));
+        show($('step-viewer'));
+        show($('step-listing'));
+        show($('step-draft'));
+        await renderRecent();
+        $('step-viewer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        toast(`Restored "${rec.name}"`);
+    }
+
+    async function deleteTake(id) {
+        await dbDelete(id);
+        if (id === currentTakeId) {
+            resetFrames();
+            hide($('step-viewer'));
+            hide($('step-listing'));
+            hide($('step-draft'));
+            currentTakeId = null;
+        }
+        await renderRecent();
+    }
+
+    async function renderRecent() {
+        let list = [];
+        try { list = await dbGetAllSorted(); } catch (_) { return; }
+        const sec = $('step-recent');
+        const strip = $('recent-strip');
+        if (!list || list.length === 0) { hide(sec); return; }
+
+        // Revoke any URLs from a previous render to avoid leaking.
+        strip.querySelectorAll('img').forEach((img) => {
+            if (img.src.startsWith('blob:')) URL.revokeObjectURL(img.src);
+        });
+        strip.innerHTML = '';
+
+        for (const t of list) {
+            const card = document.createElement('div');
+            card.className = 'recent-card' + (t.id === currentTakeId ? ' current' : '');
+            card.dataset.id = t.id;
+            const thumbUrl = URL.createObjectURL(t.thumbnail);
+            const date = new Date(t.createdAt);
+            const dateStr = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' · ' +
+                            date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+            card.innerHTML = `
+                <img src="${thumbUrl}" alt="">
+                <div class="name">${esc(t.name || 'Untitled')}</div>
+                <div class="date">${esc(dateStr)}</div>
+                <button class="delete" aria-label="Delete take">×</button>
+            `;
+            card.querySelector('.delete').addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (confirm(`Delete "${t.name || 'this take'}"? This cannot be undone.`)) deleteTake(t.id);
+            });
+            card.addEventListener('click', () => restoreTake(t.id));
+            strip.appendChild(card);
+        }
+        show(sec);
     }
 
     // ---------- listing draft (Step 5) ----------
@@ -1497,6 +1784,10 @@
             show($('step-listing'));
             show($('step-draft'));
             updateListingPreview();
+
+            // Persist this take so it survives a tab close / reload.
+            currentTakeId = new Date().toISOString().replace(/[:.]/g, '-');
+            await persistCurrentTake();
         } catch (err) {
             console.error(err);
             hide($('step-extract'));
@@ -1524,13 +1815,17 @@
         $('btn-reverse').addEventListener('click', () => { state.direction *= -1; toast(state.direction > 0 ? 'Forward' : 'Reverse'); });
         $('btn-zip'    ).addEventListener('click', downloadZip);
         $('btn-restart').addEventListener('click', () => {
+            // Don't delete the take — just clear the active session. The
+            // user can come back to it via the Recent strip.
             resetFrames();
+            currentTakeId = null;
             hide($('step-viewer'));
             hide($('step-extract'));
             hide($('step-listing'));
             hide($('step-draft'));
             $('file-camera').value = '';
             $('file-pick').value   = '';
+            renderRecent(); // refresh "current" highlight
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
 
@@ -1538,11 +1833,16 @@
         $('btn-listing-zip').addEventListener('click', downloadListingZip);
 
         // Step 5 — listing draft. Live-preview on every keystroke; persist
-        // sticky fields on change so brand/notes survive a reload.
+        // sticky fields on change so brand/notes survive a reload; also
+        // debounce-save the in-progress take to IndexedDB.
         LISTING_FIELDS.forEach((k) => {
             const el = $('f-' + k);
             const ev = (el.tagName === 'SELECT') ? 'change' : 'input';
-            el.addEventListener(ev, () => { updateListingPreview(); saveDefaults(); });
+            el.addEventListener(ev, () => {
+                updateListingPreview();
+                saveDefaults();
+                scheduleSave();
+            });
         });
         $('btn-copy-title').addEventListener('click', copyTitle);
         $('btn-copy-desc' ).addEventListener('click', copyDescription);
@@ -1550,6 +1850,9 @@
         $('btn-bundle'    ).addEventListener('click', downloadBundle);
         loadDefaults();
         updateListingPreview();
+
+        // Render the recent-takes strip on load (hidden if there are none).
+        renderRecent().catch((err) => console.warn('renderRecent failed:', err));
 
         // Register the service worker so the page works offline once installed
         // to the iPhone home screen. SW requires http(s) origin — won't run on

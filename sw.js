@@ -13,11 +13,12 @@
 // Bump CACHE_VERSION when you ship breaking changes so old caches get
 // thrown away on the next visit.
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2'; // bump when shipping breaking changes
 const CACHE_NAME = `bubs960-spin-${CACHE_VERSION}`;
 
 const PRECACHE = [
     '/360-spin.html',
+    '/manifest.json',
     '/bubs-logo.jpg',
     'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js',
 ];
@@ -47,6 +48,7 @@ self.addEventListener('fetch', (event) => {
     const isSpinPage = url.pathname === '/360-spin.html';
     const isAsset =
         url.pathname === '/bubs-logo.jpg' ||
+        url.pathname === '/manifest.json' ||
         url.href.includes('cdn.jsdelivr.net/npm/jszip');
 
     if (isSpinPage) {
