@@ -711,6 +711,119 @@ a { color: inherit; text-decoration: none; }
   .catalog-title { font-size: 2.75rem; }
   .spec-row { grid-template-columns: 100px 1fr; }
 }
+
+/* --- Catalog controls bar --- */
+.catalog-controls {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: var(--bg-panel);
+  border: 2px solid #1a2233;
+  border-radius: 12px;
+}
+.catalog-controls input[type="search"],
+.catalog-controls select {
+  background: #0a1120;
+  color: var(--text-light);
+  border: 2px solid #1a2233;
+  border-radius: 6px;
+  padding: 0.6rem 0.85rem;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.95rem;
+}
+.catalog-controls input[type="search"] {
+  flex: 1 1 240px;
+  min-width: 200px;
+}
+.catalog-controls input[type="search"]:focus,
+.catalog-controls select:focus {
+  border-color: var(--accent-yellow);
+  outline: none;
+}
+.catalog-results {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+  margin-left: auto;
+}
+
+/* --- Product card extras --- */
+.card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  margin: 0.25rem 0 0.5rem;
+}
+.card-meta-chip {
+  background: rgba(241, 196, 15, 0.12);
+  color: var(--accent-yellow);
+  border: 1px solid rgba(241, 196, 15, 0.35);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+}
+.card-stock {
+  background: var(--primary-red);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  animation: pulse-stock 2s ease-in-out infinite;
+}
+@keyframes pulse-stock {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* --- Trust card in grid --- */
+.card.card-trust {
+  background: linear-gradient(180deg, var(--bg-panel-2), #060912);
+  border: 3px dashed var(--accent-yellow);
+  box-shadow: none;
+}
+.card.card-trust:hover { transform: translateY(-4px); }
+.card-trust .trust-body { padding: 1.5rem 1.25rem; text-align: center; }
+.card-trust .trust-stars {
+  color: var(--accent-yellow);
+  font-size: 1.2rem;
+  letter-spacing: 3px;
+  margin-bottom: 0.75rem;
+}
+.card-trust blockquote {
+  color: #dfe3ec;
+  font-style: italic;
+  line-height: 1.5;
+  font-size: 0.9rem;
+  margin: 0 0 0.75rem;
+}
+.card-trust .trust-attribution {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+.card-trust .trust-attribution strong { color: var(--accent-yellow); }
+.card-trust .trust-link {
+  display: inline-block;
+  font-family: 'Bangers', cursive;
+  letter-spacing: 2px;
+  color: var(--accent-yellow);
+  border: 2px solid var(--accent-yellow);
+  border-radius: 6px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+.card-trust .trust-link:hover { background: var(--accent-yellow); color: #111; }
 </style>
 </head>
 <body>
@@ -874,11 +987,11 @@ a { color: inherit; text-decoration: none; }
     <a href="/shop/index.html#sealed-and-boxed" class="related-link">See all Sealed &amp; Boxed &rsaquo;</a>
   </div>
   <div class="related-grid">
-      <a class="card reveal " href="/shop/1998-wcw-authentic-poseable-wrestling-figure-ric-flair-toymakers-new-vintage-147.html">
+      <a class="card reveal " href="/shop/1998-wcw-authentic-poseable-wrestling-figure-ric-flair-toymakers-new-vintage-147.html" data-title="1998 wcw authentic poseable wrestling figure ric flair toymakers new vintage" data-price="22.00" data-status="active" data-collection="wrestling figures" data-year="1998" data-condition="new">
         
         <div class="card-banner">
           <span>Wrestling Figures</span>
-          
+          <span class="wave">1998</span>
         </div>
         <div class="card-img-wrap">
           <img class="card-img" src="https://cdn.shopify.com/s/files/1/0991/3919/1155/files/s-l225_733b9fac-9902-4723-a092-314444f2df6b.jpg?v=1778625657" alt="1998 WCW Authentic Poseable Wrestling Figure Ric Flair Toymakers New Vintage" loading="lazy" decoding="async">
@@ -886,6 +999,7 @@ a { color: inherit; text-decoration: none; }
         </div>
         <div class="card-body">
           <div class="card-title">1998 WCW Authentic Poseable Wrestling Figure Ric Flair Toymakers New Vintage</div>
+          <div class="card-meta"><span class="card-meta-chip">New</span><span class="card-stock">Only 1 left</span></div>
           
           <div class="card-foot">
             <span class="card-price">$22.00</span>
@@ -895,11 +1009,11 @@ a { color: inherit; text-decoration: none; }
       </a>
     
 
-      <a class="card reveal " href="/shop/2010-wwe-elite-collection-defining-moments-stone-cold-steve-austin-raw-1999-1473.html">
+      <a class="card reveal " href="/shop/2010-wwe-elite-collection-defining-moments-stone-cold-steve-austin-raw-1999-1473.html" data-title="2010 wwe elite collection defining moments: “stone cold” steve austin (raw 1999)" data-price="120.00" data-status="active" data-collection="wrestling figures" data-year="2010" data-condition="new">
         
         <div class="card-banner">
           <span>Wrestling Figures</span>
-          
+          <span class="wave">2010</span>
         </div>
         <div class="card-img-wrap">
           <img class="card-img" src="https://cdn.shopify.com/s/files/1/0991/3919/1155/files/s-l225_ab3e0f34-ec16-4d6b-8622-1f0624680a86.jpg?v=1778625655" alt="2010 WWE Elite Collection Defining Moments: “STONE COLD” STEVE AUSTIN (Raw 1999)" loading="lazy" decoding="async">
@@ -907,6 +1021,7 @@ a { color: inherit; text-decoration: none; }
         </div>
         <div class="card-body">
           <div class="card-title">2010 WWE Elite Collection Defining Moments: “STONE COLD” STEVE AUSTIN (Raw 1999)</div>
+          <div class="card-meta"><span class="card-meta-chip">New</span><span class="card-stock">Only 1 left</span></div>
           
           <div class="card-foot">
             <span class="card-price">$120.00</span>
@@ -916,11 +1031,11 @@ a { color: inherit; text-decoration: none; }
       </a>
     
 
-      <a class="card reveal " href="/shop/2015-wwe-mattel-elite-series-hulk-hogan-american-made-ringside-exclusive-figure.html">
+      <a class="card reveal " href="/shop/2015-wwe-mattel-elite-series-hulk-hogan-american-made-ringside-exclusive-figure.html" data-title="2015 wwe mattel elite series hulk hogan american made ringside exclusive figure" data-price="105.00" data-status="active" data-collection="wrestling figures" data-year="2015" data-condition="new">
         
         <div class="card-banner">
           <span>Wrestling Figures</span>
-          
+          <span class="wave">2015</span>
         </div>
         <div class="card-img-wrap">
           <img class="card-img" src="https://cdn.shopify.com/s/files/1/0991/3919/1155/files/s-l225_8cd29cd1-9cd7-4f23-a18e-69fe3331350b.jpg?v=1778627246" alt="2015 WWE Mattel Elite Series HULK HOGAN American Made Ringside Exclusive Figure" loading="lazy" decoding="async">
@@ -928,6 +1043,7 @@ a { color: inherit; text-decoration: none; }
         </div>
         <div class="card-body">
           <div class="card-title">2015 WWE Mattel Elite Series HULK HOGAN American Made Ringside Exclusive Figure</div>
+          <div class="card-meta"><span class="card-meta-chip">New</span><span class="card-stock">Only 1 left</span></div>
           
           <div class="card-foot">
             <span class="card-price">$105.00</span>

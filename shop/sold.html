@@ -711,6 +711,119 @@ a { color: inherit; text-decoration: none; }
   .catalog-title { font-size: 2.75rem; }
   .spec-row { grid-template-columns: 100px 1fr; }
 }
+
+/* --- Catalog controls bar --- */
+.catalog-controls {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: var(--bg-panel);
+  border: 2px solid #1a2233;
+  border-radius: 12px;
+}
+.catalog-controls input[type="search"],
+.catalog-controls select {
+  background: #0a1120;
+  color: var(--text-light);
+  border: 2px solid #1a2233;
+  border-radius: 6px;
+  padding: 0.6rem 0.85rem;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.95rem;
+}
+.catalog-controls input[type="search"] {
+  flex: 1 1 240px;
+  min-width: 200px;
+}
+.catalog-controls input[type="search"]:focus,
+.catalog-controls select:focus {
+  border-color: var(--accent-yellow);
+  outline: none;
+}
+.catalog-results {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+  margin-left: auto;
+}
+
+/* --- Product card extras --- */
+.card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  margin: 0.25rem 0 0.5rem;
+}
+.card-meta-chip {
+  background: rgba(241, 196, 15, 0.12);
+  color: var(--accent-yellow);
+  border: 1px solid rgba(241, 196, 15, 0.35);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+}
+.card-stock {
+  background: var(--primary-red);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  animation: pulse-stock 2s ease-in-out infinite;
+}
+@keyframes pulse-stock {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* --- Trust card in grid --- */
+.card.card-trust {
+  background: linear-gradient(180deg, var(--bg-panel-2), #060912);
+  border: 3px dashed var(--accent-yellow);
+  box-shadow: none;
+}
+.card.card-trust:hover { transform: translateY(-4px); }
+.card-trust .trust-body { padding: 1.5rem 1.25rem; text-align: center; }
+.card-trust .trust-stars {
+  color: var(--accent-yellow);
+  font-size: 1.2rem;
+  letter-spacing: 3px;
+  margin-bottom: 0.75rem;
+}
+.card-trust blockquote {
+  color: #dfe3ec;
+  font-style: italic;
+  line-height: 1.5;
+  font-size: 0.9rem;
+  margin: 0 0 0.75rem;
+}
+.card-trust .trust-attribution {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+.card-trust .trust-attribution strong { color: var(--accent-yellow); }
+.card-trust .trust-link {
+  display: inline-block;
+  font-family: 'Bangers', cursive;
+  letter-spacing: 2px;
+  color: var(--accent-yellow);
+  border: 2px solid var(--accent-yellow);
+  border-radius: 6px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+.card-trust .trust-link:hover { background: var(--accent-yellow); color: #111; }
 </style>
 </head>
 <body>
