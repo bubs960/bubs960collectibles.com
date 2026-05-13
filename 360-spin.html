@@ -622,6 +622,10 @@
                     <span><strong>Auto-trim</strong> dead frames at start &amp; end</span>
                 </label>
                 <label class="toggle">
+                    <input type="checkbox" id="opt-enhance" checked>
+                    <span><strong>Enhance</strong> listing photos (lift shadows + saturation)</span>
+                </label>
+                <label class="toggle">
                     <input type="checkbox" id="opt-watermark" checked>
                     <span><strong>Watermark</strong> listing photos with Bubs960 logo</span>
                 </label>
@@ -1130,6 +1134,70 @@
         });
     }
 
+    // ---------- photo enhancement ----------
+    // Two-knob enhancer tuned for collectible photos shot indoors under
+    // mixed lighting (the way a phone user typically shoots a figure on
+    // a desk). Both operations are conservative — they brighten and
+    // saturate slightly without making the image look filtered.
+    //
+    //   1. Shadow lift: pixels darker than 0.5 luminance get a smooth
+    //      bell-curve boost peaked around 0.25. Highlights are untouched
+    //      so no blown-out white box edges.
+    //   2. Saturation: pulls each pixel away from its grayscale value by
+    //      a fixed factor, then clamps. Subtle 1.15x — keeps reds red
+    //      without going cartoonish.
+    async function enhanceFrame(blob, opts = {}) {
+        const brighten = opts.brighten ?? 0.22;   // peak shadow lift
+        const saturate = opts.saturate ?? 1.15;   // 1 = no change
+        const quality  = opts.quality  ?? 0.9;
+
+        const img = await blobToImage(blob);
+        const W = img.naturalWidth, H = img.naturalHeight;
+        const c = document.createElement('canvas');
+        c.width = W; c.height = H;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const id = ctx.getImageData(0, 0, W, H);
+        const px = id.data;
+
+        const inv255 = 1 / 255;
+        for (let i = 0; i < px.length; i += 4) {
+            let r = px[i] * inv255, g = px[i + 1] * inv255, b = px[i + 2] * inv255;
+
+            // Shadow lift: bell-curve at luma < 0.5.
+            const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+            if (luma < 0.5) {
+                const k = brighten * (0.5 - luma) * (1 - luma) * 2;
+                r += k; g += k; b += k;
+            }
+
+            // Saturation around grayscale anchor.
+            const grey = 0.299 * r + 0.587 * g + 0.114 * b;
+            r = grey + (r - grey) * saturate;
+            g = grey + (g - grey) * saturate;
+            b = grey + (b - grey) * saturate;
+
+            // Clamp + write back.
+            px[i]     = r < 0 ? 0 : r > 1 ? 255 : r * 255;
+            px[i + 1] = g < 0 ? 0 : g > 1 ? 255 : g * 255;
+            px[i + 2] = b < 0 ? 0 : b > 1 ? 255 : b * 255;
+        }
+
+        ctx.putImageData(id, 0, 0);
+        return new Promise((res) => c.toBlob(res, 'image/jpeg', quality));
+    }
+
+    // Run a listing photo through every active processor in order:
+    // enhance first (so the watermark stays clean), then watermark.
+    async function processListingPhoto(blob) {
+        const useEnhance   = $('opt-enhance').checked;
+        const useWatermark = $('opt-watermark').checked;
+        let out = blob;
+        if (useEnhance)   out = await enhanceFrame(out);
+        if (useWatermark) out = await watermarkFrame(out);
+        return out;
+    }
+
     async function watermarkFrame(blob, opts = {}) {
         const widthRatio = opts.widthRatio ?? 0.14;   // logo width = 14% of frame width
         const opacity    = opts.opacity    ?? 0.55;
@@ -1161,21 +1229,21 @@
             showError('ZIP library failed to load. Try again with internet.');
             return;
         }
+        const useEnhance   = $('opt-enhance').checked;
         const useWatermark = $('opt-watermark').checked;
         const ordered = [...state.selected].sort((a, b) => a - b);
         const pad = String(ordered.length).length;
 
-        toast(useWatermark ? 'Watermarking & zipping…' : 'Building ZIP…');
+        toast((useEnhance || useWatermark) ? 'Processing & zipping…' : 'Building ZIP…');
         const zip = new JSZip();
         for (let i = 0; i < ordered.length; i++) {
             const idx = ordered[i];
             const name = `photo_${String(i + 1).padStart(pad, '0')}.jpg`;
-            const blob = useWatermark ? await watermarkFrame(state.frames[idx]) : state.frames[idx];
-            zip.file(name, blob);
+            zip.file(name, await processListingPhoto(state.frames[idx]));
         }
         const zipBlob = await zip.generateAsync({ type: 'blob' });
         const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
-        const suffix = useWatermark ? '-wm' : '';
+        const suffix = (useEnhance ? '-e' : '') + (useWatermark ? '-wm' : '');
         const result = await shareOrDownload(zipBlob, `bubs960-listing-photos${suffix}-${stamp}.zip`, 'application/zip');
         toast(result === 'shared' ? 'Shared ✓' : result === 'cancelled' ? 'Cancelled' : `${ordered.length} photos ready ✓`);
     }
@@ -1577,6 +1645,7 @@
 
         const title = buildTitle(d);
         const descHtml = buildDescriptionHtml(d);
+        const useEnhance   = $('opt-enhance').checked;
         const useWatermark = $('opt-watermark').checked;
         const ordered = [...state.selected].sort((a, b) => a - b);
         const pad = String(ordered.length).length;
@@ -1586,8 +1655,7 @@
         for (let i = 0; i < ordered.length; i++) {
             const idx = ordered[i];
             const name = `photo_${String(i + 1).padStart(pad, '0')}.jpg`;
-            const blob = useWatermark ? await watermarkFrame(state.frames[idx]) : state.frames[idx];
-            zip.file(name, blob);
+            zip.file(name, await processListingPhoto(state.frames[idx]));
         }
         zip.file('title.txt', title);
         zip.file('description.html', descHtml);
@@ -1604,6 +1672,7 @@
             price: d.price ? Number(d.price) : null,
             quantity: Number(d.qty) || 1,
             photoCount: ordered.length,
+            enhanced: useEnhance,
             watermarked: useWatermark,
             createdAt: new Date().toISOString(),
             source: 'bubs960 360-spin maker',
