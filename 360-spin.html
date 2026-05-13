@@ -344,6 +344,95 @@
         }
         .selection-summary strong { color: var(--text-light); }
 
+        /* Listing-draft form (Step 5) */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+        @media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } }
+
+        .form-field { display: flex; flex-direction: column; gap: 0.3rem; }
+        .form-field.span-2 { grid-column: 1 / -1; }
+        .form-field label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+        }
+        .form-field input,
+        .form-field select,
+        .form-field textarea {
+            background: var(--bg-dark);
+            color: var(--text-light);
+            border: 1px solid var(--metal-light);
+            border-radius: 8px;
+            padding: 0.6rem 0.7rem;
+            font: inherit;
+            font-size: 1rem;
+        }
+        .form-field textarea { min-height: 80px; resize: vertical; }
+
+        .preview-block {
+            background: var(--bg-dark);
+            border: 1px solid var(--metal-light);
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
+            margin-top: 0.4rem;
+        }
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .preview-header h3 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--accent-gold);
+        }
+        .copy-btn {
+            background: var(--metal-light);
+            color: var(--text-light);
+            border: none;
+            border-radius: 6px;
+            padding: 0.35rem 0.7rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .copy-btn:active { transform: scale(0.96); }
+
+        .preview-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            line-height: 1.35;
+            word-wrap: break-word;
+        }
+        .preview-title.too-long { color: #ffb3b6; }
+
+        .preview-desc {
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: var(--text-light);
+            max-height: 280px;
+            overflow-y: auto;
+            background: #050810;
+            padding: 0.7rem;
+            border-radius: 6px;
+        }
+        .preview-desc h4 { color: var(--accent-gold); margin: 0.4rem 0 0.25rem; font-size: 0.9rem; }
+        .preview-desc ul { padding-left: 1.2rem; margin: 0.3rem 0; }
+        .preview-desc p { margin: 0.3rem 0; }
+
+        .char-count {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-variant-numeric: tabular-nums;
+        }
+        .char-count.too-long { color: #ffb3b6; }
+
         .hidden { display: none !important; }
 
         .toast {
@@ -516,12 +605,103 @@
             </div>
         </section>
 
-        <section class="panel">
-            <h2>What's next</h2>
+        <!-- STEP 5: Build the listing ------------------------------- -->
+        <section class="panel hidden" id="step-draft">
+            <h2>5. Draft the eBay listing</h2>
             <p class="tip">
-                Phase 2 (separate page) will take the photos you select above + your eBay OAuth and create a
-                <strong>draft listing</strong> with AI-suggested title, description, category, and price — you
-                review on your phone, then publish.
+                Type once, get a paste-ready title + description + photo bundle. Brand/notes save to this
+                browser so you don't retype every figure.
+            </p>
+
+            <div class="form-grid">
+                <div class="form-field">
+                    <label for="f-vendor">Brand / Line</label>
+                    <select id="f-vendor">
+                        <option value="">— pick one —</option>
+                        <option>Mattel WWE Elite</option>
+                        <option>Mattel WWE Ultimate Edition</option>
+                        <option>Mattel WWE Basic</option>
+                        <option>AEW Unmatched</option>
+                        <option>AEW Unrivaled</option>
+                        <option>Funko Pop!</option>
+                        <option>Marvel Legends</option>
+                        <option>Star Wars Black Series</option>
+                        <option>NECA</option>
+                        <option>Jakks Pacific WWE Classic</option>
+                        <option>Vintage Hasbro WWF</option>
+                        <option>Vintage</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label for="f-series">Series / Wave</label>
+                    <input id="f-series" type="text" placeholder="e.g. Series 110">
+                </div>
+                <div class="form-field span-2">
+                    <label for="f-character">Character / Name</label>
+                    <input id="f-character" type="text" placeholder="e.g. Roman Reigns">
+                </div>
+                <div class="form-field">
+                    <label for="f-year">Year</label>
+                    <input id="f-year" type="number" inputmode="numeric" min="1970" max="2030" placeholder="2023">
+                </div>
+                <div class="form-field">
+                    <label for="f-variant">Variant (optional)</label>
+                    <input id="f-variant" type="text" placeholder="Chase, SDCC, Flocked…">
+                </div>
+                <div class="form-field span-2">
+                    <label for="f-condition">Condition</label>
+                    <select id="f-condition">
+                        <option value="Sealed NIB|Brand New, factory sealed in original packaging.">Brand New — Sealed in Box</option>
+                        <option value="NIB Mint|New in mint box — never opened, packaging in pristine condition.">New in Mint Box</option>
+                        <option value="NIB|New in box with light shelf/box wear. Figure inside is sealed and untouched.">New in Box (Box Wear)</option>
+                        <option value="Loose Mint Complete|Loose figure in mint condition, complete with all original accessories.">Loose Mint — Complete</option>
+                        <option value="Loose Complete|Loose figure in good condition, complete with all original accessories.">Loose Complete</option>
+                        <option value="Loose|Loose figure — see photos for full condition. Accessories may be missing.">Loose — Incomplete</option>
+                    </select>
+                </div>
+                <div class="form-field span-2">
+                    <label for="f-notes">Notes (optional — appended to description)</label>
+                    <textarea id="f-notes" placeholder="Anything else worth mentioning. Smoke-free home, etc."></textarea>
+                </div>
+                <div class="form-field">
+                    <label for="f-price">Price (USD)</label>
+                    <input id="f-price" type="number" inputmode="decimal" min="0" step="0.01" placeholder="29.99">
+                </div>
+                <div class="form-field">
+                    <label for="f-qty">Quantity</label>
+                    <input id="f-qty" type="number" inputmode="numeric" min="1" value="1">
+                </div>
+            </div>
+
+            <div class="preview-block">
+                <div class="preview-header">
+                    <h3>Listing title</h3>
+                    <span class="char-count" id="title-char">0 / 80</span>
+                </div>
+                <div class="preview-title" id="title-preview">—</div>
+                <div style="margin-top: 0.5rem;">
+                    <button class="copy-btn" id="btn-copy-title">📋 Copy title</button>
+                </div>
+            </div>
+
+            <div class="preview-block">
+                <div class="preview-header">
+                    <h3>Listing description</h3>
+                    <button class="copy-btn" id="btn-copy-desc">📋 Copy HTML</button>
+                </div>
+                <div class="preview-desc" id="desc-preview">—</div>
+            </div>
+
+            <div class="listing-actions">
+                <button class="btn-secondary" id="btn-clear-form">↺ Clear form</button>
+                <button class="btn-green" id="btn-bundle">⬇ Download listing bundle</button>
+            </div>
+
+            <p class="tip" style="margin-top: 0.9rem;">
+                The bundle ZIP contains the watermarked photos, <code>title.txt</code>,
+                <code>description.html</code>, <code>listing.json</code>, and a README with paste
+                instructions for eBay's web uploader.
             </p>
         </section>
     </main>
@@ -919,6 +1099,249 @@
         toast(`${ordered.length} photos ready ✓`);
     }
 
+    // ---------- listing draft (Step 5) ----------
+    // Free-text fields → eBay-ready title + description. Everything stays
+    // in-browser; the only persistence is localStorage for sticky defaults
+    // (so brand/notes don't have to be re-typed for every figure).
+
+    const LISTING_FIELDS = ['vendor', 'series', 'character', 'year', 'variant', 'condition', 'notes', 'price', 'qty'];
+    const LS_KEY = 'bubs960-listing-defaults-v1';
+    const TITLE_MAX = 80;
+
+    function readListingForm() {
+        const f = (id) => $('f-' + id).value.trim();
+        const [condShort, condLong] = (f('condition') || '|').split('|');
+        return {
+            vendor: f('vendor'),
+            series: f('series'),
+            character: f('character'),
+            year: f('year'),
+            variant: f('variant'),
+            conditionShort: condShort,
+            conditionLong: condLong,
+            notes: f('notes'),
+            price: f('price'),
+            qty: f('qty') || '1',
+        };
+    }
+
+    // Title format optimized for eBay search keywords:
+    //   {Variant?} {Vendor} {Series?} {Character} {Year?} {ConditionShort}
+    // Trimmed to 80 chars by dropping the lowest-priority pieces (year, then
+    // series, then variant) before truncating the rest.
+    function buildTitle(d) {
+        const tryAssemble = (drop) => {
+            const parts = [];
+            if (!drop.has('variant') && d.variant) parts.push(d.variant);
+            if (d.vendor)                          parts.push(d.vendor);
+            if (!drop.has('series') && d.series)   parts.push(d.series);
+            if (d.character)                       parts.push(d.character);
+            if (!drop.has('year') && d.year)       parts.push(d.year);
+            if (d.conditionShort)                  parts.push(d.conditionShort);
+            return parts.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+        };
+        // Try progressively trimming low-priority fields until we fit.
+        const dropOrder = [new Set(), new Set(['year']), new Set(['year','series']), new Set(['year','series','variant'])];
+        for (const drop of dropOrder) {
+            const t = tryAssemble(drop);
+            if (t.length <= TITLE_MAX) return t;
+        }
+        // If still too long, hard-truncate the final attempt at a word boundary.
+        const last = tryAssemble(dropOrder[dropOrder.length - 1]);
+        if (last.length <= TITLE_MAX) return last;
+        const cut = last.slice(0, TITLE_MAX);
+        const ws = cut.lastIndexOf(' ');
+        return (ws > 60 ? cut.slice(0, ws) : cut).trim();
+    }
+
+    function esc(s) {
+        return String(s).replace(/[&<>"']/g, (c) =>
+            ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    function buildDescriptionHtml(d) {
+        const heading = [d.variant, d.vendor, d.series].filter(Boolean).join(' ').trim() || 'Collectible';
+        const lines = [];
+        lines.push('<div style="font-family: Arial, sans-serif; max-width: 720px;">');
+        lines.push(`  <h2 style="color:#1c3b70;margin:0 0 .25em;">${esc(heading)}${d.character ? ' — ' + esc(d.character) : ''}</h2>`);
+        lines.push('  <ul style="line-height:1.55;">');
+        if (d.character) lines.push(`    <li><strong>Character:</strong> ${esc(d.character)}</li>`);
+        if (d.vendor)    lines.push(`    <li><strong>Brand / Line:</strong> ${esc(d.vendor)}</li>`);
+        if (d.series)    lines.push(`    <li><strong>Series:</strong> ${esc(d.series)}</li>`);
+        if (d.year)      lines.push(`    <li><strong>Year:</strong> ${esc(d.year)}</li>`);
+        if (d.variant)   lines.push(`    <li><strong>Variant:</strong> ${esc(d.variant)}</li>`);
+        if (d.conditionShort) lines.push(`    <li><strong>Condition:</strong> ${esc(d.conditionShort)}</li>`);
+        lines.push('  </ul>');
+        if (d.conditionLong) lines.push(`  <p>${esc(d.conditionLong)}</p>`);
+        if (d.notes) {
+            const notesHtml = esc(d.notes).replace(/\n{2,}/g, '</p><p>').replace(/\n/g, '<br>');
+            lines.push(`  <p>${notesHtml}</p>`);
+        }
+        lines.push('  <hr style="border:none;border-top:1px solid #ddd;margin:1em 0;">');
+        lines.push('  <h3 style="color:#e62429;margin:.5em 0 .25em;">Why buy from Bubs960?</h3>');
+        lines.push('  <ul style="line-height:1.55;">');
+        lines.push('    <li>Real collectors — fair prices priced off real eBay sold comps.</li>');
+        lines.push('    <li>Carefully packed for safe shipping. Bubble wrap + box-in-box.</li>');
+        lines.push('    <li>We also <strong>buy collections</strong> — cash or consignment, fast payouts.</li>');
+        lines.push('  </ul>');
+        lines.push('  <p>Questions? <a href="mailto:Bubs960toys@gmail.com">Bubs960toys@gmail.com</a> &nbsp;|&nbsp; ' +
+                   '<a href="https://www.bubs960collectibles.com/">bubs960collectibles.com</a></p>');
+        lines.push('</div>');
+        return lines.join('\n');
+    }
+
+    function updateListingPreview() {
+        const d = readListingForm();
+        const title = buildTitle(d);
+        const titleEl = $('title-preview');
+        const charEl  = $('title-char');
+        titleEl.textContent = title || '—';
+        titleEl.classList.toggle('too-long', title.length > TITLE_MAX);
+        charEl.textContent  = `${title.length} / ${TITLE_MAX}`;
+        charEl.classList.toggle('too-long', title.length > TITLE_MAX);
+        $('desc-preview').innerHTML = buildDescriptionHtml(d);
+    }
+
+    // ---------- localStorage stickiness ----------
+    // Save the fields a user usually reuses (vendor / notes boilerplate / qty).
+    // Per-figure fields (character, series, year, variant, price) intentionally
+    // do NOT get persisted — they should always be typed fresh.
+    const STICKY = ['vendor', 'notes', 'qty'];
+    function saveDefaults() {
+        try {
+            const d = readListingForm();
+            const slim = Object.fromEntries(STICKY.map((k) => [k, d[k]]));
+            localStorage.setItem(LS_KEY, JSON.stringify(slim));
+        } catch (_) { /* private mode, quota — fine to ignore */ }
+    }
+    function loadDefaults() {
+        try {
+            const raw = localStorage.getItem(LS_KEY);
+            if (!raw) return;
+            const slim = JSON.parse(raw);
+            if (slim.vendor && $('f-vendor').querySelector(`option[value="${CSS.escape(slim.vendor)}"]`)) {
+                $('f-vendor').value = slim.vendor;
+            }
+            if (typeof slim.notes === 'string') $('f-notes').value = slim.notes;
+            if (slim.qty) $('f-qty').value = slim.qty;
+        } catch (_) { /* fine */ }
+    }
+
+    // ---------- clipboard ----------
+    async function copyToClipboard(text) {
+        try {
+            await navigator.clipboard.writeText(text);
+            return true;
+        } catch (_) {
+            // Fallback for older Safari / non-secure contexts.
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            let ok = false;
+            try { ok = document.execCommand('copy'); } catch (_) {}
+            document.body.removeChild(ta);
+            return ok;
+        }
+    }
+
+    async function copyTitle() {
+        const d = readListingForm();
+        const ok = await copyToClipboard(buildTitle(d));
+        toast(ok ? 'Title copied ✓' : 'Copy failed — long-press the title to copy.');
+    }
+    async function copyDescription() {
+        const d = readListingForm();
+        const ok = await copyToClipboard(buildDescriptionHtml(d));
+        toast(ok ? 'Description HTML copied ✓' : 'Copy failed.');
+    }
+
+    function clearForm() {
+        LISTING_FIELDS.forEach((k) => {
+            const el = $('f-' + k);
+            if (el.tagName === 'SELECT') el.selectedIndex = 0;
+            else el.value = (k === 'qty') ? '1' : '';
+        });
+        try { localStorage.removeItem(LS_KEY); } catch (_) {}
+        updateListingPreview();
+        toast('Form cleared');
+    }
+
+    // ---------- bundle ZIP: photos + paste-ready text + JSON record ----------
+    async function downloadBundle() {
+        if (state.selected.size === 0) {
+            showError('Pick at least one listing photo above first.');
+            return;
+        }
+        if (typeof JSZip === 'undefined') {
+            showError('ZIP library failed to load. Try again with internet.');
+            return;
+        }
+        const d = readListingForm();
+        if (!d.character && !d.vendor) {
+            showError('Fill in at least Brand and Character before downloading the bundle.');
+            return;
+        }
+        clearError();
+
+        const title = buildTitle(d);
+        const descHtml = buildDescriptionHtml(d);
+        const useWatermark = $('opt-watermark').checked;
+        const ordered = [...state.selected].sort((a, b) => a - b);
+        const pad = String(ordered.length).length;
+
+        toast('Building bundle…');
+        const zip = new JSZip();
+        for (let i = 0; i < ordered.length; i++) {
+            const idx = ordered[i];
+            const name = `photo_${String(i + 1).padStart(pad, '0')}.jpg`;
+            const blob = useWatermark ? await watermarkFrame(state.frames[idx]) : state.frames[idx];
+            zip.file(name, blob);
+        }
+        zip.file('title.txt', title);
+        zip.file('description.html', descHtml);
+        zip.file('listing.json', JSON.stringify({
+            title,
+            vendor: d.vendor,
+            series: d.series,
+            character: d.character,
+            year: d.year ? Number(d.year) : null,
+            variant: d.variant,
+            condition: d.conditionShort,
+            conditionDescription: d.conditionLong,
+            notes: d.notes,
+            price: d.price ? Number(d.price) : null,
+            quantity: Number(d.qty) || 1,
+            photoCount: ordered.length,
+            watermarked: useWatermark,
+            createdAt: new Date().toISOString(),
+            source: 'bubs960 360-spin maker',
+        }, null, 2));
+        zip.file('README.txt', [
+            'BUBS960 LISTING BUNDLE',
+            '======================',
+            '',
+            '1. eBay → Sell an Item → New Listing.',
+            '2. Paste title.txt into the Title field.',
+            '3. Upload the photo_*.jpg files. They are already in rotation order.',
+            '4. Switch the Description to HTML view, paste description.html.',
+            d.price ? `5. Set Buy It Now price: $${d.price}` : '5. Set your Buy It Now price.',
+            `6. Set Quantity: ${d.qty}`,
+            '',
+            'listing.json keeps a record of every field — handy for re-listing later.',
+            'photos are watermarked so re-listers can\'t easily steal them.',
+        ].join('\n'));
+
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const stampedSlug = (d.character || 'listing').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
+        const stamp = new Date().toISOString().slice(0, 10);
+        triggerDownload(zipBlob, `bubs960-listing-${stampedSlug || 'untitled'}-${stamp}.zip`);
+        saveDefaults();
+        toast('Bundle ready ✓');
+    }
+
     // ---------- spin viewer ----------
     function renderFrame(i) {
         const n = state.frames.length;
@@ -1072,6 +1495,8 @@
             renderListingGrid();
             hide($('step-extract'));
             show($('step-listing'));
+            show($('step-draft'));
+            updateListingPreview();
         } catch (err) {
             console.error(err);
             hide($('step-extract'));
@@ -1103,6 +1528,7 @@
             hide($('step-viewer'));
             hide($('step-extract'));
             hide($('step-listing'));
+            hide($('step-draft'));
             $('file-camera').value = '';
             $('file-pick').value   = '';
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1110,6 +1536,20 @@
 
         $('btn-reset-pick' ).addEventListener('click', resetToAutoPicked);
         $('btn-listing-zip').addEventListener('click', downloadListingZip);
+
+        // Step 5 — listing draft. Live-preview on every keystroke; persist
+        // sticky fields on change so brand/notes survive a reload.
+        LISTING_FIELDS.forEach((k) => {
+            const el = $('f-' + k);
+            const ev = (el.tagName === 'SELECT') ? 'change' : 'input';
+            el.addEventListener(ev, () => { updateListingPreview(); saveDefaults(); });
+        });
+        $('btn-copy-title').addEventListener('click', copyTitle);
+        $('btn-copy-desc' ).addEventListener('click', copyDescription);
+        $('btn-clear-form').addEventListener('click', clearForm);
+        $('btn-bundle'    ).addEventListener('click', downloadBundle);
+        loadDefaults();
+        updateListingPreview();
 
         // Register the service worker so the page works offline once installed
         // to the iPhone home screen. SW requires http(s) origin — won't run on
