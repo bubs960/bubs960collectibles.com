@@ -38,6 +38,9 @@ function buyButtons(p) {
   if (links.shopify) {
     out.push(`<a class="btn btn-primary" href="${escapeHtml(links.shopify)}" target="_blank" rel="noopener">Buy Here · Save 15%</a>`);
   }
+  if (links.ebay) {
+    out.push(`<a class="btn btn-ghost" href="${escapeHtml(links.ebay)}" target="_blank" rel="noopener">View on eBay</a>`);
+  }
   out.push(`<a class="btn btn-ghost" href="/index.html#contact">Ask a Question</a>`);
   return out.join('\n');
 }

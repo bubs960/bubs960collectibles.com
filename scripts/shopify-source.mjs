@@ -121,7 +121,11 @@ function normalize(p, storeDomain) {
     images: uniqueImages,
     buyLinks: {
       shopify: `https://${storeDomain}/products/${p.handle}`,
-      ebay: null,
+      // Derive eBay URL from SKU pattern BUBS-EB-<itemId> set by the import script.
+      ebay: (() => {
+        const m = (variant.sku ?? '').match(/^BUBS-EB-(\d+)$/);
+        return m ? `https://www.ebay.com/itm/${m[1]}` : null;
+      })(),
       whatnot: null,
     },
     featured: tags.some((t) => t.toLowerCase() === 'featured' || t.toLowerCase() === 'grail'),
