@@ -1,0 +1,37 @@
+name: Fix Shopify Prices (one-off)
+
+# Resets previously-imported Shopify products from the pre-discount pricing
+# model (price=85, compareAt=100) to the new eBay-retail model (price=100,
+# compareAt=null). Run once after the import script change. Safe to re-run.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (print plan, no writes)'
+        required: false
+        type: boolean
+        default: true
+      tag:
+        description: 'Shopify tag to target'
+        required: false
+        default: 'from-ebay'
+
+permissions:
+  contents: read
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Fix prices
+        env:
+          SHOPIFY_STORE:       ${{ secrets.SHOPIFY_STORE }}
+          SHOPIFY_ADMIN_TOKEN: ${{ secrets.SHOPIFY_ADMIN_TOKEN }}
+          DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && '1' || '' }}
+          TAG:     ${{ github.event.inputs.tag }}
+        run: node scripts/fix-shopify-prices.mjs

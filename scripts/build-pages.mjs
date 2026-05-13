@@ -36,7 +36,7 @@ function buyButtons(p) {
   const links = p.buyLinks ?? {};
   const out = [];
   if (links.shopify) {
-    out.push(`<a class="btn btn-primary" href="${escapeHtml(links.shopify)}" target="_blank" rel="noopener">Buy Here · Save 15%</a>`);
+    out.push(`<a class="btn btn-primary" href="${escapeHtml(links.shopify)}" target="_blank" rel="noopener">Buy Here · 15% Off at Checkout</a>`);
   }
   if (links.ebay) {
     out.push(`<a class="btn btn-ghost" href="${escapeHtml(links.ebay)}" target="_blank" rel="noopener">Buy on eBay</a>`);

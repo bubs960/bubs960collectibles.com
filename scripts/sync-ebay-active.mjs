@@ -444,7 +444,10 @@ async function main() {
       console.warn(`[sync-ebay-active] no price on ${itemId} — skipping`);
       continue;
     }
-    const shopifyPrice = Math.round(ebayPrice * DISCOUNT_MULT * 100) / 100;
+    // We import at full eBay retail. The direct-buyer discount lives in
+    // Shopify's Automatic Discount engine (storefront-wide, applied at
+    // checkout), so non-Shopify channels like Whatnot pull a correct price.
+    const shopifyPrice = ebayPrice;
 
     const detail = await fetchItemDetail(token, summary.itemId);
     const title = summary.title?.trim() || `eBay item ${itemId}`;
@@ -479,13 +482,17 @@ async function main() {
         categoryId: defaultCategoryId,
       });
 
-      // 2. Update the default variant with sku/price/compareAt/track-inventory
+      // 2. Update the default variant with sku/price/compareAt/track-inventory.
+      // Price = eBay retail (no pre-discount) so other channels (Whatnot, etc.)
+      // pulling from Shopify get an accurate, market-comparable price.
+      // The "15% off direct buyer" perk is applied at checkout via a Shopify
+      // Automatic Discount the user configures storefront-wide.
       await shopifyUpdateVariant({
         productId,
         variantId,
         sku,
-        price: shopifyPrice.toFixed(2),
-        compareAtPrice: ebayPrice.toFixed(2),
+        price: ebayPrice.toFixed(2),
+        compareAtPrice: null,
       });
 
       // 3. Set inventory to 1 at primary location
