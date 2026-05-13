@@ -841,6 +841,119 @@ a { color: inherit; text-decoration: none; }
   .catalog-title { font-size: 2.75rem; }
   .spec-row { grid-template-columns: 100px 1fr; }
 }
+
+/* --- Catalog controls bar --- */
+.catalog-controls {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: var(--bg-panel);
+  border: 2px solid #1a2233;
+  border-radius: 12px;
+}
+.catalog-controls input[type="search"],
+.catalog-controls select {
+  background: #0a1120;
+  color: var(--text-light);
+  border: 2px solid #1a2233;
+  border-radius: 6px;
+  padding: 0.6rem 0.85rem;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.95rem;
+}
+.catalog-controls input[type="search"] {
+  flex: 1 1 240px;
+  min-width: 200px;
+}
+.catalog-controls input[type="search"]:focus,
+.catalog-controls select:focus {
+  border-color: var(--accent-yellow);
+  outline: none;
+}
+.catalog-results {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+  margin-left: auto;
+}
+
+/* --- Product card extras --- */
+.card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  margin: 0.25rem 0 0.5rem;
+}
+.card-meta-chip {
+  background: rgba(241, 196, 15, 0.12);
+  color: var(--accent-yellow);
+  border: 1px solid rgba(241, 196, 15, 0.35);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+}
+.card-stock {
+  background: var(--primary-red);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  animation: pulse-stock 2s ease-in-out infinite;
+}
+@keyframes pulse-stock {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* --- Trust card in grid --- */
+.card.card-trust {
+  background: linear-gradient(180deg, var(--bg-panel-2), #060912);
+  border: 3px dashed var(--accent-yellow);
+  box-shadow: none;
+}
+.card.card-trust:hover { transform: translateY(-4px); }
+.card-trust .trust-body { padding: 1.5rem 1.25rem; text-align: center; }
+.card-trust .trust-stars {
+  color: var(--accent-yellow);
+  font-size: 1.2rem;
+  letter-spacing: 3px;
+  margin-bottom: 0.75rem;
+}
+.card-trust blockquote {
+  color: #dfe3ec;
+  font-style: italic;
+  line-height: 1.5;
+  font-size: 0.9rem;
+  margin: 0 0 0.75rem;
+}
+.card-trust .trust-attribution {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+.card-trust .trust-attribution strong { color: var(--accent-yellow); }
+.card-trust .trust-link {
+  display: inline-block;
+  font-family: 'Bangers', cursive;
+  letter-spacing: 2px;
+  color: var(--accent-yellow);
+  border: 2px solid var(--accent-yellow);
+  border-radius: 6px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+.card-trust .trust-link:hover { background: var(--accent-yellow); color: #111; }
 `;
 
 const NAV_HTML = `
@@ -1072,6 +1185,19 @@ function savingsVsEbay(p) {
   return saved;
 }
 
+// Pull a condition label from product tags like "condition-new" -> "New"
+function conditionFromTags(tags = []) {
+  const c = tags.find((t) => typeof t === 'string' && /^condition-/i.test(t));
+  if (!c) return null;
+  return c.replace(/^condition-/i, '').replace(/-/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase());
+}
+
+// Extract a year (1970-current+1) from title, e.g. "2010 WWE Elite ..." -> "2010"
+function yearFromTitle(title = '') {
+  const m = title.match(/\b(19[7-9]\d|20\d{2}|21\d{2})\b/);
+  return m ? m[1] : null;
+}
+
 function renderCard(p) {
     const isSold = (p.status ?? '').toLowerCase() === 'sold';
     const imgs = resolveImages(p, LOCAL_IMG_PREFIX);
@@ -1086,12 +1212,27 @@ function renderCard(p) {
     const soldStamp = isSold ? `<div class="sold-stamp">Sold</div>` : '';
     const saved = savingsVsEbay(p);
     const savingsBadge = saved ? `<span class="savings-badge">Save $${saved.toFixed(0)}</span>` : '';
+    const condition = p.condition || conditionFromTags(p.tags);
+    const year = p.year || yearFromTitle(p.title);
+    const stockNote = !isSold && Number(p.inventory) > 0 && Number(p.inventory) <= 3
+      ? `<span class="card-stock">Only ${p.inventory} left</span>`
+      : '';
+    const conditionChip = condition ? `<span class="card-meta-chip">${escapeHtml(condition)}</span>` : '';
+    // Data attributes drive client-side filter/sort in the catalog page.
+    const dataAttrs = [
+      `data-title="${escapeHtml((p.title || '').toLowerCase())}"`,
+      `data-price="${p.price ?? ''}"`,
+      `data-status="${(p.status ?? 'active').toLowerCase()}"`,
+      `data-collection="${escapeHtml((p.collection ?? '').toLowerCase())}"`,
+      `data-year="${year ?? ''}"`,
+      `data-condition="${escapeHtml((condition ?? '').toLowerCase())}"`,
+    ].join(' ');
     return `
-      <a class="card reveal ${isSold ? 'is-sold' : ''}" href="/shop/${escapeHtml(p.handle)}.html">
+      <a class="card reveal ${isSold ? 'is-sold' : ''}" href="/shop/${escapeHtml(p.handle)}.html" ${dataAttrs}>
         ${ribbon}
         <div class="card-banner">
           <span>${escapeHtml(p.collection ?? 'Collectible')}</span>
-          ${p.year ? `<span class="wave">${escapeHtml(p.year)}</span>` : ''}
+          ${year ? `<span class="wave">${escapeHtml(year)}</span>` : ''}
         </div>
         <div class="card-img-wrap">
           ${img}
@@ -1099,6 +1240,7 @@ function renderCard(p) {
         </div>
         <div class="card-body">
           <div class="card-title">${escapeHtml(p.title)}</div>
+          ${(conditionChip || stockNote) ? `<div class="card-meta">${conditionChip}${stockNote}</div>` : ''}
           ${savingsBadge ? `<div class="card-savings">${savingsBadge}</div>` : ''}
           <div class="card-foot">
             ${p.price != null ? `<span class="card-price">${fmtPrice(p.price)}</span>` : '<span></span>'}
@@ -1127,6 +1269,22 @@ function renderEmptyState() {
   `;
 }
 
+// Trust-building card that lives inside the product grid. Surfaces once
+// near the top of the grid as social proof without leaving the catalog.
+function renderTrustCard() {
+  return `
+      <div class="card card-trust" aria-label="Customer testimonial">
+        <div class="card-banner"><span>Why People Buy Here</span></div>
+        <div class="trust-body">
+          <div class="trust-stars">★★★★★</div>
+          <blockquote>"Bubs gave me a fair quote same day. Money hit my account the moment the boxes arrived. Would've taken me a year on eBay."</blockquote>
+          <div class="trust-attribution"><strong>Dan P.</strong> · Seller</div>
+          <a href="/testimonials.html" class="trust-link">More stories →</a>
+        </div>
+      </div>
+  `;
+}
+
 function catalogPage(products) {
   const isEmpty = products.length === 0;
   const grouped = groupByCollection(products);
@@ -1143,19 +1301,112 @@ function catalogPage(products) {
        </nav>`
     : '';
 
-  const sections = grouped.map(([name, items]) => `
+  // Inject one trust/testimonial card into the largest collection group,
+  // positioned 4 items in so customers see it after a row of products.
+  const sections = grouped.map(([name, items]) => {
+    const cards = items.map(renderCard);
+    if (items.length >= 4) cards.splice(Math.min(4, items.length), 0, renderTrustCard());
+    return `
     <section class="collection-section" id="${slugify(name)}">
       <h2 class="collection-heading">
         <span>${escapeHtml(name)}</span>
         <span class="collection-count">${items.length} piece${items.length === 1 ? '' : 's'}</span>
       </h2>
-      <div class="catalog-grid">${items.map(renderCard).join('\n')}</div>
+      <div class="catalog-grid">${cards.join('\n')}</div>
     </section>
-  `).join('\n');
+  `;
+  }).join('\n');
 
   const subCopy = isEmpty
     ? 'New drops loading — VIP list gets first crack.'
     : `${products.length} piece${products.length === 1 ? '' : 's'} across ${grouped.length} collection${grouped.length === 1 ? '' : 's'}.`;
+
+  // Client-side filter/sort controls bar and its driver script. Pure DOM —
+  // no framework, no fetch — operates on the data-* attributes baked into
+  // each card by renderCard above.
+  const controlsBar = isEmpty ? '' : `
+<div class="catalog-controls" role="search">
+  <input type="search" id="catSearch" placeholder="Search title…" aria-label="Search products">
+  <select id="catStatus" aria-label="Status">
+    <option value="any">Any status</option>
+    <option value="active">Available only</option>
+    <option value="sold">Sold only</option>
+  </select>
+  <select id="catSort" aria-label="Sort order">
+    <option value="default">Featured first</option>
+    <option value="price-asc">Price · low → high</option>
+    <option value="price-desc">Price · high → low</option>
+    <option value="title-asc">A → Z</option>
+    <option value="year-desc">Year · newest</option>
+    <option value="year-asc">Year · oldest</option>
+  </select>
+  <span class="catalog-results" id="catResults"></span>
+</div>
+<script>
+  (function () {
+    const search   = document.getElementById('catSearch');
+    const statusEl = document.getElementById('catStatus');
+    const sortEl   = document.getElementById('catSort');
+    const resultsEl= document.getElementById('catResults');
+    if (!search) return;
+
+    function apply() {
+      const q = (search.value || '').toLowerCase().trim();
+      const status = statusEl.value;
+      const sort = sortEl.value;
+      const sections = document.querySelectorAll('.collection-section');
+      let totalShown = 0;
+
+      sections.forEach((sec) => {
+        const grid = sec.querySelector('.catalog-grid');
+        const cards = Array.from(grid.querySelectorAll('.card'));
+        // Hide trust cards during filter, show only when no filters active.
+        const trustCards = cards.filter((c) => c.classList.contains('card-trust'));
+        const productCards = cards.filter((c) => !c.classList.contains('card-trust'));
+
+        let shown = 0;
+        productCards.forEach((c) => {
+          const title = c.dataset.title || '';
+          const s = c.dataset.status || 'active';
+          const matchQ = !q || title.includes(q);
+          const matchStatus = status === 'any' || s === status;
+          const show = matchQ && matchStatus;
+          c.style.display = show ? '' : 'none';
+          if (show) shown++;
+        });
+        totalShown += shown;
+
+        // Sort visible product cards
+        const visible = productCards.filter((c) => c.style.display !== 'none');
+        visible.sort((a, b) => {
+          switch (sort) {
+            case 'price-asc':  return (parseFloat(a.dataset.price) || 0) - (parseFloat(b.dataset.price) || 0);
+            case 'price-desc': return (parseFloat(b.dataset.price) || 0) - (parseFloat(a.dataset.price) || 0);
+            case 'title-asc':  return (a.dataset.title || '').localeCompare(b.dataset.title || '');
+            case 'year-desc':  return (parseInt(b.dataset.year) || 0) - (parseInt(a.dataset.year) || 0);
+            case 'year-asc':   return (parseInt(a.dataset.year) || 0) - (parseInt(b.dataset.year) || 0);
+            default: return 0;
+          }
+        });
+        visible.forEach((c) => grid.appendChild(c));
+        // Move trust cards back to natural position only when no filters active.
+        const filtersActive = q || status !== 'any' || sort !== 'default';
+        trustCards.forEach((tc) => {
+          tc.style.display = filtersActive ? 'none' : '';
+          if (!filtersActive) grid.appendChild(tc); // re-anchor at end of visible
+        });
+
+        sec.style.display = shown === 0 ? 'none' : '';
+      });
+
+      resultsEl.textContent = totalShown === 0 ? 'No matches' : '';
+    }
+
+    [search, statusEl, sortEl].forEach((el) => el.addEventListener('input', apply));
+    apply();
+  })();
+</script>
+`;
 
   return `${HEAD('Shop', isEmpty ? 'New drops every week — VIP list gets first crack at every piece.' : 'Shop Bubs960 Collectibles — hard-to-find figures, vintage grails, and pop culture pieces.', { ogUrl: `${SITE_URL}/shop/` })}
 <div class="catalog-header">
@@ -1164,7 +1415,7 @@ function catalogPage(products) {
 </div>
 <div class="rope" aria-hidden="true"></div>
 <div style="height:2rem"></div>
-${isEmpty ? renderEmptyState() : `${chips}${sections}`}
+${isEmpty ? renderEmptyState() : `${controlsBar}${chips}${sections}`}
 ${FOOT}`;
 }
 
