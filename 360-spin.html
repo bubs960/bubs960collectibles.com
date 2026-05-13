@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0e17">
+    <title>360° Spin Maker | Bubs960 Collectibles</title>
+    <meta name="description" content="Turn a short phone video of a figure into a drag-to-rotate 360° spin photo. Works offline on your iPhone. Download as numbered frames or a ZIP for eBay/Shopify listings.">
+    <meta name="robots" content="noindex">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-red: #e62429;
+            --accent-gold: #d4a017;
+            --money-green: #2ecc71;
+            --bg-dark: #0a0e17;
+            --bg-panel: #111826;
+            --text-light: #f4f4f4;
+            --text-muted: #9aa3b2;
+            --metal-light: #2a3142;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+        body {
+            background: var(--bg-dark);
+            color: var(--text-light);
+            font-family: 'Montserrat', sans-serif;
+            min-height: 100vh;
+            min-height: 100dvh;
+            padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+        }
+
+        header {
+            background: linear-gradient(180deg, #14192a 0%, var(--bg-dark) 100%);
+            border-bottom: 1px solid var(--metal-light);
+            padding: 1.25rem 1rem 1rem;
+            text-align: center;
+        }
+
+        header h1 {
+            font-family: 'Bangers', cursive;
+            font-size: clamp(1.8rem, 6vw, 2.6rem);
+            letter-spacing: 0.05em;
+            color: var(--accent-gold);
+            text-shadow: 2px 2px 0 var(--primary-red);
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 0.35rem;
+        }
+
+        main {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--metal-light);
+            border-radius: 14px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .panel h2 {
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--accent-gold);
+            margin-bottom: 0.75rem;
+        }
+
+        .tip {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        .tip strong { color: var(--text-light); }
+
+        .row {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        label.field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            flex: 1 1 140px;
+        }
+
+        select, input[type="number"] {
+            background: var(--bg-dark);
+            color: var(--text-light);
+            border: 1px solid var(--metal-light);
+            border-radius: 8px;
+            padding: 0.6rem 0.7rem;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        button, .btn {
+            background: var(--primary-red);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 0.85rem 1.1rem;
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            transition: transform 0.05s ease, filter 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        button:hover:not(:disabled) { filter: brightness(1.1); }
+        button:active:not(:disabled) { transform: scale(0.98); }
+        button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+        .btn-secondary {
+            background: var(--metal-light);
+            color: var(--text-light);
+        }
+
+        .btn-green { background: var(--money-green); color: #0a0e17; }
+
+        .file-zone {
+            border: 2px dashed var(--metal-light);
+            border-radius: 14px;
+            padding: 1.75rem 1rem;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .file-zone.dragover {
+            border-color: var(--accent-gold);
+            background: rgba(212, 160, 23, 0.06);
+        }
+
+        .file-zone input { display: none; }
+
+        .file-zone .big {
+            font-family: 'Bangers', cursive;
+            font-size: 1.6rem;
+            color: var(--text-light);
+            letter-spacing: 0.05em;
+            margin-bottom: 0.35rem;
+        }
+
+        .file-zone .pick-row {
+            display: flex;
+            gap: 0.6rem;
+            justify-content: center;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        progress {
+            width: 100%;
+            height: 10px;
+            -webkit-appearance: none;
+            appearance: none;
+            border: none;
+            border-radius: 5px;
+            overflow: hidden;
+            background: var(--metal-light);
+        }
+        progress::-webkit-progress-bar { background: var(--metal-light); }
+        progress::-webkit-progress-value { background: var(--accent-gold); transition: width 0.1s linear; }
+        progress::-moz-progress-bar { background: var(--accent-gold); }
+
+        .progress-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.4rem;
+        }
+
+        .viewer-wrap {
+            position: relative;
+            background: #000;
+            border-radius: 14px;
+            overflow: hidden;
+            aspect-ratio: 1 / 1;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            cursor: grab;
+        }
+        .viewer-wrap:active { cursor: grabbing; }
+
+        .viewer-wrap img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+            -webkit-user-drag: none;
+        }
+
+        .viewer-hint {
+            position: absolute;
+            left: 50%;
+            bottom: 0.75rem;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.55);
+            color: #fff;
+            font-size: 0.75rem;
+            padding: 0.35rem 0.7rem;
+            border-radius: 999px;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .viewer-hint.fade { opacity: 0; }
+
+        .frame-indicator {
+            position: absolute;
+            top: 0.6rem;
+            right: 0.6rem;
+            background: rgba(0, 0, 0, 0.55);
+            color: #fff;
+            font-size: 0.7rem;
+            font-variant-numeric: tabular-nums;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+        }
+
+        .actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.6rem;
+            margin-top: 1rem;
+        }
+        .actions button { width: 100%; }
+        @media (max-width: 380px) { .actions { grid-template-columns: 1fr; } }
+
+        .hidden { display: none !important; }
+
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: max(1rem, env(safe-area-inset-bottom));
+            transform: translateX(-50%);
+            background: var(--bg-panel);
+            border: 1px solid var(--metal-light);
+            color: var(--text-light);
+            padding: 0.65rem 1rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            z-index: 50;
+        }
+        .toast.show { opacity: 1; }
+
+        .error {
+            background: rgba(230, 36, 41, 0.12);
+            border: 1px solid rgba(230, 36, 41, 0.4);
+            color: #ffb3b6;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            margin-top: 0.75rem;
+        }
+
+        .nav-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            padding: 0.5rem 0.25rem;
+        }
+
+        canvas#work { display: none; }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/" class="nav-back" aria-label="Back to Bubs960">← bubs960collectibles.com</a>
+        <h1>360° Spin Maker</h1>
+        <p>Phone video in → drag-to-rotate spin photo out.</p>
+    </header>
+
+    <main>
+        <!-- STEP 1: Pick a video ----------------------------------- -->
+        <section class="panel" id="step-pick">
+            <h2>1. Film the figure</h2>
+            <p class="tip">
+                Put the figure on a <strong>lazy-susan / turntable</strong> (or walk around it) and film a smooth
+                <strong>4–8 second</strong> rotation. Even speed = clean spin. Plain background works best.
+            </p>
+
+            <div class="file-zone" id="drop">
+                <div class="big">Drop a video here</div>
+                <div>or pick one from your phone</div>
+                <div class="pick-row">
+                    <label class="btn">
+                        📹 Record now
+                        <input type="file" id="file-camera" accept="video/*" capture="environment">
+                    </label>
+                    <label class="btn btn-secondary">
+                        📁 Choose video
+                        <input type="file" id="file-pick" accept="video/*">
+                    </label>
+                </div>
+            </div>
+
+            <div class="row" style="margin-top: 1rem;">
+                <label class="field">
+                    Frames
+                    <select id="frame-count">
+                        <option value="24">24 (light)</option>
+                        <option value="36" selected>36 (eBay spin)</option>
+                        <option value="48">48 (smooth)</option>
+                        <option value="72">72 (silky)</option>
+                    </select>
+                </label>
+                <label class="field">
+                    Max size (px)
+                    <select id="max-dim">
+                        <option value="1200">1200</option>
+                        <option value="1600" selected>1600</option>
+                        <option value="2000">2000</option>
+                        <option value="0">Original</option>
+                    </select>
+                </label>
+                <label class="field">
+                    JPEG quality
+                    <select id="quality">
+                        <option value="0.82">82%</option>
+                        <option value="0.9" selected>90%</option>
+                        <option value="0.95">95%</option>
+                    </select>
+                </label>
+            </div>
+
+            <div id="error-box" class="error hidden"></div>
+        </section>
+
+        <!-- STEP 2: Extraction progress ------------------------------ -->
+        <section class="panel hidden" id="step-extract">
+            <h2>2. Extracting frames</h2>
+            <progress id="progress" value="0" max="100"></progress>
+            <div class="progress-row">
+                <span id="progress-label">Reading video…</span>
+                <span id="progress-pct">0%</span>
+            </div>
+        </section>
+
+        <!-- STEP 3: Spin viewer ------------------------------------- -->
+        <section class="panel hidden" id="step-viewer">
+            <h2>3. Drag to spin</h2>
+            <div class="viewer-wrap" id="viewer">
+                <img id="viewer-img" alt="360 spin viewer">
+                <span class="frame-indicator" id="frame-indicator">1 / 36</span>
+                <span class="viewer-hint" id="viewer-hint">← drag to rotate →</span>
+            </div>
+
+            <div class="actions">
+                <button class="btn-secondary" id="btn-play">▶ Auto-spin</button>
+                <button class="btn-secondary" id="btn-reverse">↻ Reverse direction</button>
+                <button class="btn-green" id="btn-zip">⬇ Download ZIP</button>
+                <button id="btn-restart">↺ Start over</button>
+            </div>
+
+            <p class="tip" style="margin-top: 0.9rem;">
+                The ZIP contains numbered <code>frame_001.jpg … frame_NNN.jpg</code> — the format eBay's
+                360° image uploader and most Shopify spin apps expect.
+            </p>
+        </section>
+
+        <section class="panel">
+            <h2>What's next</h2>
+            <p class="tip">
+                Phase 2 (separate page) will take these same frames + your eBay OAuth and create a <strong>draft
+                listing</strong> with AI-suggested title, description, category, and price — you review on your
+                phone, then publish.
+            </p>
+        </section>
+    </main>
+
+    <canvas id="work"></canvas>
+    <div class="toast" id="toast"></div>
+
+    <!-- JSZip from CDN, fallback message if offline -->
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+    <script>
+    'use strict';
+
+    // ---------- tiny helpers ----------
+    const $ = (id) => document.getElementById(id);
+    const show = (el) => el.classList.remove('hidden');
+    const hide = (el) => el.classList.add('hidden');
+
+    function toast(msg, ms = 2200) {
+        const t = $('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        clearTimeout(toast._t);
+        toast._t = setTimeout(() => t.classList.remove('show'), ms);
+    }
+
+    function showError(msg) {
+        const box = $('error-box');
+        box.textContent = msg;
+        show(box);
+    }
+    function clearError() { hide($('error-box')); }
+
+    // ---------- state ----------
+    const state = {
+        frames: [],          // Array<Blob>  (JPEG)
+        frameURLs: [],       // Array<string>  (object URLs)
+        currentFrame: 0,
+        autoSpin: null,      // requestAnimationFrame id
+        direction: 1,
+    };
+
+    function resetFrames() {
+        state.frameURLs.forEach(u => URL.revokeObjectURL(u));
+        state.frames = [];
+        state.frameURLs = [];
+        state.currentFrame = 0;
+        state.direction = 1;
+        stopAutoSpin();
+    }
+
+    // ---------- frame extraction ----------
+    async function extractFrames(file, frameCount, maxDim, quality) {
+        const url = URL.createObjectURL(file);
+        const video = document.createElement('video');
+        video.preload = 'auto';
+        video.muted = true;
+        video.playsInline = true;
+        video.crossOrigin = 'anonymous';
+        video.src = url;
+
+        // Wait for metadata so we know duration + dimensions.
+        await new Promise((resolve, reject) => {
+            video.onloadedmetadata = resolve;
+            video.onerror = () => reject(new Error('Could not read that video. Try a different format (MP4 / MOV).'));
+        });
+
+        // iOS Safari quirk: a quick play() then pause() primes the decoder so seek+draw works reliably.
+        try { await video.play(); video.pause(); } catch (_) { /* autoplay may be denied; seek still usually works */ }
+
+        const duration = video.duration;
+        if (!isFinite(duration) || duration <= 0) {
+            URL.revokeObjectURL(url);
+            throw new Error('Video duration looks wrong. Re-record or pick a different file.');
+        }
+
+        // Compute output canvas size, preserving aspect ratio.
+        const srcW = video.videoWidth;
+        const srcH = video.videoHeight;
+        let dstW = srcW, dstH = srcH;
+        if (maxDim > 0 && Math.max(srcW, srcH) > maxDim) {
+            const scale = maxDim / Math.max(srcW, srcH);
+            dstW = Math.round(srcW * scale);
+            dstH = Math.round(srcH * scale);
+        }
+
+        const canvas = $('work');
+        canvas.width = dstW;
+        canvas.height = dstH;
+        const ctx = canvas.getContext('2d');
+
+        // Sample frame_i at (i + 0.5) / N * duration so we land in the middle of each "slice"
+        // and never hit the very last black frame.
+        const blobs = [];
+        for (let i = 0; i < frameCount; i++) {
+            const t = ((i + 0.5) / frameCount) * duration;
+            await seekTo(video, t);
+            ctx.drawImage(video, 0, 0, dstW, dstH);
+            const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', quality));
+            if (!blob) throw new Error('Browser refused to encode a frame. Try a smaller max size.');
+            blobs.push(blob);
+
+            const pct = Math.round(((i + 1) / frameCount) * 100);
+            $('progress').value = pct;
+            $('progress-pct').textContent = pct + '%';
+            $('progress-label').textContent = `Frame ${i + 1} / ${frameCount}`;
+        }
+
+        URL.revokeObjectURL(url);
+        return blobs;
+    }
+
+    function seekTo(video, time) {
+        return new Promise((resolve, reject) => {
+            const onSeeked = () => { cleanup(); resolve(); };
+            const onError  = () => { cleanup(); reject(new Error('Seek failed at ' + time.toFixed(2) + 's')); };
+            const cleanup  = () => {
+                video.removeEventListener('seeked', onSeeked);
+                video.removeEventListener('error', onError);
+            };
+            video.addEventListener('seeked', onSeeked, { once: true });
+            video.addEventListener('error',  onError,  { once: true });
+            // Clamp to a hair before the end to avoid EOS issues on some decoders.
+            video.currentTime = Math.min(time, Math.max(0, video.duration - 0.001));
+        });
+    }
+
+    // ---------- spin viewer ----------
+    function renderFrame(i) {
+        const n = state.frames.length;
+        if (n === 0) return;
+        // Wrap index into [0, n)
+        const idx = ((i % n) + n) % n;
+        state.currentFrame = idx;
+        $('viewer-img').src = state.frameURLs[idx];
+        $('frame-indicator').textContent = `${idx + 1} / ${n}`;
+    }
+
+    function attachDragHandlers() {
+        const wrap = $('viewer');
+        let dragging = false;
+        let startX = 0;
+        let startFrame = 0;
+        let hinted = false;
+
+        const onDown = (e) => {
+            dragging = true;
+            startX = (e.touches ? e.touches[0].clientX : e.clientX);
+            startFrame = state.currentFrame;
+            stopAutoSpin();
+            if (!hinted) { $('viewer-hint').classList.add('fade'); hinted = true; }
+        };
+        const onMove = (e) => {
+            if (!dragging) return;
+            const x = (e.touches ? e.touches[0].clientX : e.clientX);
+            const dx = x - startX;
+            const w = wrap.clientWidth || 1;
+            // A full drag across the viewer = one full revolution.
+            const frameDelta = Math.round((dx / w) * state.frames.length);
+            renderFrame(startFrame + frameDelta * state.direction);
+            e.preventDefault();
+        };
+        const onUp = () => { dragging = false; };
+
+        wrap.addEventListener('mousedown', onDown);
+        wrap.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onUp);
+        wrap.addEventListener('touchstart', onDown, { passive: true });
+        wrap.addEventListener('touchmove',  onMove, { passive: false });
+        wrap.addEventListener('touchend',   onUp);
+    }
+
+    function startAutoSpin() {
+        stopAutoSpin();
+        let last = performance.now();
+        const fps = 24;
+        let acc = 0;
+        const loop = (now) => {
+            const dt = now - last; last = now;
+            acc += dt;
+            const step = 1000 / fps;
+            while (acc >= step) {
+                renderFrame(state.currentFrame + state.direction);
+                acc -= step;
+            }
+            state.autoSpin = requestAnimationFrame(loop);
+        };
+        state.autoSpin = requestAnimationFrame(loop);
+        $('btn-play').textContent = '⏸ Pause';
+    }
+    function stopAutoSpin() {
+        if (state.autoSpin) cancelAnimationFrame(state.autoSpin);
+        state.autoSpin = null;
+        $('btn-play').textContent = '▶ Auto-spin';
+    }
+
+    // ---------- ZIP download ----------
+    async function downloadZip() {
+        if (typeof JSZip === 'undefined') {
+            showError('ZIP library failed to load (offline?). Frames are still viewable — try again with internet.');
+            return;
+        }
+        const zip = new JSZip();
+        const pad = String(state.frames.length).length;
+        state.frames.forEach((blob, i) => {
+            const name = `frame_${String(i + 1).padStart(pad, '0')}.jpg`;
+            zip.file(name, blob);
+        });
+        toast('Building ZIP…');
+        const zipBlob = await zip.generateAsync({ type: 'blob' }, (meta) => {
+            $('progress').value = meta.percent;
+            $('progress-pct').textContent = Math.round(meta.percent) + '%';
+        });
+        const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+        triggerDownload(zipBlob, `bubs960-spin-${stamp}.zip`);
+        toast('ZIP ready ✓');
+    }
+
+    function triggerDownload(blob, name) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+    }
+
+    // ---------- wire up the page ----------
+    async function handleFile(file) {
+        clearError();
+        if (!file) return;
+        if (!file.type.startsWith('video/') && !/\.(mp4|mov|m4v|webm)$/i.test(file.name)) {
+            showError('That doesn\'t look like a video. Pick an MP4 or MOV.');
+            return;
+        }
+
+        const frameCount = parseInt($('frame-count').value, 10);
+        const maxDim     = parseInt($('max-dim').value, 10);
+        const quality    = parseFloat($('quality').value);
+
+        resetFrames();
+        hide($('step-viewer'));
+        show($('step-extract'));
+        $('progress').value = 0;
+        $('progress-pct').textContent = '0%';
+        $('progress-label').textContent = 'Reading video…';
+
+        try {
+            const blobs = await extractFrames(file, frameCount, maxDim, quality);
+            state.frames = blobs;
+            state.frameURLs = blobs.map(b => URL.createObjectURL(b));
+            renderFrame(0);
+            hide($('step-extract'));
+            show($('step-viewer'));
+            $('step-viewer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } catch (err) {
+            console.error(err);
+            hide($('step-extract'));
+            showError(err.message || 'Something went wrong extracting frames.');
+        }
+    }
+
+    function init() {
+        $('file-camera').addEventListener('change', (e) => handleFile(e.target.files[0]));
+        $('file-pick'  ).addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+        const drop = $('drop');
+        ['dragenter', 'dragover'].forEach(ev =>
+            drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('dragover'); }));
+        ['dragleave', 'drop'].forEach(ev =>
+            drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('dragover'); }));
+        drop.addEventListener('drop', (e) => {
+            const f = e.dataTransfer.files && e.dataTransfer.files[0];
+            if (f) handleFile(f);
+        });
+
+        attachDragHandlers();
+
+        $('btn-play'   ).addEventListener('click', () => state.autoSpin ? stopAutoSpin() : startAutoSpin());
+        $('btn-reverse').addEventListener('click', () => { state.direction *= -1; toast(state.direction > 0 ? 'Forward' : 'Reverse'); });
+        $('btn-zip'    ).addEventListener('click', downloadZip);
+        $('btn-restart').addEventListener('click', () => {
+            resetFrames();
+            hide($('step-viewer'));
+            hide($('step-extract'));
+            $('file-camera').value = '';
+            $('file-pick').value   = '';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
