@@ -254,6 +254,56 @@
         .actions button { width: 100%; }
         @media (max-width: 380px) { .actions { grid-template-columns: 1fr; } }
 
+        /* iOS PWA install banner (shown only in Safari, not standalone) */
+        .pwa-banner {
+            background: linear-gradient(135deg, #1c3b70 0%, #14192a 100%);
+            border: 1px solid var(--accent-gold);
+            border-radius: 12px;
+            padding: 0.85rem 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+        }
+        .pwa-banner .pwa-icon {
+            font-size: 1.6rem;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+        .pwa-banner .pwa-body { flex: 1; }
+        .pwa-banner .pwa-body strong {
+            display: block;
+            color: var(--accent-gold);
+            font-size: 0.9rem;
+            margin-bottom: 0.2rem;
+        }
+        .pwa-banner .pwa-body p {
+            margin: 0;
+            font-size: 0.78rem;
+            line-height: 1.4;
+            color: var(--text-light);
+        }
+        .pwa-banner .pwa-share {
+            display: inline-block;
+            border: 1px solid var(--accent-gold);
+            border-radius: 4px;
+            padding: 0 5px;
+            font-weight: 700;
+            color: var(--accent-gold);
+        }
+        .pwa-banner .pwa-dismiss {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.3rem;
+            line-height: 1;
+            padding: 0 0.25rem;
+            cursor: pointer;
+            flex-shrink: 0;
+            align-self: flex-start;
+        }
+        .pwa-banner .pwa-dismiss:hover { color: var(--text-light); }
+
         /* Recent-takes strip */
         .recent-strip {
             display: flex;
@@ -578,6 +628,17 @@
     </header>
 
     <main>
+        <!-- iOS install banner (auto-hidden when standalone or dismissed) -->
+        <div class="pwa-banner hidden" id="pwa-banner" role="region" aria-label="Install as app">
+            <div class="pwa-icon">📲</div>
+            <div class="pwa-body">
+                <strong>Install on your iPhone</strong>
+                <p>Tap <span class="pwa-share">⎙ Share</span> in Safari → <strong>Add to Home Screen</strong>.
+                   You'll get a real app icon, full-screen launch, and the page works offline.</p>
+            </div>
+            <button class="pwa-dismiss" id="pwa-dismiss" aria-label="Dismiss">×</button>
+        </div>
+
         <!-- RECENT TAKES (hidden until at least one save) ----------- -->
         <section class="panel hidden" id="step-recent">
             <h2>Recent</h2>
@@ -2250,6 +2311,26 @@
 
         // Render the recent-takes strip on load (hidden if there are none).
         renderRecent().catch((err) => console.warn('renderRecent failed:', err));
+
+        // iOS PWA install banner. iOS Safari doesn't fire 'beforeinstallprompt',
+        // so we have to detect-and-instruct manually. Only shown to iOS users
+        // who haven't already installed and haven't dismissed.
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                             window.navigator.standalone === true;
+        const ua = navigator.userAgent;
+        const isIOS = /iPhone|iPad|iPod/.test(ua) && !window.MSStream;
+        // Exclude in-app browsers (Chrome iOS, Firefox iOS) since their Share
+        // sheet doesn't expose Add to Home Screen the same way.
+        const isIOSSafari = isIOS && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua);
+        const dismissed = (() => { try { return !!localStorage.getItem('bubs960-pwa-dismissed'); } catch (_) { return false; } })();
+
+        if (isIOSSafari && !isStandalone && !dismissed) {
+            show($('pwa-banner'));
+        }
+        $('pwa-dismiss').addEventListener('click', () => {
+            hide($('pwa-banner'));
+            try { localStorage.setItem('bubs960-pwa-dismissed', '1'); } catch (_) {}
+        });
 
         // Register the service worker so the page works offline once installed
         // to the iPhone home screen. SW requires http(s) origin — won't run on
