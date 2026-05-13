@@ -413,6 +413,31 @@
         }
         .selection-summary strong { color: var(--text-light); }
 
+        /* OCR scan row */
+        .ocr-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.85rem;
+            flex-wrap: wrap;
+        }
+        .ocr-row .tip { flex: 1; min-width: 180px; font-size: 0.78rem; }
+        #ocr-output { margin: 0 0 0.85rem; }
+        #ocr-output summary { padding: 0.2rem 0; }
+        #ocr-raw {
+            white-space: pre-wrap;
+            font-size: 0.7rem;
+            max-height: 180px;
+            overflow-y: auto;
+            background: var(--bg-dark);
+            border: 1px solid var(--metal-light);
+            padding: 0.55rem 0.7rem;
+            border-radius: 6px;
+            margin-top: 0.4rem;
+            color: var(--text-muted);
+            font-family: ui-monospace, Menlo, Consolas, monospace;
+        }
+
         /* Listing-draft form (Step 5) */
         .form-grid {
             display: grid;
@@ -696,6 +721,16 @@
                 Type once, get a paste-ready title + description + photo bundle. Brand/notes save to this
                 browser so you don't retype every figure.
             </p>
+
+            <div class="ocr-row">
+                <button class="btn-secondary" id="btn-scan-box">📸 Scan box text to auto-fill</button>
+                <span class="tip">Snap the box. Auto-fills empty fields only — won't overwrite what you've typed.</span>
+            </div>
+
+            <details id="ocr-output" class="hidden">
+                <summary class="tip" style="cursor: pointer;">📄 Detected text (tap to expand)</summary>
+                <pre id="ocr-raw"></pre>
+            </details>
 
             <div class="form-grid">
                 <div class="form-field">
@@ -1456,6 +1491,137 @@
         show(sec);
     }
 
+    // ---------- OCR: scan box text → auto-fill form ----------
+    // Tesseract.js is loaded lazily (large library — ~2.6 MB JS + ~10 MB
+    // English lang file) the first time the user taps "Scan box". After
+    // the first scan it's HTTP-cached for ~1 year, so subsequent scans
+    // are fast. Pure local — the image never leaves the browser.
+    let _tesseractPromise = null;
+    function loadTesseract() {
+        if (typeof Tesseract !== 'undefined') return Promise.resolve();
+        if (_tesseractPromise) return _tesseractPromise;
+        _tesseractPromise = new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+            s.onload  = () => resolve();
+            s.onerror = () => reject(new Error('Could not load OCR library (offline?).'));
+            document.head.appendChild(s);
+        });
+        return _tesseractPromise;
+    }
+
+    // Pattern-match the OCR text against known collectible brands and
+    // common field shapes. Order matters — more specific brands come
+    // first so "Mattel WWE Ultimate Edition" doesn't lose to a generic
+    // "WWE" hit.
+    const BRAND_PATTERNS = [
+        ['Mattel WWE Ultimate Edition',  /ultimate\s+edition|wwe\s+ultimate/i],
+        ['Mattel WWE Elite',              /wwe\s+elite|elite\s+(collection|series)/i],
+        ['Mattel WWE Basic',              /wwe\b[\s\S]{0,30}basic/i],
+        ['AEW Unmatched',                 /aew[\s\S]{0,20}unmatched/i],
+        ['AEW Unrivaled',                 /aew[\s\S]{0,20}unrivaled/i],
+        ['Funko Pop!',                    /\bfunko\b|pop!?\s*\bvinyl\b|pop\s*figure/i],
+        ['Marvel Legends',                /marvel\s+legends/i],
+        ['Star Wars Black Series',        /black\s+series|star\s+wars/i],
+        ['NECA',                          /\bneca\b/i],
+        ['Jakks Pacific WWE Classic',     /\bjakks\b/i],
+        ['Vintage Hasbro WWF',            /hasbro[\s\S]{0,40}wwf|wwf[\s\S]{0,40}hasbro/i],
+    ];
+
+    function parseCollectibleText(text) {
+        const out = { brand: '', year: '', series: '', rawText: text };
+
+        for (const [name, re] of BRAND_PATTERNS) {
+            if (re.test(text)) { out.brand = name; break; }
+        }
+
+        // Years 1970-2039. Pick the LAST one in the text — copyright lines
+        // are usually near the bottom of the box and most accurate.
+        const years = [...text.matchAll(/\b(19[7-9]\d|20[0-3]\d)\b/g)];
+        if (years.length) out.year = years[years.length - 1][1];
+
+        // "Series 110", "Wave 5", "Vol. 22", "Set 3"
+        const sMatch = text.match(/\b(series|wave|vol(?:\.|ume)?|set)\s*#?\s*(\d+)\b/i);
+        if (sMatch) {
+            const word = sMatch[1].toLowerCase().replace(/^vol(?:ume)?\.?$/, 'Vol');
+            const cap = word === 'Vol' ? 'Vol' : word.charAt(0).toUpperCase() + word.slice(1);
+            out.series = `${cap} ${sMatch[2]}`;
+        }
+
+        return out;
+    }
+
+    function applyParsedToForm(p) {
+        let applied = 0;
+        const vendorEl = $('f-vendor');
+        if (p.brand && !vendorEl.value && Array.from(vendorEl.options).some((o) => o.value === p.brand)) {
+            vendorEl.value = p.brand; applied++;
+        }
+        if (p.year && !$('f-year').value) { $('f-year').value = p.year; applied++; }
+        if (p.series && !$('f-series').value) { $('f-series').value = p.series; applied++; }
+        if (applied > 0) {
+            updateListingPreview();
+            saveDefaults();
+            scheduleSave();
+        }
+        return applied;
+    }
+
+    async function scanBoxText() {
+        // Pick a still photo from the camera (NOT video).
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.capture = 'environment';
+        const file = await new Promise((res) => {
+            input.onchange = () => res(input.files[0] || null);
+            input.click();
+            // No reliable "cancel" event; tolerate the promise sitting unresolved.
+        });
+        if (!file) return;
+        clearError();
+        hide($('ocr-output'));
+
+        try {
+            show($('step-extract'));
+            $('progress').value = 0;
+            $('progress-pct').textContent = '0%';
+            $('progress-label').textContent = 'Loading OCR engine…';
+            await loadTesseract();
+
+            $('progress-label').textContent = 'Reading box text…';
+            const result = await Tesseract.recognize(file, 'eng', {
+                logger: (m) => {
+                    if (m.status === 'recognizing text') {
+                        const pct = Math.round((m.progress || 0) * 100);
+                        $('progress').value = pct;
+                        $('progress-pct').textContent = pct + '%';
+                    } else if (m.status) {
+                        $('progress-label').textContent = m.status.charAt(0).toUpperCase() + m.status.slice(1) + '…';
+                    }
+                },
+            });
+            hide($('step-extract'));
+
+            const rawText = (result && result.data && result.data.text) || '';
+            const parsed = parseCollectibleText(rawText);
+            const applied = applyParsedToForm(parsed);
+
+            $('ocr-raw').textContent = rawText.trim() || '(no text detected)';
+            show($('ocr-output'));
+
+            if (applied === 0) {
+                toast('No fields auto-filled — expand "Detected text" to copy manually.');
+            } else {
+                toast(`Auto-filled ${applied} field${applied > 1 ? 's' : ''} ✓`);
+            }
+        } catch (err) {
+            console.error(err);
+            hide($('step-extract'));
+            showError(err.message || 'OCR failed. Try a clearer photo of the box.');
+        }
+    }
+
     // ---------- listing draft (Step 5) ----------
     // Free-text fields → eBay-ready title + description. Everything stays
     // in-browser; the only persistence is localStorage for sticky defaults
@@ -2034,6 +2200,7 @@
         $('btn-copy-desc' ).addEventListener('click', copyDescription);
         $('btn-clear-form').addEventListener('click', clearForm);
         $('btn-bundle'    ).addEventListener('click', downloadBundle);
+        $('btn-scan-box'  ).addEventListener('click', scanBoxText);
         loadDefaults();
         updateListingPreview();
 
