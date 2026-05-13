@@ -1,0 +1,3216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0e17">
+    <title>360° Spin Maker | Bubs960 Collectibles</title>
+    <meta name="description" content="Turn a short phone video of a figure into a drag-to-rotate 360° spin photo. Works offline on your iPhone. Download as numbered frames or a ZIP for eBay/Shopify listings.">
+    <meta name="robots" content="noindex">
+
+    <!-- PWA: lets you "Add to Home Screen" on iPhone for an app-like icon -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/bubs-logo.jpg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="360 Spin">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-red: #e62429;
+            --accent-gold: #d4a017;
+            --money-green: #2ecc71;
+            --bg-dark: #0a0e17;
+            --bg-panel: #111826;
+            --text-light: #f4f4f4;
+            --text-muted: #9aa3b2;
+            --metal-light: #2a3142;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+        body {
+            background: var(--bg-dark);
+            color: var(--text-light);
+            font-family: 'Montserrat', sans-serif;
+            min-height: 100vh;
+            min-height: 100dvh;
+            padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+        }
+
+        header {
+            background: linear-gradient(180deg, #14192a 0%, var(--bg-dark) 100%);
+            border-bottom: 1px solid var(--metal-light);
+            padding: 1.25rem 1rem 1rem;
+            text-align: center;
+        }
+
+        header h1 {
+            font-family: 'Bangers', cursive;
+            font-size: clamp(1.8rem, 6vw, 2.6rem);
+            letter-spacing: 0.05em;
+            color: var(--accent-gold);
+            text-shadow: 2px 2px 0 var(--primary-red);
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 0.35rem;
+        }
+
+        main {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--metal-light);
+            border-radius: 14px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .panel h2 {
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--accent-gold);
+            margin-bottom: 0.75rem;
+        }
+
+        .tip {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        .tip strong { color: var(--text-light); }
+
+        .row {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        label.field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            flex: 1 1 140px;
+        }
+
+        select, input[type="number"] {
+            background: var(--bg-dark);
+            color: var(--text-light);
+            border: 1px solid var(--metal-light);
+            border-radius: 8px;
+            padding: 0.6rem 0.7rem;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        button, .btn {
+            background: var(--primary-red);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 0.85rem 1.1rem;
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            transition: transform 0.05s ease, filter 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        button:hover:not(:disabled) { filter: brightness(1.1); }
+        button:active:not(:disabled) { transform: scale(0.98); }
+        button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+        .btn-secondary {
+            background: var(--metal-light);
+            color: var(--text-light);
+        }
+
+        .btn-green { background: var(--money-green); color: #0a0e17; }
+
+        .file-zone {
+            border: 2px dashed var(--metal-light);
+            border-radius: 14px;
+            padding: 1.75rem 1rem;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .file-zone.dragover {
+            border-color: var(--accent-gold);
+            background: rgba(212, 160, 23, 0.06);
+        }
+
+        .file-zone input { display: none; }
+
+        .file-zone .big {
+            font-family: 'Bangers', cursive;
+            font-size: 1.6rem;
+            color: var(--text-light);
+            letter-spacing: 0.05em;
+            margin-bottom: 0.35rem;
+        }
+
+        .file-zone .pick-row {
+            display: flex;
+            gap: 0.6rem;
+            justify-content: center;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        progress {
+            width: 100%;
+            height: 10px;
+            -webkit-appearance: none;
+            appearance: none;
+            border: none;
+            border-radius: 5px;
+            overflow: hidden;
+            background: var(--metal-light);
+        }
+        progress::-webkit-progress-bar { background: var(--metal-light); }
+        progress::-webkit-progress-value { background: var(--accent-gold); transition: width 0.1s linear; }
+        progress::-moz-progress-bar { background: var(--accent-gold); }
+
+        .progress-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.4rem;
+        }
+
+        .viewer-wrap {
+            position: relative;
+            background: #000;
+            border-radius: 14px;
+            overflow: hidden;
+            aspect-ratio: 1 / 1;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            cursor: grab;
+        }
+        .viewer-wrap:active { cursor: grabbing; }
+
+        .viewer-wrap img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+            -webkit-user-drag: none;
+        }
+
+        .viewer-hint {
+            position: absolute;
+            left: 50%;
+            bottom: 0.75rem;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.55);
+            color: #fff;
+            font-size: 0.75rem;
+            padding: 0.35rem 0.7rem;
+            border-radius: 999px;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .viewer-hint.fade { opacity: 0; }
+
+        .frame-indicator {
+            position: absolute;
+            top: 0.6rem;
+            right: 0.6rem;
+            background: rgba(0, 0, 0, 0.55);
+            color: #fff;
+            font-size: 0.7rem;
+            font-variant-numeric: tabular-nums;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+        }
+
+        .actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.6rem;
+            margin-top: 1rem;
+        }
+        .actions button { width: 100%; }
+        @media (max-width: 380px) { .actions { grid-template-columns: 1fr; } }
+
+        /* iOS PWA install banner (shown only in Safari, not standalone) */
+        .pwa-banner {
+            background: linear-gradient(135deg, #1c3b70 0%, #14192a 100%);
+            border: 1px solid var(--accent-gold);
+            border-radius: 12px;
+            padding: 0.85rem 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+        }
+        .pwa-banner .pwa-icon {
+            font-size: 1.6rem;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+        .pwa-banner .pwa-body { flex: 1; }
+        .pwa-banner .pwa-body strong {
+            display: block;
+            color: var(--accent-gold);
+            font-size: 0.9rem;
+            margin-bottom: 0.2rem;
+        }
+        .pwa-banner .pwa-body p {
+            margin: 0;
+            font-size: 0.78rem;
+            line-height: 1.4;
+            color: var(--text-light);
+        }
+        .pwa-banner .pwa-share {
+            display: inline-block;
+            border: 1px solid var(--accent-gold);
+            border-radius: 4px;
+            padding: 0 5px;
+            font-weight: 700;
+            color: var(--accent-gold);
+        }
+        .pwa-banner .pwa-dismiss {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.3rem;
+            line-height: 1;
+            padding: 0 0.25rem;
+            cursor: pointer;
+            flex-shrink: 0;
+            align-self: flex-start;
+        }
+        .pwa-banner .pwa-dismiss:hover { color: var(--text-light); }
+
+        /* Recent-takes strip */
+        .recent-head { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+        .recent-strip {
+            display: flex;
+            gap: 0.6rem;
+            overflow-x: auto;
+            padding: 0.25rem 0 0.5rem;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+        }
+        .recent-strip::-webkit-scrollbar { height: 6px; }
+        .recent-strip::-webkit-scrollbar-thumb { background: var(--metal-light); border-radius: 3px; }
+
+        .recent-card {
+            flex: 0 0 130px;
+            background: var(--bg-dark);
+            border: 1px solid var(--metal-light);
+            border-radius: 10px;
+            padding: 0.5rem;
+            cursor: pointer;
+            scroll-snap-align: start;
+            position: relative;
+            transition: border-color 0.15s ease, transform 0.05s ease;
+        }
+        .recent-card:hover { border-color: var(--accent-gold); }
+        .recent-card:active { transform: scale(0.97); }
+        .recent-card.current { border-color: var(--money-green); }
+
+        .recent-card img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: 6px;
+            background: #000;
+            pointer-events: none;
+        }
+        .recent-card .name {
+            margin-top: 0.4rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-light);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .recent-card .date {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 0.1rem;
+        }
+        .recent-card .delete {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.75);
+            color: #fff;
+            display: grid;
+            place-items: center;
+            font-size: 0.95rem;
+            line-height: 1;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+        }
+        .recent-card .delete:hover { background: var(--primary-red); }
+
+        /* Toggle row in step 1 */
+        .toggle-row { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+        .toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            user-select: none;
+            padding: 0.2rem 0;
+        }
+        .toggle input { width: 18px; height: 18px; accent-color: var(--accent-gold); flex-shrink: 0; }
+        .toggle strong { color: var(--text-light); }
+
+        /* Listing-photo grid */
+        .thumb-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+            margin-top: 0.25rem;
+        }
+        @media (max-width: 480px) { .thumb-grid { grid-template-columns: repeat(2, 1fr); } }
+
+        .thumb {
+            position: relative;
+            aspect-ratio: 1 / 1;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border-color 0.15s ease, transform 0.05s ease;
+        }
+        .thumb:active { transform: scale(0.97); }
+        .thumb img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+
+        .thumb.selected { border-color: var(--money-green); }
+        .thumb:not(.selected) img { opacity: 0.45; }
+        .thumb:not(.selected)::after {
+            content: '+';
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            color: var(--text-muted);
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+
+        /* "Lead photo" star — visible only on currently-selected thumbs.
+           Tapping it promotes that photo to be photo_01 in any ZIP/bundle. */
+        .thumb .lead-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.55);
+            color: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: none;
+            place-items: center;
+            line-height: 1;
+            padding: 0;
+        }
+        .thumb.selected .lead-btn { display: grid; }
+        .thumb.lead { border-color: var(--accent-gold); }
+        .thumb.lead .lead-btn {
+            background: var(--accent-gold);
+            color: #1a1f2c;
+            border-color: var(--accent-gold);
+        }
+
+        .thumb .badge {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            font-size: 0.65rem;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-variant-numeric: tabular-nums;
+        }
+        .thumb .score-bar {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 3px;
+            background: rgba(255,255,255,0.08);
+        }
+        .thumb .score-bar > span {
+            display: block;
+            height: 100%;
+            background: var(--accent-gold);
+        }
+
+        .listing-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.6rem;
+            margin-top: 1rem;
+        }
+        @media (max-width: 380px) { .listing-actions { grid-template-columns: 1fr; } }
+
+        .selection-summary {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+        }
+        .selection-summary strong { color: var(--text-light); }
+
+        /* Output preview panel — before/after comparison for photo_01 */
+        .preview-panel {
+            background: var(--bg-dark);
+            border: 1px solid var(--metal-light);
+            border-radius: 12px;
+            padding: 0.85rem 1rem;
+            margin-top: 1rem;
+        }
+        .preview-panel-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.6rem;
+        }
+        .preview-panel-head h3 {
+            font-size: 0.95rem;
+            color: var(--accent-gold);
+        }
+        .preview-panel-head button {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.4rem;
+            line-height: 1;
+            padding: 0 0.25rem;
+            cursor: pointer;
+        }
+        .preview-pair {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+        .preview-half {
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+        .preview-half img {
+            display: block;
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: contain;
+            background: #000;
+        }
+        .preview-label {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            background: rgba(0,0,0,0.65);
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            letter-spacing: 0.04em;
+        }
+        .preview-flags {
+            margin: 0.55rem 0 0;
+            font-size: 0.78rem;
+            font-variant-numeric: tabular-nums;
+        }
+        .preview-flags strong { color: var(--accent-gold); }
+
+        /* Measurement panel — tap reference + figure → height in inches */
+        .height-row { display: flex; gap: 0.5rem; align-items: center; }
+        .height-row input { flex: 1; }
+        .height-row button {
+            background: var(--metal-light);
+            color: var(--text-light);
+            border: none;
+            border-radius: 8px;
+            padding: 0.55rem 0.75rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .measure-panel {
+            background: var(--bg-dark);
+            border: 1px solid var(--accent-gold);
+            border-radius: 12px;
+            padding: 0.85rem 1rem;
+            margin-top: 1rem;
+        }
+        .measure-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem; }
+        .measure-header h3 { font-size: 0.95rem; color: var(--accent-gold); }
+        .measure-header button {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.4rem;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0 0.25rem;
+        }
+
+        .measure-toolbar { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.5rem; }
+        .measure-toolbar label { font-size: 0.8rem; color: var(--text-muted); }
+        .measure-toolbar select,
+        .measure-toolbar input {
+            background: var(--bg-panel);
+            color: var(--text-light);
+            border: 1px solid var(--metal-light);
+            border-radius: 6px;
+            padding: 0.4rem 0.55rem;
+            font: inherit;
+            font-size: 0.85rem;
+        }
+
+        .measure-stage {
+            position: relative;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            /* No max-height: the stage takes the img's rendered size, so the
+               SVG overlay's viewBox lines up exactly with displayed pixels. */
+        }
+        .measure-stage img {
+            display: block;
+            width: 100%;
+            height: auto;
+            -webkit-user-drag: none;
+            pointer-events: none;
+        }
+        .measure-stage svg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .measure-stage .dot {
+            cursor: grab;
+            pointer-events: all;
+        }
+        .measure-stage .dot.dragging { cursor: grabbing; }
+        .measure-stage .ref-dot   { fill: #d4a017; stroke: #fff; stroke-width: 2; }
+        .measure-stage .fig-dot   { fill: #2ecc71; stroke: #fff; stroke-width: 2; }
+        .measure-stage .ref-line  { stroke: #d4a017; stroke-width: 3; }
+        .measure-stage .fig-line  { stroke: #2ecc71; stroke-width: 3; }
+
+        .measure-status {
+            position: absolute;
+            left: 50%;
+            top: 0.65rem;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+            font-size: 0.78rem;
+            padding: 0.35rem 0.7rem;
+            border-radius: 999px;
+            white-space: nowrap;
+            max-width: calc(100% - 1rem);
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .measure-readout {
+            font-variant-numeric: tabular-nums;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin: 0.65rem 0 0.5rem;
+        }
+        .measure-readout strong { color: var(--text-light); font-size: 1rem; }
+
+        .measure-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0.5rem;
+        }
+        @media (max-width: 380px) { .measure-actions { grid-template-columns: 1fr; } }
+
+        /* OCR scan row */
+        .ocr-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.85rem;
+            flex-wrap: wrap;
+        }
+        .ocr-row .tip { flex: 1; min-width: 180px; font-size: 0.78rem; }
+        #ocr-output { margin: 0 0 0.85rem; }
+        #ocr-output summary { padding: 0.2rem 0; }
+        #ocr-raw {
+            white-space: pre-wrap;
+            font-size: 0.7rem;
+            max-height: 180px;
+            overflow-y: auto;
+            background: var(--bg-dark);
+            border: 1px solid var(--metal-light);
+            padding: 0.55rem 0.7rem;
+            border-radius: 6px;
+            margin-top: 0.4rem;
+            color: var(--text-muted);
+            font-family: ui-monospace, Menlo, Consolas, monospace;
+        }
+
+        /* Listing-draft form (Step 5) */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+        @media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } }
+
+        .form-field { display: flex; flex-direction: column; gap: 0.3rem; }
+        .form-field.span-2 { grid-column: 1 / -1; }
+        .form-field label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+        }
+        .form-field input,
+        .form-field select,
+        .form-field textarea {
+            background: var(--bg-dark);
+            color: var(--text-light);
+            border: 1px solid var(--metal-light);
+            border-radius: 8px;
+            padding: 0.6rem 0.7rem;
+            font: inherit;
+            font-size: 1rem;
+        }
+        .form-field textarea { min-height: 80px; resize: vertical; }
+
+        .preview-block {
+            background: var(--bg-dark);
+            border: 1px solid var(--metal-light);
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
+            margin-top: 0.4rem;
+        }
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .preview-header h3 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--accent-gold);
+        }
+        .copy-btn {
+            background: var(--metal-light);
+            color: var(--text-light);
+            border: none;
+            border-radius: 6px;
+            padding: 0.35rem 0.7rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .copy-btn:active { transform: scale(0.96); }
+
+        .preview-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            line-height: 1.35;
+            word-wrap: break-word;
+        }
+        .preview-title.too-long { color: #ffb3b6; }
+
+        .preview-desc {
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: var(--text-light);
+            max-height: 280px;
+            overflow-y: auto;
+            background: #050810;
+            padding: 0.7rem;
+            border-radius: 6px;
+        }
+        .preview-desc h4 { color: var(--accent-gold); margin: 0.4rem 0 0.25rem; font-size: 0.9rem; }
+        .preview-desc ul { padding-left: 1.2rem; margin: 0.3rem 0; }
+        .preview-desc p { margin: 0.3rem 0; }
+
+        .char-count {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-variant-numeric: tabular-nums;
+        }
+        .char-count.too-long { color: #ffb3b6; }
+
+        .hidden { display: none !important; }
+
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: max(1rem, env(safe-area-inset-bottom));
+            transform: translateX(-50%);
+            background: var(--bg-panel);
+            border: 1px solid var(--metal-light);
+            color: var(--text-light);
+            padding: 0.65rem 1rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            z-index: 50;
+        }
+        .toast.show { opacity: 1; }
+
+        .error {
+            background: rgba(230, 36, 41, 0.12);
+            border: 1px solid rgba(230, 36, 41, 0.4);
+            color: #ffb3b6;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            margin-top: 0.75rem;
+        }
+
+        .nav-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            padding: 0.5rem 0.25rem;
+        }
+
+        canvas#work { display: none; }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/" class="nav-back" aria-label="Back to Bubs960">← bubs960collectibles.com</a>
+        <h1>360° Spin Maker</h1>
+        <p>Phone video in → drag-to-rotate spin photo out.</p>
+    </header>
+
+    <main>
+        <!-- iOS install banner (auto-hidden when standalone or dismissed) -->
+        <div class="pwa-banner hidden" id="pwa-banner" role="region" aria-label="Install as app">
+            <div class="pwa-icon">📲</div>
+            <div class="pwa-body">
+                <strong>Install on your iPhone</strong>
+                <p>Tap <span class="pwa-share">⎙ Share</span> in Safari → <strong>Add to Home Screen</strong>.
+                   You'll get a real app icon, full-screen launch, and the page works offline.</p>
+            </div>
+            <button class="pwa-dismiss" id="pwa-dismiss" aria-label="Dismiss">×</button>
+        </div>
+
+        <!-- RECENT TAKES (hidden until at least one save) ----------- -->
+        <section class="panel hidden" id="step-recent">
+            <div class="recent-head">
+                <h2 style="margin: 0;">Recent</h2>
+                <button class="copy-btn" id="btn-export-all" title="Download every saved take as one backup ZIP">⬇ Export all</button>
+            </div>
+            <p class="tip" style="margin: 0.45rem 0 0.6rem;">
+                Tap any take to restore its photos, picks, and form. Capped at 12; oldest drop off.
+            </p>
+            <div class="recent-strip" id="recent-strip"></div>
+        </section>
+
+        <!-- STEP 1: Pick a video ----------------------------------- -->
+        <section class="panel" id="step-pick">
+            <h2>1. Film the figure</h2>
+            <p class="tip">
+                Put the figure on a <strong>lazy-susan / turntable</strong> (or walk around it) and film a smooth
+                <strong>4–8 second</strong> rotation. Even speed = clean spin. Plain background works best.
+                Don't worry about timing the record/stop perfectly — <strong>auto-trim</strong> will cut the
+                still moments at the start and end for you.
+            </p>
+
+            <div class="file-zone" id="drop">
+                <div class="big">Drop a video here</div>
+                <div>or pick one from your phone</div>
+                <div class="pick-row">
+                    <label class="btn">
+                        📹 Record now
+                        <input type="file" id="file-camera" accept="video/*" capture="environment">
+                    </label>
+                    <label class="btn btn-secondary">
+                        📁 Choose video
+                        <input type="file" id="file-pick" accept="video/*">
+                    </label>
+                </div>
+            </div>
+
+            <div class="row" style="margin-top: 1rem;">
+                <label class="field">
+                    Frames
+                    <select id="frame-count">
+                        <option value="24">24 (light)</option>
+                        <option value="36" selected>36 (eBay spin)</option>
+                        <option value="48">48 (smooth)</option>
+                        <option value="72">72 (silky)</option>
+                    </select>
+                </label>
+                <label class="field">
+                    Max size (px)
+                    <select id="max-dim">
+                        <option value="1200">1200</option>
+                        <option value="1600" selected>1600</option>
+                        <option value="2000">2000</option>
+                        <option value="0">Original</option>
+                    </select>
+                </label>
+                <label class="field">
+                    JPEG quality
+                    <select id="quality">
+                        <option value="0.82">82%</option>
+                        <option value="0.9" selected>90%</option>
+                        <option value="0.95">95%</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="row toggle-row" style="margin-top: 0.75rem;">
+                <label class="toggle">
+                    <input type="checkbox" id="opt-trim" checked>
+                    <span><strong>Auto-trim</strong> dead frames at start &amp; end</span>
+                </label>
+                <label class="toggle">
+                    <input type="checkbox" id="opt-autocrop">
+                    <span><strong>Auto-crop</strong> to figure, square with white background <em style="color: var(--text-muted); font-style: italic;">(experimental — works best on plain backgrounds)</em></span>
+                </label>
+                <label class="toggle">
+                    <input type="checkbox" id="opt-enhance" checked>
+                    <span><strong>Enhance</strong> listing photos (lift shadows + saturation)</span>
+                </label>
+                <label class="toggle">
+                    <input type="checkbox" id="opt-watermark" checked>
+                    <span><strong>Watermark</strong> listing photos with Bubs960 logo</span>
+                </label>
+            </div>
+
+            <div id="error-box" class="error hidden"></div>
+        </section>
+
+        <!-- STEP 2: Extraction progress ------------------------------ -->
+        <section class="panel hidden" id="step-extract">
+            <h2>2. Extracting frames</h2>
+            <progress id="progress" value="0" max="100"></progress>
+            <div class="progress-row">
+                <span id="progress-label">Reading video…</span>
+                <span id="progress-pct">0%</span>
+            </div>
+        </section>
+
+        <!-- STEP 3: Spin viewer ------------------------------------- -->
+        <section class="panel hidden" id="step-viewer">
+            <h2>3. Drag to spin</h2>
+            <div class="viewer-wrap" id="viewer">
+                <img id="viewer-img" alt="360 spin viewer">
+                <span class="frame-indicator" id="frame-indicator">1 / 36</span>
+                <span class="viewer-hint" id="viewer-hint">← drag to rotate →</span>
+            </div>
+
+            <div class="actions">
+                <button class="btn-secondary" id="btn-play">▶ Auto-spin</button>
+                <button class="btn-secondary" id="btn-reverse">↻ Reverse direction</button>
+                <button class="btn-green"     id="btn-zip">⬇ Spin frames ZIP</button>
+                <button class="btn-green"     id="btn-video" hidden>🎬 Spin video</button>
+                <button id="btn-restart">↺ Start over</button>
+            </div>
+
+            <p class="tip" style="margin-top: 0.9rem;">
+                <strong>ZIP</strong> = numbered <code>frame_001.jpg…</code>, the format eBay's 360° uploader
+                and Shopify spin apps expect. <strong>Video</strong> = one looping MP4/WebM you can post
+                straight to Whatnot announcements, Instagram, or TikTok.
+            </p>
+        </section>
+
+        <!-- STEP 4: Best listing photos ----------------------------- -->
+        <section class="panel hidden" id="step-listing">
+            <h2>4. Best listing photos</h2>
+            <p class="tip">
+                Picked automatically: one sharpest frame per <strong>45° wedge</strong>, so you get
+                front / side / back / 3-4 angles with the least blur. Tap any thumb to add or drop it.
+            </p>
+
+            <div class="thumb-grid" id="thumb-grid"></div>
+
+            <div class="selection-summary">
+                <span><strong id="sel-count">0</strong> selected</span>
+                <span id="sel-tip">Tap to toggle. Aim for 8–12.</span>
+            </div>
+
+            <div class="listing-actions">
+                <button class="btn-secondary" id="btn-reset-pick">↺ Reset to auto-picked</button>
+                <button class="btn-secondary" id="btn-preview-photo">👁 Preview output</button>
+                <button class="btn-green"     id="btn-listing-zip">⬇ Download listing photos</button>
+            </div>
+
+            <div class="preview-panel hidden" id="preview-panel">
+                <div class="preview-panel-head">
+                    <h3>Output preview — photo_01</h3>
+                    <button type="button" id="preview-close" aria-label="Close">×</button>
+                </div>
+                <div class="preview-pair">
+                    <div class="preview-half">
+                        <span class="preview-label">Before</span>
+                        <img id="preview-before" alt="Original frame">
+                    </div>
+                    <div class="preview-half">
+                        <span class="preview-label">After</span>
+                        <img id="preview-after" alt="Processed frame">
+                    </div>
+                </div>
+                <p class="preview-flags tip" id="preview-flags"></p>
+            </div>
+        </section>
+
+        <!-- STEP 5: Build the listing ------------------------------- -->
+        <section class="panel hidden" id="step-draft">
+            <h2>5. Draft the eBay listing</h2>
+            <p class="tip">
+                Type once, get a paste-ready title + description + photo bundle. Brand/notes save to this
+                browser so you don't retype every figure.
+            </p>
+
+            <div class="ocr-row">
+                <button class="btn-secondary" id="btn-scan-box">📸 Scan box text to auto-fill</button>
+                <span class="tip">Snap the box. Auto-fills empty fields only — won't overwrite what you've typed.</span>
+            </div>
+
+            <details id="ocr-output" class="hidden">
+                <summary class="tip" style="cursor: pointer;">📄 Detected text (tap to expand)</summary>
+                <pre id="ocr-raw"></pre>
+            </details>
+
+            <div class="form-grid">
+                <div class="form-field">
+                    <label for="f-vendor">Brand / Line</label>
+                    <select id="f-vendor">
+                        <option value="">— pick one —</option>
+                        <option>Mattel WWE Elite</option>
+                        <option>Mattel WWE Ultimate Edition</option>
+                        <option>Mattel WWE Basic</option>
+                        <option>AEW Unmatched</option>
+                        <option>AEW Unrivaled</option>
+                        <option>Funko Pop!</option>
+                        <option>Marvel Legends</option>
+                        <option>Star Wars Black Series</option>
+                        <option>NECA</option>
+                        <option>Jakks Pacific WWE Classic</option>
+                        <option>Vintage Hasbro WWF</option>
+                        <option>Vintage</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label for="f-series">Series / Wave</label>
+                    <input id="f-series" type="text" placeholder="e.g. Series 110">
+                </div>
+                <div class="form-field span-2">
+                    <label for="f-character">Character / Name</label>
+                    <input id="f-character" type="text" placeholder="e.g. Roman Reigns">
+                </div>
+                <div class="form-field">
+                    <label for="f-year">Year</label>
+                    <input id="f-year" type="number" inputmode="numeric" min="1970" max="2030" placeholder="2023">
+                </div>
+                <div class="form-field">
+                    <label for="f-variant">Variant (optional)</label>
+                    <input id="f-variant" type="text" placeholder="Chase, SDCC, Flocked…">
+                </div>
+                <div class="form-field span-2">
+                    <label for="f-condition">Condition</label>
+                    <select id="f-condition">
+                        <option value="Sealed NIB|Brand New, factory sealed in original packaging.">Brand New — Sealed in Box</option>
+                        <option value="NIB Mint|New in mint box — never opened, packaging in pristine condition.">New in Mint Box</option>
+                        <option value="NIB|New in box with light shelf/box wear. Figure inside is sealed and untouched.">New in Box (Box Wear)</option>
+                        <option value="Loose Mint Complete|Loose figure in mint condition, complete with all original accessories.">Loose Mint — Complete</option>
+                        <option value="Loose Complete|Loose figure in good condition, complete with all original accessories.">Loose Complete</option>
+                        <option value="Loose|Loose figure — see photos for full condition. Accessories may be missing.">Loose — Incomplete</option>
+                    </select>
+                </div>
+                <div class="form-field span-2">
+                    <label for="f-notes">Notes (optional — appended to description)</label>
+                    <textarea id="f-notes" placeholder="Anything else worth mentioning. Smoke-free home, etc."></textarea>
+                </div>
+                <div class="form-field">
+                    <label for="f-price">Price (USD)</label>
+                    <input id="f-price" type="number" inputmode="decimal" min="0" step="0.01" placeholder="29.99">
+                </div>
+                <div class="form-field">
+                    <label for="f-qty">Quantity</label>
+                    <input id="f-qty" type="number" inputmode="numeric" min="1" value="1">
+                </div>
+                <div class="form-field span-2">
+                    <label for="f-height">Height (inches)</label>
+                    <div class="height-row">
+                        <input id="f-height" type="number" inputmode="decimal" min="0" step="0.1" placeholder="—">
+                        <button type="button" id="btn-measure">📏 Measure from photo</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="measure-panel hidden" id="measure-panel">
+                <div class="measure-header">
+                    <h3>📏 Tap on a photo to measure</h3>
+                    <button type="button" id="measure-close" aria-label="Close">×</button>
+                </div>
+                <div class="measure-toolbar">
+                    <label for="measure-ref">Reference:</label>
+                    <select id="measure-ref">
+                        <option value="24.26">US Quarter (0.95")</option>
+                        <option value="19.05">US Penny (0.75")</option>
+                        <option value="17.91">US Dime (0.71")</option>
+                        <option value="21.21">US Nickel (0.84")</option>
+                        <option value="66.6">US Dollar Bill width (2.62")</option>
+                        <option value="95">Funko Pop! box width (3.74")</option>
+                        <option value="custom">Custom (mm)</option>
+                    </select>
+                    <input id="measure-ref-custom" type="number" inputmode="decimal" min="1" step="0.1" placeholder="mm" class="hidden" style="width: 80px;">
+                </div>
+                <div class="measure-stage" id="measure-stage">
+                    <img id="measure-img" alt="Listing photo for measurement">
+                    <svg id="measure-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+                    <div class="measure-status" id="measure-status">Tap 2 points on the reference object</div>
+                </div>
+                <div class="measure-readout" id="measure-readout">Place 4 dots to measure the figure height.</div>
+                <div class="measure-actions">
+                    <button type="button" class="btn-secondary" id="measure-reset">↺ Reset</button>
+                    <button type="button" class="btn-secondary" id="measure-cycle">Next photo →</button>
+                    <button type="button" class="btn-green"     id="measure-apply" disabled>✓ Apply height</button>
+                </div>
+            </div>
+
+            <div class="preview-block">
+                <div class="preview-header">
+                    <h3>Listing title</h3>
+                    <span class="char-count" id="title-char">0 / 80</span>
+                </div>
+                <div class="preview-title" id="title-preview">—</div>
+                <div style="margin-top: 0.5rem;">
+                    <button class="copy-btn" id="btn-copy-title">📋 Copy title</button>
+                </div>
+            </div>
+
+            <div class="preview-block">
+                <div class="preview-header">
+                    <h3>Listing description</h3>
+                    <button class="copy-btn" id="btn-copy-desc">📋 Copy HTML</button>
+                </div>
+                <div class="preview-desc" id="desc-preview">—</div>
+            </div>
+
+            <div class="listing-actions">
+                <button class="btn-secondary" id="btn-clear-form">↺ Clear form</button>
+                <button class="btn-green" id="btn-bundle">⬇ Download listing bundle</button>
+            </div>
+
+            <p class="tip" style="margin-top: 0.9rem;">
+                The bundle ZIP contains the watermarked photos, <code>title.txt</code>,
+                <code>description.html</code>, <code>listing.json</code>, and a README with paste
+                instructions for eBay's web uploader.
+            </p>
+        </section>
+    </main>
+
+    <canvas id="work"></canvas>
+    <div class="toast" id="toast"></div>
+
+    <!-- JSZip from CDN, fallback message if offline -->
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+    <script>
+    'use strict';
+
+    // ---------- tiny helpers ----------
+    const $ = (id) => document.getElementById(id);
+    const show = (el) => el.classList.remove('hidden');
+    const hide = (el) => el.classList.add('hidden');
+
+    function toast(msg, ms = 2200) {
+        const t = $('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        clearTimeout(toast._t);
+        toast._t = setTimeout(() => t.classList.remove('show'), ms);
+    }
+
+    function showError(msg) {
+        const box = $('error-box');
+        box.textContent = msg;
+        show(box);
+    }
+    function clearError() { hide($('error-box')); }
+
+    // ---------- state ----------
+    const state = {
+        frames: [],          // Array<Blob>  (JPEG)
+        frameURLs: [],       // Array<string>  (object URLs)
+        currentFrame: 0,
+        autoSpin: null,      // requestAnimationFrame id
+        direction: 1,
+        scores: [],          // Array<number>  Laplacian-variance sharpness per frame
+        selected: new Set(), // Set<number>    indices currently chosen for listing
+        autoPicked: [],      // Array<number>  the original auto-pick (for reset)
+        leadIdx: null,       // number|null    user-promoted lead photo (becomes photo_01)
+    };
+
+    function resetFrames() {
+        state.frameURLs.forEach(u => URL.revokeObjectURL(u));
+        state.frames = [];
+        state.frameURLs = [];
+        state.currentFrame = 0;
+        state.direction = 1;
+        state.scores = [];
+        state.selected = new Set();
+        state.autoPicked = [];
+        state.leadIdx = null;
+        stopAutoSpin();
+    }
+
+    // Final order of selected photos for any ZIP/bundle: user's chosen lead
+    // first, everything else in rotation order. Used everywhere we render or
+    // export the listing-photo set so all paths stay in sync.
+    function selectedInOrder() {
+        const base = [...state.selected].sort((a, b) => a - b);
+        if (state.leadIdx == null || !state.selected.has(state.leadIdx)) return base;
+        return [state.leadIdx, ...base.filter((i) => i !== state.leadIdx)];
+    }
+
+    // ---------- video helpers ----------
+    // Opens a file as an HTMLVideoElement, waits for metadata, and primes
+    // the iOS Safari decoder so subsequent seek+draw works reliably.
+    async function openVideo(file) {
+        const url = URL.createObjectURL(file);
+        const video = document.createElement('video');
+        video.preload = 'auto';
+        video.muted = true;
+        video.playsInline = true;
+        video.crossOrigin = 'anonymous';
+        video.src = url;
+
+        await new Promise((resolve, reject) => {
+            video.onloadedmetadata = resolve;
+            video.onerror = () => reject(new Error('Could not read that video. Try a different format (MP4 / MOV).'));
+        });
+        try { await video.play(); video.pause(); } catch (_) { /* autoplay denied is fine, seek still usually works */ }
+
+        const duration = video.duration;
+        if (!isFinite(duration) || duration <= 0) {
+            URL.revokeObjectURL(url);
+            throw new Error('Video duration looks wrong. Re-record or pick a different file.');
+        }
+        return { video, url, duration };
+    }
+
+    // ---------- auto-trim (movement scout) ----------
+    // Step through ~40 low-res frames spanning the whole video and compute
+    // the mean absolute pixel difference between consecutive frames. The
+    // figure rotating shows up as a high-diff plateau; the leading dead
+    // air (figure not yet moving) and trailing dead air (figure stopped)
+    // show up as low-diff tails. Trim them.
+    async function scoutMovement(file, scoutCount = 40) {
+        const { video, url, duration } = await openVideo(file);
+
+        const sw = 96;
+        const sh = Math.max(1, Math.round(video.videoHeight * (sw / video.videoWidth)));
+        const c = document.createElement('canvas');
+        c.width = sw; c.height = sh;
+        const cx = c.getContext('2d', { willReadFrequently: true });
+
+        const grays = new Array(scoutCount);
+        for (let i = 0; i < scoutCount; i++) {
+            const t = ((i + 0.5) / scoutCount) * duration;
+            await seekTo(video, t);
+            cx.drawImage(video, 0, 0, sw, sh);
+            const px = cx.getImageData(0, 0, sw, sh).data;
+            const g = new Float32Array(sw * sh);
+            for (let j = 0, k = 0; j < px.length; j += 4, k++) {
+                g[k] = (px[j] + px[j + 1] + px[j + 2]) * (1 / 3);
+            }
+            grays[i] = g;
+
+            const pct = Math.round(((i + 1) / scoutCount) * 50); // scout takes the first half of the bar
+            $('progress').value = pct;
+            $('progress-pct').textContent = pct + '%';
+        }
+        URL.revokeObjectURL(url);
+
+        // Frame-to-frame mean absolute difference.
+        const n = grays[0].length;
+        const diffs = new Array(scoutCount - 1);
+        for (let i = 1; i < scoutCount; i++) {
+            let s = 0;
+            const a = grays[i - 1], b = grays[i];
+            for (let j = 0; j < n; j++) s += Math.abs(b[j] - a[j]);
+            diffs[i - 1] = s / n;
+        }
+
+        // Threshold = 30% of the median diff. Anything below that is "dead air".
+        const sorted = [...diffs].sort((a, b) => a - b);
+        const median = sorted[Math.floor(sorted.length / 2)] || 0;
+        const threshold = Math.max(0.5, median * 0.3); // small absolute floor so noise-only frames don't pass
+
+        let lo = 0, hi = diffs.length - 1;
+        while (lo < diffs.length && diffs[lo] < threshold) lo++;
+        while (hi > lo && diffs[hi] < threshold) hi--;
+
+        // Sanity fallback: if scout failed (e.g., uniform video), use whole range.
+        if (hi - lo < 2) return { startT: 0, endT: duration, duration, trimmed: false, diffs: null, lo: 0, hi: 0, scoutCount };
+
+        // Map scout indices → seconds, with a tiny safety pad inward to avoid the very-edge frames.
+        const startT = Math.max(0,        ((lo + 0.5) / scoutCount) * duration);
+        const endT   = Math.min(duration, ((hi + 1.5) / scoutCount) * duration);
+        return {
+            startT, endT, duration,
+            trimmed: (startT > 0.05 || endT < duration - 0.05),
+            // Pass the raw diffs + bounds back so the extractor can resample
+            // frames to uniform ROTATION ANGLE rather than uniform time.
+            diffs, lo, hi, scoutCount,
+        };
+    }
+
+    // Map the cumulative frame-to-frame diff curve to output timestamps so that
+    // each pair of consecutive output frames represents the same amount of
+    // rotation. For a constant-speed turntable, diffs are roughly uniform and
+    // this collapses to evenly-spaced time. For a hand-spun rotation that
+    // accelerates and decelerates, it compensates so the output spin looks
+    // smooth. Returns null if the diff signal is too weak to be useful — the
+    // caller falls back to time-uniform sampling.
+    function uniformAngularTimestamps(scout, frameCount) {
+        if (!scout || !scout.diffs) return null;
+        const { diffs, lo, hi, scoutCount, duration } = scout;
+
+        // Cumulative diff across the active range: cum[0] = 0, cum[k] = sum of
+        // diffs[lo..lo + k - 1] for k in [1, hi - lo + 1].
+        const cum = [0];
+        for (let k = lo; k <= hi; k++) cum.push(cum[cum.length - 1] + diffs[k]);
+        const total = cum[cum.length - 1];
+        if (!isFinite(total) || total <= 0) return null;
+
+        const ts = new Array(frameCount);
+        for (let i = 0; i < frameCount; i++) {
+            const target = ((i + 0.5) / frameCount) * total;
+            // Linear search is fine — cum.length is at most ~40.
+            let k = 1;
+            while (k < cum.length && cum[k] < target) k++;
+            const segLen = cum[k] - cum[k - 1];
+            const frac = segLen > 0 ? (target - cum[k - 1]) / segLen : 0;
+            const kFrac = (k - 1) + frac;
+            ts[i] = ((lo + kFrac) / scoutCount) * duration;
+        }
+        return ts;
+    }
+
+    // ---------- frame extraction ----------
+    async function extractFrames(file, frameCount, maxDim, quality, range) {
+        const { video, url, duration } = await openVideo(file);
+
+        const startT = range ? range.startT : 0;
+        const endT   = range ? range.endT   : duration;
+        const span   = Math.max(0.001, endT - startT);
+
+        // Compute output canvas size, preserving aspect ratio.
+        const srcW = video.videoWidth;
+        const srcH = video.videoHeight;
+        let dstW = srcW, dstH = srcH;
+        if (maxDim > 0 && Math.max(srcW, srcH) > maxDim) {
+            const scale = maxDim / Math.max(srcW, srcH);
+            dstW = Math.round(srcW * scale);
+            dstH = Math.round(srcH * scale);
+        }
+
+        const canvas = $('work');
+        canvas.width = dstW;
+        canvas.height = dstH;
+        const ctx = canvas.getContext('2d');
+
+        // Prefer uniform-angle resampling (uses the scout's diff curve to map
+        // cumulative rotation to time). Falls back to uniform-time when there's
+        // no usable diff signal — turntable users get identical behaviour to
+        // before, handheld users get smoother spins for free.
+        const angularTs = uniformAngularTimestamps(range, frameCount);
+        const useAngular = !!angularTs;
+
+        const blobs = [];
+        for (let i = 0; i < frameCount; i++) {
+            const t = useAngular ? angularTs[i] : startT + ((i + 0.5) / frameCount) * span;
+            await seekTo(video, t);
+            ctx.drawImage(video, 0, 0, dstW, dstH);
+            const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', quality));
+            if (!blob) throw new Error('Browser refused to encode a frame. Try a smaller max size.');
+            blobs.push(blob);
+
+            const pct = Math.round(((i + 1) / frameCount) * 100);
+            $('progress').value = pct;
+            $('progress-pct').textContent = pct + '%';
+            $('progress-label').textContent = `Frame ${i + 1} / ${frameCount}`;
+        }
+
+        URL.revokeObjectURL(url);
+        return blobs;
+    }
+
+    function seekTo(video, time) {
+        return new Promise((resolve, reject) => {
+            const onSeeked = () => { cleanup(); resolve(); };
+            const onError  = () => { cleanup(); reject(new Error('Seek failed at ' + time.toFixed(2) + 's')); };
+            const cleanup  = () => {
+                video.removeEventListener('seeked', onSeeked);
+                video.removeEventListener('error', onError);
+            };
+            video.addEventListener('seeked', onSeeked, { once: true });
+            video.addEventListener('error',  onError,  { once: true });
+            // Clamp to a hair before the end to avoid EOS issues on some decoders.
+            video.currentTime = Math.min(time, Math.max(0, video.duration - 0.001));
+        });
+    }
+
+    // ---------- sharpness scoring ----------
+    // Laplacian-variance estimator: blurrier images have less edge energy, so the
+    // variance of a 4-neighbor Laplacian drops. We downsample to ~200px wide for
+    // speed (~10ms per frame on a phone), which is plenty accurate for ranking.
+    const SCORE_W = 200;
+    const scoreCanvas = document.createElement('canvas');
+    const scoreCtx = scoreCanvas.getContext('2d', { willReadFrequently: true });
+
+    function scoreSharpness(blob) {
+        return new Promise((resolve, reject) => {
+            const url = URL.createObjectURL(blob);
+            const img = new Image();
+            img.onload = () => {
+                const w = SCORE_W;
+                const h = Math.max(1, Math.round(img.height * (w / img.width)));
+                scoreCanvas.width = w;
+                scoreCanvas.height = h;
+                scoreCtx.drawImage(img, 0, 0, w, h);
+                URL.revokeObjectURL(url);
+
+                const px = scoreCtx.getImageData(0, 0, w, h).data;
+                // Pre-flatten to a grayscale Float32Array for cache-friendly access.
+                const gray = new Float32Array(w * h);
+                for (let i = 0, j = 0; i < px.length; i += 4, j++) {
+                    gray[j] = (px[i] + px[i + 1] + px[i + 2]) * (1 / 3);
+                }
+                let sum = 0, sumSq = 0, n = 0;
+                for (let y = 1; y < h - 1; y++) {
+                    for (let x = 1; x < w - 1; x++) {
+                        const c = gray[y * w + x];
+                        const lap = gray[y * w + (x - 1)] + gray[y * w + (x + 1)]
+                                  + gray[(y - 1) * w + x] + gray[(y + 1) * w + x] - 4 * c;
+                        sum += lap;
+                        sumSq += lap * lap;
+                        n++;
+                    }
+                }
+                const mean = sum / n;
+                resolve(sumSq / n - mean * mean); // variance
+            };
+            img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not decode a frame for scoring.')); };
+            img.src = url;
+        });
+    }
+
+    async function scoreAllFrames(blobs) {
+        const scores = new Array(blobs.length);
+        for (let i = 0; i < blobs.length; i++) {
+            scores[i] = await scoreSharpness(blobs[i]);
+            const pct = Math.round(((i + 1) / blobs.length) * 100);
+            $('progress').value = pct;
+            $('progress-pct').textContent = pct + '%';
+            $('progress-label').textContent = `Scoring frame ${i + 1} / ${blobs.length}`;
+        }
+        return scores;
+    }
+
+    // Split the frame ring into N equal angular wedges and return the index of the
+    // sharpest frame in each. Guarantees angular spread without duplicates.
+    function pickBestPerWedge(scores, wedges = 8) {
+        const n = scores.length;
+        const picked = [];
+        for (let b = 0; b < wedges; b++) {
+            const start = Math.floor((b / wedges) * n);
+            const end   = Math.max(start + 1, Math.floor(((b + 1) / wedges) * n));
+            let bestIdx = start, bestScore = -Infinity;
+            for (let i = start; i < end; i++) {
+                if (scores[i] > bestScore) { bestScore = scores[i]; bestIdx = i; }
+            }
+            picked.push(bestIdx);
+        }
+        return picked;
+    }
+
+    // ---------- listing-photo grid ----------
+    function renderListingGrid() {
+        const grid = $('thumb-grid');
+        grid.innerHTML = '';
+        const maxScore = Math.max(1e-6, ...state.scores);
+
+        state.frames.forEach((_, i) => {
+            const isSel  = state.selected.has(i);
+            const isLead = state.leadIdx === i && isSel;
+            const el = document.createElement('div');
+            el.className = 'thumb' + (isSel ? ' selected' : '') + (isLead ? ' lead' : '');
+            el.dataset.idx = i;
+            const norm = Math.min(1, state.scores[i] / maxScore);
+            const leadLabel = isLead ? '★' : '☆';
+            const leadTitle = isLead ? 'Lead photo (photo_01)' : 'Make this the lead photo';
+            el.innerHTML = `
+                <img src="${state.frameURLs[i]}" alt="Frame ${i + 1}">
+                <span class="badge">#${String(i + 1).padStart(2, '0')}</span>
+                <button class="lead-btn" type="button" aria-label="${leadTitle}" title="${leadTitle}">${leadLabel}</button>
+                <div class="score-bar"><span style="width:${(norm * 100).toFixed(1)}%"></span></div>
+            `;
+            el.addEventListener('click', () => toggleListingFrame(i));
+            el.querySelector('.lead-btn').addEventListener('click', (e) => {
+                e.stopPropagation(); // don't deselect when starring
+                setLeadPhoto(i);
+            });
+            grid.appendChild(el);
+        });
+        updateSelectionSummary();
+    }
+
+    function toggleListingFrame(i) {
+        if (state.selected.has(i)) {
+            state.selected.delete(i);
+            // If we just dropped the lead, clear it so ZIPs don't reference a stale index.
+            if (state.leadIdx === i) state.leadIdx = null;
+        } else {
+            state.selected.add(i);
+        }
+        renderListingGrid(); // simpler than diffing classes when lead state may have changed
+        scheduleSave();
+    }
+
+    function setLeadPhoto(i) {
+        if (!state.selected.has(i)) {
+            // Auto-select if the user starred an unselected thumb — they obviously want it in.
+            state.selected.add(i);
+        }
+        state.leadIdx = (state.leadIdx === i) ? null : i; // tap again to unset
+        renderListingGrid();
+        scheduleSave();
+        toast(state.leadIdx === i ? 'Lead photo set ★' : 'Lead photo cleared');
+    }
+
+    function updateSelectionSummary() {
+        const n = state.selected.size;
+        $('sel-count').textContent = String(n);
+        $('btn-listing-zip').disabled = n === 0;
+    }
+
+    function resetToAutoPicked() {
+        state.selected = new Set(state.autoPicked);
+        document.querySelectorAll('#thumb-grid .thumb').forEach(el => {
+            const idx = parseInt(el.dataset.idx, 10);
+            el.classList.toggle('selected', state.selected.has(idx));
+        });
+        updateSelectionSummary();
+        toast('Restored auto-pick');
+    }
+
+    // ---------- watermark ----------
+    // The Bubs960 logo gets stamped into the bottom-right of each listing
+    // photo so re-listers can't easily steal them. Decoded once and reused.
+    let _watermarkPromise = null;
+    function loadWatermark() {
+        if (_watermarkPromise) return _watermarkPromise;
+        _watermarkPromise = new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload  = () => resolve(img);
+            img.onerror = () => reject(new Error('Could not load watermark logo.'));
+            img.src = 'bubs-logo.jpg'; // same directory as the page; works both at / and locally
+        });
+        return _watermarkPromise;
+    }
+
+    function blobToImage(blob) {
+        return new Promise((resolve, reject) => {
+            const url = URL.createObjectURL(blob);
+            const img = new Image();
+            img.onload  = () => { URL.revokeObjectURL(url); resolve(img); };
+            img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not decode a frame to watermark.')); };
+            img.src = url;
+        });
+    }
+
+    // ---------- photo enhancement ----------
+    // Two-knob enhancer tuned for collectible photos shot indoors under
+    // mixed lighting (the way a phone user typically shoots a figure on
+    // a desk). Both operations are conservative — they brighten and
+    // saturate slightly without making the image look filtered.
+    //
+    //   1. Shadow lift: pixels darker than 0.5 luminance get a smooth
+    //      bell-curve boost peaked around 0.25. Highlights are untouched
+    //      so no blown-out white box edges.
+    //   2. Saturation: pulls each pixel away from its grayscale value by
+    //      a fixed factor, then clamps. Subtle 1.15x — keeps reds red
+    //      without going cartoonish.
+    async function enhanceFrame(blob, opts = {}) {
+        const brighten = opts.brighten ?? 0.22;   // peak shadow lift
+        const saturate = opts.saturate ?? 1.15;   // 1 = no change
+        const quality  = opts.quality  ?? 0.9;
+
+        const img = await blobToImage(blob);
+        const W = img.naturalWidth, H = img.naturalHeight;
+        const c = document.createElement('canvas');
+        c.width = W; c.height = H;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const id = ctx.getImageData(0, 0, W, H);
+        const px = id.data;
+
+        const inv255 = 1 / 255;
+        for (let i = 0; i < px.length; i += 4) {
+            let r = px[i] * inv255, g = px[i + 1] * inv255, b = px[i + 2] * inv255;
+
+            // Shadow lift: bell-curve at luma < 0.5.
+            const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+            if (luma < 0.5) {
+                const k = brighten * (0.5 - luma) * (1 - luma) * 2;
+                r += k; g += k; b += k;
+            }
+
+            // Saturation around grayscale anchor.
+            const grey = 0.299 * r + 0.587 * g + 0.114 * b;
+            r = grey + (r - grey) * saturate;
+            g = grey + (g - grey) * saturate;
+            b = grey + (b - grey) * saturate;
+
+            // Clamp + write back.
+            px[i]     = r < 0 ? 0 : r > 1 ? 255 : r * 255;
+            px[i + 1] = g < 0 ? 0 : g > 1 ? 255 : g * 255;
+            px[i + 2] = b < 0 ? 0 : b > 1 ? 255 : b * 255;
+        }
+
+        ctx.putImageData(id, 0, 0);
+        return new Promise((res) => c.toBlob(res, 'image/jpeg', quality));
+    }
+
+    // ---------- auto-crop to figure ----------
+    // Cheap foreground-detection by sampling the four corners as background,
+    // then walking the image at stride 2 to find the bounding box of pixels
+    // that are significantly different from background. We then expand the
+    // box by a small padding ratio, pad to a square with white fill (eBay
+    // listings prefer square + white), and re-encode. Works great on plain
+    // tabletop / wall backgrounds; gracefully returns the original blob if
+    // no foreground is detected (so a busy background can't make things
+    // worse than they were).
+    async function autoCropFrame(blob, opts = {}) {
+        const padding = opts.padding ?? 0.08;    // 8% extra around bbox
+        const tol     = opts.tolerance ?? 38;    // RGB Euclidean threshold
+        const quality = opts.quality   ?? 0.9;
+
+        const img = await blobToImage(blob);
+        const W = img.naturalWidth, H = img.naturalHeight;
+        if (W < 32 || H < 32) return blob;
+
+        const sc = document.createElement('canvas');
+        sc.width = W; sc.height = H;
+        const sctx = sc.getContext('2d', { willReadFrequently: true });
+        sctx.drawImage(img, 0, 0);
+        const px = sctx.getImageData(0, 0, W, H).data;
+
+        // Sample background from 4 corner patches (~4% of min dimension).
+        const cs = Math.max(2, Math.floor(Math.min(W, H) * 0.04));
+        let bgR = 0, bgG = 0, bgB = 0, n = 0;
+        const corners = [[0,0], [W - cs, 0], [0, H - cs], [W - cs, H - cs]];
+        for (const [x0, y0] of corners) {
+            for (let y = y0; y < y0 + cs; y++) {
+                for (let x = x0; x < x0 + cs; x++) {
+                    const i = (y * W + x) * 4;
+                    bgR += px[i]; bgG += px[i + 1]; bgB += px[i + 2];
+                    n++;
+                }
+            }
+        }
+        bgR /= n; bgG /= n; bgB /= n;
+
+        // Bounding box at stride-2 to halve the work; perfectly fine since
+        // we expand by padding afterward.
+        const tolSq = tol * tol;
+        let minX = W, minY = H, maxX = -1, maxY = -1;
+        for (let y = 0; y < H; y += 2) {
+            for (let x = 0; x < W; x += 2) {
+                const i = (y * W + x) * 4;
+                const dr = px[i]     - bgR;
+                const dg = px[i + 1] - bgG;
+                const db = px[i + 2] - bgB;
+                if (dr * dr + dg * dg + db * db > tolSq) {
+                    if (x < minX) minX = x;
+                    if (x > maxX) maxX = x;
+                    if (y < minY) minY = y;
+                    if (y > maxY) maxY = y;
+                }
+            }
+        }
+        // Nothing detected (e.g., near-uniform image) → leave the photo alone.
+        if (maxX < 0 || (maxX - minX) * (maxY - minY) < W * H * 0.02) return blob;
+
+        const bboxW = maxX - minX;
+        const bboxH = maxY - minY;
+        const padX = Math.round(bboxW * padding);
+        const padY = Math.round(bboxH * padding);
+        const cx0 = Math.max(0, minX - padX);
+        const cy0 = Math.max(0, minY - padY);
+        const cx1 = Math.min(W - 1, maxX + padX);
+        const cy1 = Math.min(H - 1, maxY + padY);
+        const cw = cx1 - cx0 + 1;
+        const ch = cy1 - cy0 + 1;
+
+        // Output square = side of the longer crop dimension, content centered,
+        // white background per eBay convention.
+        const side = Math.max(cw, ch);
+        const oc = document.createElement('canvas');
+        oc.width = side; oc.height = side;
+        const octx = oc.getContext('2d');
+        octx.fillStyle = '#ffffff';
+        octx.fillRect(0, 0, side, side);
+        const offX = Math.round((side - cw) / 2);
+        const offY = Math.round((side - ch) / 2);
+        octx.drawImage(img, cx0, cy0, cw, ch, offX, offY, cw, ch);
+
+        return new Promise((res) => oc.toBlob(res, 'image/jpeg', quality));
+    }
+
+    // Run a listing photo through every active processor in order:
+    // crop → enhance → watermark. Order matters: crop first so subsequent
+    // ops don't waste work on background pixels; watermark last so it
+    // doesn't get cropped out or stretched.
+    async function processListingPhoto(blob) {
+        const useCrop      = $('opt-autocrop').checked;
+        const useEnhance   = $('opt-enhance').checked;
+        const useWatermark = $('opt-watermark').checked;
+        let out = blob;
+        if (useCrop)      out = await autoCropFrame(out);
+        if (useEnhance)   out = await enhanceFrame(out);
+        if (useWatermark) out = await watermarkFrame(out);
+        return out;
+    }
+
+    async function watermarkFrame(blob, opts = {}) {
+        const widthRatio = opts.widthRatio ?? 0.14;   // logo width = 14% of frame width
+        const opacity    = opts.opacity    ?? 0.55;
+        const margin     = opts.margin     ?? 0.025;  // 2.5% inset from edges
+        const quality    = opts.quality    ?? 0.9;
+
+        const [wm, frame] = await Promise.all([loadWatermark(), blobToImage(blob)]);
+        const W = frame.naturalWidth, H = frame.naturalHeight;
+        const c = document.createElement('canvas');
+        c.width = W; c.height = H;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(frame, 0, 0);
+
+        const wmW = W * widthRatio;
+        const wmH = wmW * (wm.naturalHeight / wm.naturalWidth);
+        const x = W - wmW - W * margin;
+        const y = H - wmH - H * margin;
+
+        ctx.globalAlpha = opacity;
+        ctx.drawImage(wm, x, y, wmW, wmH);
+        ctx.globalAlpha = 1;
+
+        return new Promise((res) => c.toBlob(res, 'image/jpeg', quality));
+    }
+
+    async function downloadListingZip() {
+        if (state.selected.size === 0) return;
+        if (typeof JSZip === 'undefined') {
+            showError('ZIP library failed to load. Try again with internet.');
+            return;
+        }
+        const useCrop      = $('opt-autocrop').checked;
+        const useEnhance   = $('opt-enhance').checked;
+        const useWatermark = $('opt-watermark').checked;
+        const ordered = selectedInOrder();
+        const pad = String(ordered.length).length;
+
+        toast((useCrop || useEnhance || useWatermark) ? 'Processing & zipping…' : 'Building ZIP…');
+        const zip = new JSZip();
+        for (let i = 0; i < ordered.length; i++) {
+            const idx = ordered[i];
+            const name = `photo_${String(i + 1).padStart(pad, '0')}.jpg`;
+            zip.file(name, await processListingPhoto(state.frames[idx]));
+        }
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+        const suffix = (useCrop ? '-c' : '') + (useEnhance ? '-e' : '') + (useWatermark ? '-wm' : '');
+        const result = await shareOrDownload(zipBlob, `bubs960-listing-photos${suffix}-${stamp}.zip`, 'application/zip');
+        toast(result === 'shared' ? 'Shared ✓' : result === 'cancelled' ? 'Cancelled' : `${ordered.length} photos ready ✓`);
+    }
+
+    // ---------- recent-takes history (IndexedDB) ----------
+    // Stores every extracted take so the user can come back to it later —
+    // even after closing the tab, restarting the phone, or backgrounding
+    // Safari for an hour. Blobs go in directly; IndexedDB handles them
+    // natively without base64 inflation. Capped at MAX_TAKES (~12) by
+    // auto-pruning oldest. All local; no Cloudflare, no sync.
+
+    const DB_NAME = 'bubs960-spins';
+    const DB_VERSION = 1;
+    const STORE = 'takes';
+    const MAX_TAKES = 12;
+
+    let _dbPromise = null;
+    let currentTakeId = null;
+    let saveDebounceTimer = null;
+
+    function openDB() {
+        if (_dbPromise) return _dbPromise;
+        _dbPromise = new Promise((resolve, reject) => {
+            if (!('indexedDB' in window)) return reject(new Error('IndexedDB not available'));
+            const req = indexedDB.open(DB_NAME, DB_VERSION);
+            req.onupgradeneeded = () => {
+                const db = req.result;
+                if (!db.objectStoreNames.contains(STORE)) {
+                    const store = db.createObjectStore(STORE, { keyPath: 'id' });
+                    store.createIndex('createdAt', 'createdAt');
+                }
+            };
+            req.onsuccess = () => resolve(req.result);
+            req.onerror  = () => reject(req.error);
+        });
+        return _dbPromise;
+    }
+
+    async function dbRun(mode, fn) {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE, mode);
+            const store = tx.objectStore(STORE);
+            let result;
+            Promise.resolve(fn(store)).then((r) => { result = r; }).catch(reject);
+            tx.oncomplete = () => resolve(result);
+            tx.onerror    = () => reject(tx.error);
+            tx.onabort    = () => reject(tx.error);
+        });
+    }
+
+    const dbGet    = (id) => dbRun('readonly',  (s) => new Promise((res, rej) => {
+        const r = s.get(id); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    }));
+    const dbDelete = (id) => dbRun('readwrite', (s) => { s.delete(id); });
+    const dbGetAllSorted = () => dbRun('readonly', (s) => new Promise((res, rej) => {
+        const r = s.getAll();
+        r.onsuccess = () => res(r.result.sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+        r.onerror   = () => rej(r.error);
+    }));
+    const dbPut = (record) => dbRun('readwrite', (s) => { s.put(record); });
+
+    async function pruneOldTakes() {
+        const all = await dbGetAllSorted();
+        const old = all.slice(MAX_TAKES);
+        for (const t of old) await dbDelete(t.id);
+    }
+
+    // Generate a small JPEG preview of the auto-picked "best front" frame.
+    async function makeThumbnail(blob) {
+        const img = await blobToImage(blob);
+        const dim = 300;
+        const scale = dim / Math.max(img.naturalWidth, img.naturalHeight);
+        const w = Math.max(1, Math.round(img.naturalWidth  * scale));
+        const h = Math.max(1, Math.round(img.naturalHeight * scale));
+        const c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        return new Promise((res) => c.toBlob(res, 'image/jpeg', 0.8));
+    }
+
+    // Build the on-disk record from current in-memory state.
+    function deriveTakeName(form) {
+        const raw = (form.character || form.vendor || '').trim();
+        return raw ? raw.slice(0, 40) : 'Untitled';
+    }
+
+    async function persistCurrentTake() {
+        if (!currentTakeId || state.frames.length === 0) return;
+        try {
+            const form = readListingForm();
+            const thumbIdx = state.autoPicked[0] ?? 0;
+            const thumbnail = await makeThumbnail(state.frames[thumbIdx]);
+            const record = {
+                id: currentTakeId,
+                name: deriveTakeName(form),
+                createdAt: currentTakeId,
+                frames: state.frames,
+                scores: state.scores,
+                selected: [...state.selected],
+                leadIdx: state.leadIdx,
+                form: {
+                    vendor: form.vendor, series: form.series, character: form.character,
+                    year: form.year, variant: form.variant,
+                    conditionShort: form.conditionShort, conditionLong: form.conditionLong,
+                    notes: form.notes, price: form.price, qty: form.qty,
+                    height: form.height,
+                },
+                thumbnail,
+            };
+            await dbPut(record);
+            await pruneOldTakes();
+            await renderRecent();
+        } catch (err) {
+            console.warn('persistCurrentTake failed:', err);
+        }
+    }
+
+    function scheduleSave(delay = 1200) {
+        if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
+        saveDebounceTimer = setTimeout(() => persistCurrentTake(), delay);
+    }
+
+    async function restoreTake(id) {
+        const rec = await dbGet(id);
+        if (!rec) return;
+        resetFrames();
+        state.frames    = rec.frames;
+        state.frameURLs = rec.frames.map((b) => URL.createObjectURL(b));
+        state.scores    = rec.scores || [];
+        state.autoPicked = state.scores.length ? pickBestPerWedge(state.scores, 8) : [];
+        state.selected  = new Set(rec.selected || state.autoPicked);
+        state.leadIdx   = (typeof rec.leadIdx === 'number') ? rec.leadIdx : null;
+        currentTakeId   = rec.id;
+
+        // Restore form fields
+        const f = rec.form || {};
+        const setVal = (id, v) => { $('f-' + id).value = v ?? ''; };
+        setVal('vendor',    f.vendor);
+        setVal('series',    f.series);
+        setVal('character', f.character);
+        setVal('year',      f.year);
+        setVal('variant',   f.variant);
+        if (f.conditionShort) {
+            const target = `${f.conditionShort}|${f.conditionLong || ''}`;
+            for (const opt of $('f-condition').options) {
+                if (opt.value === target) { $('f-condition').value = target; break; }
+            }
+        }
+        setVal('notes', f.notes);
+        setVal('price', f.price);
+        setVal('qty',   f.qty || '1');
+        setVal('height', f.height);
+
+        // Repaint UI
+        renderFrame(0);
+        renderListingGrid();
+        updateListingPreview();
+        hide($('step-extract'));
+        show($('step-viewer'));
+        show($('step-listing'));
+        show($('step-draft'));
+        await renderRecent();
+        $('step-viewer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        toast(`Restored "${rec.name}"`);
+    }
+
+    // Master backup ZIP — every saved take as its own folder so the user
+    // can recover from a phone wipe, switch devices, or just archive a
+    // batch. Folder name is "YYYY-MM-DD_<slug>" to sort by date.
+    async function exportAllTakes() {
+        let list = [];
+        try { list = await dbGetAllSorted(); } catch (_) {}
+        if (!list || list.length === 0) {
+            toast('No saved takes to export yet.');
+            return;
+        }
+        if (typeof JSZip === 'undefined') {
+            showError('ZIP library failed to load. Try again with internet.');
+            return;
+        }
+
+        toast(`Bundling ${list.length} take${list.length > 1 ? 's' : ''}…`);
+        const zip = new JSZip();
+
+        for (const take of list) {
+            const dateSlug = (take.createdAt || take.id).slice(0, 10);
+            const nameSlug = (take.name || 'untitled').toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'untitled';
+            const folder = `takes/${dateSlug}_${nameSlug}`;
+
+            // Photos: only the ones the user had selected for that take. If
+            // the selection was empty (edge case), fall back to all frames.
+            const selected = (take.selected && take.selected.length > 0)
+                ? [...take.selected].sort((a, b) => a - b)
+                : take.frames.map((_, i) => i);
+            const pad = String(selected.length).length;
+            for (let i = 0; i < selected.length; i++) {
+                const idx = selected[i];
+                if (!take.frames[idx]) continue;
+                const fname = `photo_${String(i + 1).padStart(pad, '0')}.jpg`;
+                zip.file(`${folder}/${fname}`, take.frames[idx]);
+            }
+
+            // listing.json with all metadata for re-listing
+            const f = take.form || {};
+            zip.file(`${folder}/listing.json`, JSON.stringify({
+                takeId: take.id,
+                createdAt: take.createdAt,
+                name: take.name,
+                vendor: f.vendor,
+                series: f.series,
+                character: f.character,
+                year: f.year ? Number(f.year) : null,
+                variant: f.variant,
+                condition: f.conditionShort,
+                conditionDescription: f.conditionLong,
+                notes: f.notes,
+                price: f.price ? Number(f.price) : null,
+                quantity: Number(f.qty) || 1,
+                heightInches: f.height ? Number(f.height) : null,
+                photoCount: selected.length,
+                source: 'bubs960 360-spin maker',
+            }, null, 2));
+        }
+
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const filename = `bubs960-takes-backup-${new Date().toISOString().slice(0, 10)}.zip`;
+        const result = await shareOrDownload(zipBlob, filename, 'application/zip');
+        toast(result === 'shared' ? 'Shared ✓' :
+              result === 'cancelled' ? 'Cancelled' :
+              `Backup of ${list.length} take${list.length > 1 ? 's' : ''} ready ✓`);
+    }
+
+    async function deleteTake(id) {
+        await dbDelete(id);
+        if (id === currentTakeId) {
+            resetFrames();
+            hide($('step-viewer'));
+            hide($('step-listing'));
+            hide($('step-draft'));
+            currentTakeId = null;
+        }
+        await renderRecent();
+    }
+
+    async function renderRecent() {
+        let list = [];
+        try { list = await dbGetAllSorted(); } catch (_) { return; }
+        const sec = $('step-recent');
+        const strip = $('recent-strip');
+        if (!list || list.length === 0) { hide(sec); return; }
+
+        // Revoke any URLs from a previous render to avoid leaking.
+        strip.querySelectorAll('img').forEach((img) => {
+            if (img.src.startsWith('blob:')) URL.revokeObjectURL(img.src);
+        });
+        strip.innerHTML = '';
+
+        for (const t of list) {
+            const card = document.createElement('div');
+            card.className = 'recent-card' + (t.id === currentTakeId ? ' current' : '');
+            card.dataset.id = t.id;
+            const thumbUrl = URL.createObjectURL(t.thumbnail);
+            const date = new Date(t.createdAt);
+            const dateStr = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' · ' +
+                            date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+            card.innerHTML = `
+                <img src="${thumbUrl}" alt="">
+                <div class="name">${esc(t.name || 'Untitled')}</div>
+                <div class="date">${esc(dateStr)}</div>
+                <button class="delete" aria-label="Delete take">×</button>
+            `;
+            card.querySelector('.delete').addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (confirm(`Delete "${t.name || 'this take'}"? This cannot be undone.`)) deleteTake(t.id);
+            });
+            card.addEventListener('click', () => restoreTake(t.id));
+            strip.appendChild(card);
+        }
+        show(sec);
+    }
+
+    // ---------- dimension estimation ----------
+    // Tap two points on a known reference object (a quarter, a Funko box
+    // edge, etc.) plus two points on the figure (top + bottom). The page
+    // computes mm-per-pixel from the reference and applies it to the
+    // figure to get a height in inches. Pure geometry — accuracy depends
+    // entirely on the user clicking accurately and on the reference and
+    // figure being on roughly the same plane / depth (so they have the
+    // same pixel-per-mm scale).
+    const measure = {
+        open: false,
+        photoIdx: 0,
+        refMm: 24.26, // quarter
+        ref: [],      // [{x, y}, {x, y}] — in image-natural pixel space
+        fig: [],
+        dragging: null, // { which: 'ref'|'fig', idx: 0|1 }
+    };
+
+    function refMmFromUI() {
+        const sel = $('measure-ref');
+        if (sel.value === 'custom') {
+            return parseFloat($('measure-ref-custom').value) || 0;
+        }
+        return parseFloat(sel.value) || 0;
+    }
+
+    function openMeasurePanel() {
+        if (state.selected.size === 0) {
+            showError('Pick at least one listing photo first (Step 4 above).');
+            return;
+        }
+        clearError();
+        // Use the user's first selected photo as the starting point.
+        const ordered = selectedInOrder();
+        measure.photoIdx = ordered.indexOf(state.autoPicked[0] ?? ordered[0]);
+        if (measure.photoIdx < 0) measure.photoIdx = 0;
+        measure.open = true;
+        measure.ref = [];
+        measure.fig = [];
+        measure.refMm = refMmFromUI() || 24.26;
+        loadMeasurePhoto();
+        show($('measure-panel'));
+        $('measure-panel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function closeMeasurePanel() {
+        measure.open = false;
+        hide($('measure-panel'));
+    }
+
+    function loadMeasurePhoto() {
+        const ordered = selectedInOrder();
+        if (ordered.length === 0) return;
+        const idx = ordered[measure.photoIdx % ordered.length];
+        $('measure-img').src = state.frameURLs[idx];
+        // Wait for the image to load before sizing the SVG so the viewBox is right.
+        $('measure-img').onload = () => {
+            const img = $('measure-img');
+            const svg = $('measure-svg');
+            svg.setAttribute('viewBox', `0 0 ${img.naturalWidth} ${img.naturalHeight}`);
+            svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+            redrawMeasure();
+        };
+    }
+
+    function cycleMeasurePhoto() {
+        const ordered = selectedInOrder();
+        measure.photoIdx = (measure.photoIdx + 1) % ordered.length;
+        measure.ref = [];
+        measure.fig = [];
+        loadMeasurePhoto();
+        updateMeasureStatus();
+    }
+
+    function resetMeasure() {
+        measure.ref = [];
+        measure.fig = [];
+        redrawMeasure();
+        updateMeasureStatus();
+    }
+
+    function updateMeasureStatus() {
+        const s = $('measure-status');
+        let msg;
+        if (measure.ref.length < 2) {
+            msg = `Tap 2 points on the reference (${measure.ref.length}/2)`;
+        } else if (measure.fig.length < 2) {
+            msg = `Now tap top &amp; bottom of the figure (${measure.fig.length}/2)`;
+        } else {
+            msg = 'Drag dots to refine, then tap ✓ Apply';
+        }
+        s.innerHTML = msg;
+
+        const readout = $('measure-readout');
+        const apply = $('measure-apply');
+        if (measure.ref.length === 2 && measure.fig.length === 2) {
+            const result = computeHeight();
+            if (result) {
+                readout.innerHTML = `Reference ${measure.refMm} mm = ${result.refPx.toFixed(1)} px &nbsp; · &nbsp; ` +
+                                    `Figure ${result.figPx.toFixed(1)} px = <strong>${result.inches.toFixed(2)}"</strong> ` +
+                                    `<span style="color: var(--text-muted);">(${result.mm.toFixed(1)} mm)</span>`;
+                apply.disabled = false;
+                apply.dataset.value = result.inches.toFixed(2);
+            } else {
+                readout.textContent = 'Pick a non-zero reference length.';
+                apply.disabled = true;
+            }
+        } else {
+            readout.textContent = 'Place 4 dots to measure the figure height.';
+            apply.disabled = true;
+        }
+    }
+
+    function dist(p, q) { return Math.hypot(p.x - q.x, p.y - q.y); }
+
+    function computeHeight() {
+        if (measure.ref.length !== 2 || measure.fig.length !== 2) return null;
+        const refPx = dist(measure.ref[0], measure.ref[1]);
+        const figPx = dist(measure.fig[0], measure.fig[1]);
+        if (refPx < 1) return null;
+        const pxPerMm = refPx / measure.refMm;
+        const mm = figPx / pxPerMm;
+        const inches = mm / 25.4;
+        return { refPx, figPx, mm, inches };
+    }
+
+    function redrawMeasure() {
+        const svg = $('measure-svg');
+        // Clear all but keep the viewBox.
+        while (svg.firstChild) svg.removeChild(svg.firstChild);
+        const NS = 'http://www.w3.org/2000/svg';
+        const img = $('measure-img');
+        const r = Math.max(8, Math.min(img.naturalWidth, img.naturalHeight) * 0.012);
+
+        if (measure.ref.length === 2) {
+            const line = document.createElementNS(NS, 'line');
+            line.setAttribute('class', 'ref-line');
+            line.setAttribute('x1', measure.ref[0].x); line.setAttribute('y1', measure.ref[0].y);
+            line.setAttribute('x2', measure.ref[1].x); line.setAttribute('y2', measure.ref[1].y);
+            svg.appendChild(line);
+        }
+        if (measure.fig.length === 2) {
+            const line = document.createElementNS(NS, 'line');
+            line.setAttribute('class', 'fig-line');
+            line.setAttribute('x1', measure.fig[0].x); line.setAttribute('y1', measure.fig[0].y);
+            line.setAttribute('x2', measure.fig[1].x); line.setAttribute('y2', measure.fig[1].y);
+            svg.appendChild(line);
+        }
+        const addDot = (p, cls, which, idx) => {
+            const c = document.createElementNS(NS, 'circle');
+            c.setAttribute('cx', p.x); c.setAttribute('cy', p.y);
+            c.setAttribute('r', r);
+            c.setAttribute('class', 'dot ' + cls);
+            c.dataset.which = which;
+            c.dataset.idx = String(idx);
+            svg.appendChild(c);
+        };
+        measure.ref.forEach((p, i) => addDot(p, 'ref-dot', 'ref', i));
+        measure.fig.forEach((p, i) => addDot(p, 'fig-dot', 'fig', i));
+    }
+
+    // Convert a pointer event (in client space) to image-natural coordinates.
+    function eventToImageCoords(e) {
+        const img = $('measure-img');
+        const rect = img.getBoundingClientRect();
+        const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+        const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+        // img is object-fit: contain inside the stage; rect IS the rendered img area
+        // because the <img> element itself has the contained aspect ratio. Direct scale.
+        const x = (cx / rect.width)  * img.naturalWidth;
+        const y = (cy / rect.height) * img.naturalHeight;
+        return { x: Math.max(0, Math.min(img.naturalWidth,  x)),
+                 y: Math.max(0, Math.min(img.naturalHeight, y)) };
+    }
+
+    function findNearestDot(p) {
+        const all = [...measure.ref.map((q, i) => ({ q, which: 'ref', idx: i })),
+                     ...measure.fig.map((q, i) => ({ q, which: 'fig', idx: i }))];
+        if (all.length === 0) return null;
+        let best = all[0], bestD = dist(p, all[0].q);
+        for (let i = 1; i < all.length; i++) {
+            const d = dist(p, all[i].q);
+            if (d < bestD) { bestD = d; best = all[i]; }
+        }
+        const img = $('measure-img');
+        const grabRadius = Math.max(20, Math.min(img.naturalWidth, img.naturalHeight) * 0.03);
+        return bestD <= grabRadius ? best : null;
+    }
+
+    function onStagePointerDown(e) {
+        if (!measure.open) return;
+        const p = eventToImageCoords(e);
+
+        // If the user is tapping near an existing dot, grab it for dragging.
+        const hit = findNearestDot(p);
+        if (hit) {
+            measure.dragging = hit;
+            e.preventDefault();
+            return;
+        }
+
+        // Otherwise, append to the active set (ref first, then fig).
+        if (measure.ref.length < 2) {
+            measure.ref.push(p);
+        } else if (measure.fig.length < 2) {
+            measure.fig.push(p);
+        } else {
+            // Both sets full and no dot was hit — start a small drag on nearest.
+            return;
+        }
+        redrawMeasure();
+        updateMeasureStatus();
+        e.preventDefault();
+    }
+
+    function onStagePointerMove(e) {
+        if (!measure.dragging) return;
+        const p = eventToImageCoords(e);
+        const arr = measure.dragging.which === 'ref' ? measure.ref : measure.fig;
+        arr[measure.dragging.idx] = p;
+        redrawMeasure();
+        updateMeasureStatus();
+        e.preventDefault();
+    }
+
+    function onStagePointerUp() {
+        measure.dragging = null;
+    }
+
+    function applyMeasurement() {
+        const v = $('measure-apply').dataset.value;
+        if (!v) return;
+        $('f-height').value = v;
+        updateListingPreview();
+        saveDefaults();
+        scheduleSave();
+        closeMeasurePanel();
+        toast(`Height set to ${v}" ✓`);
+    }
+
+    // ---------- OCR: scan box text → auto-fill form ----------
+    // Tesseract.js is loaded lazily (large library — ~2.6 MB JS + ~10 MB
+    // English lang file) the first time the user taps "Scan box". After
+    // the first scan it's HTTP-cached for ~1 year, so subsequent scans
+    // are fast. Pure local — the image never leaves the browser.
+    let _tesseractPromise = null;
+    function loadTesseract() {
+        if (typeof Tesseract !== 'undefined') return Promise.resolve();
+        if (_tesseractPromise) return _tesseractPromise;
+        _tesseractPromise = new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+            s.onload  = () => resolve();
+            s.onerror = () => reject(new Error('Could not load OCR library (offline?).'));
+            document.head.appendChild(s);
+        });
+        return _tesseractPromise;
+    }
+
+    // Pattern-match the OCR text against known collectible brands and
+    // common field shapes. Order matters — more specific brands come
+    // first so "Mattel WWE Ultimate Edition" doesn't lose to a generic
+    // "WWE" hit.
+    const BRAND_PATTERNS = [
+        ['Mattel WWE Ultimate Edition',  /ultimate\s+edition|wwe\s+ultimate/i],
+        ['Mattel WWE Elite',              /wwe\s+elite|elite\s+(collection|series)/i],
+        ['Mattel WWE Basic',              /wwe\b[\s\S]{0,30}basic/i],
+        ['AEW Unmatched',                 /aew[\s\S]{0,20}unmatched/i],
+        ['AEW Unrivaled',                 /aew[\s\S]{0,20}unrivaled/i],
+        ['Funko Pop!',                    /\bfunko\b|pop!?\s*\bvinyl\b|pop\s*figure/i],
+        ['Marvel Legends',                /marvel\s+legends/i],
+        ['Star Wars Black Series',        /black\s+series|star\s+wars/i],
+        ['NECA',                          /\bneca\b/i],
+        ['Jakks Pacific WWE Classic',     /\bjakks\b/i],
+        ['Vintage Hasbro WWF',            /hasbro[\s\S]{0,40}wwf|wwf[\s\S]{0,40}hasbro/i],
+    ];
+
+    // Domain vocabulary: a line composed entirely of these is brand-y boilerplate,
+    // not a character name. Used by extractCharacter() to reject false positives.
+    const BRAND_VOCAB = new Set([
+        'funko', 'mattel', 'hasbro', 'neca', 'jakks', 'pacific', 'pop',
+        'wwe', 'wwf', 'aew', 'wcw', 'ufc', 'njpw', 'roh', 'wrestling',
+        'marvel', 'legends', 'star', 'wars', 'black', 'dc', 'comics',
+        'pokemon', 'transformers', 'gi', 'joe', 'mcfarlane',
+        'heroes', 'villains', 'movies', 'movie', 'animation', 'television', 'tv',
+        'rocks', 'royalty', 'sports', 'horror', 'disney', 'anime', 'kpop', 'games', 'icons',
+        'elite', 'ultimate', 'basic', 'classic', 'retro', 'vintage',
+        'unmatched', 'unrivaled', 'collection', 'collectible', 'collectibles',
+        'limited', 'exclusive', 'sdcc', 'nycc', 'walmart', 'target', 'gamestop',
+        'figure', 'figures', 'action', 'bobble', 'head', 'bobblehead', 'vinyl',
+        'pack', 'set', 'doll', 'figurine', 'toy', 'toys', 'plastic',
+        'special', 'anniversary', 'series', 'wave', 'edition', 'volume',
+        'mint', 'sealed', 'new', 'rare', 'chase', 'glow', 'flocked',
+        'the', 'a', 'an', 'of', 'and', 'in', 'on', 'for', 'with', 'to',
+    ]);
+
+    // Heuristic character extractor. Refuses to guess when no brand was
+    // identified (too unreliable). Smoke-tested against 8 realistic OCR
+    // outputs (WWE Elite, Funko Pop variants, Marvel Legends, AEW etc.) —
+    // 8/8 hit rate; node test left in repo at scripts-style level.
+    function extractCharacter(text, brand) {
+        if (!brand) return '';
+        const lines = text.split('\n').map((l) => l.trim()).filter((l) => l.length >= 3 && l.length <= 50);
+        const ignorePats = [
+            /\bages?\b/i, /\bcaution\b/i, /\bwarning\b/i, /\bhazard\b/i,
+            /\bcopyright\b/i, /©|®|™/, /\bmade\s+in\b/i, /\bcontents\b/i,
+            /\bseries\s+\d|\bwave\s+\d|\bvol\b|\bset\s+\d/i, /\bnot\s+for\b/i,
+            /\bbattery\b|\bbatteries\b/i, /\bsmall\s+parts\b/i,
+            /\bcollect\s/i, /^\d+$/, /^[#\d\s-]+$/,
+        ];
+
+        for (const line of lines) {
+            if (ignorePats.some((p) => p.test(line))) continue;
+            if (!/[A-Z]/.test(line)) continue;
+
+            // Strip trailing "#04", "(2023)", and punctuation.
+            const cleaned = line
+                .replace(/\s*[#\(][\d\s-]+\)?\s*$/, '')
+                .replace(/[\s!.,]+$/, '')
+                .trim();
+            if (cleaned.length < 3) continue;
+
+            // Reject lines that are entirely brand/generic vocabulary —
+            // those are sub-brand labels like "POP! WWE" or "RETRO COLLECTION",
+            // not character names.
+            const words = cleaned.toLowerCase().split(/[\s!.,()-]+/).filter((w) => w.length > 0);
+            if (words.length === 0) continue;
+            if (words.every((w) => BRAND_VOCAB.has(w))) continue;
+
+            // Title-case for consistency: "ROMAN REIGNS" → "Roman Reigns".
+            return cleaned.split(/\s+/).map((w) =>
+                w.length > 0 ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w
+            ).join(' ');
+        }
+        return '';
+    }
+
+    function parseCollectibleText(text) {
+        const out = { brand: '', year: '', series: '', character: '', rawText: text };
+
+        for (const [name, re] of BRAND_PATTERNS) {
+            if (re.test(text)) { out.brand = name; break; }
+        }
+
+        out.character = extractCharacter(text, out.brand);
+
+        // Years 1970-2039. Pick the LAST one in the text — copyright lines
+        // are usually near the bottom of the box and most accurate.
+        const years = [...text.matchAll(/\b(19[7-9]\d|20[0-3]\d)\b/g)];
+        if (years.length) out.year = years[years.length - 1][1];
+
+        // "Series 110", "Wave 5", "Vol. 22", "Set 3"
+        const sMatch = text.match(/\b(series|wave|vol(?:\.|ume)?|set)\s*#?\s*(\d+)\b/i);
+        if (sMatch) {
+            const word = sMatch[1].toLowerCase().replace(/^vol(?:ume)?\.?$/, 'Vol');
+            const cap = word === 'Vol' ? 'Vol' : word.charAt(0).toUpperCase() + word.slice(1);
+            out.series = `${cap} ${sMatch[2]}`;
+        }
+
+        return out;
+    }
+
+    function applyParsedToForm(p) {
+        let applied = 0;
+        const vendorEl = $('f-vendor');
+        if (p.brand && !vendorEl.value && Array.from(vendorEl.options).some((o) => o.value === p.brand)) {
+            vendorEl.value = p.brand; applied++;
+        }
+        if (p.character && !$('f-character').value) { $('f-character').value = p.character; applied++; }
+        if (p.year      && !$('f-year').value)      { $('f-year').value      = p.year;      applied++; }
+        if (p.series    && !$('f-series').value)    { $('f-series').value    = p.series;    applied++; }
+        if (applied > 0) {
+            updateListingPreview();
+            saveDefaults();
+            scheduleSave();
+        }
+        return applied;
+    }
+
+    async function scanBoxText() {
+        // Pick a still photo from the camera (NOT video).
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.capture = 'environment';
+        const file = await new Promise((res) => {
+            input.onchange = () => res(input.files[0] || null);
+            input.click();
+            // No reliable "cancel" event; tolerate the promise sitting unresolved.
+        });
+        if (!file) return;
+        clearError();
+        hide($('ocr-output'));
+
+        try {
+            show($('step-extract'));
+            $('progress').value = 0;
+            $('progress-pct').textContent = '0%';
+            $('progress-label').textContent = 'Loading OCR engine…';
+            await loadTesseract();
+
+            $('progress-label').textContent = 'Reading box text…';
+            const result = await Tesseract.recognize(file, 'eng', {
+                logger: (m) => {
+                    if (m.status === 'recognizing text') {
+                        const pct = Math.round((m.progress || 0) * 100);
+                        $('progress').value = pct;
+                        $('progress-pct').textContent = pct + '%';
+                    } else if (m.status) {
+                        $('progress-label').textContent = m.status.charAt(0).toUpperCase() + m.status.slice(1) + '…';
+                    }
+                },
+            });
+            hide($('step-extract'));
+
+            const rawText = (result && result.data && result.data.text) || '';
+            const parsed = parseCollectibleText(rawText);
+            const applied = applyParsedToForm(parsed);
+
+            $('ocr-raw').textContent = rawText.trim() || '(no text detected)';
+            show($('ocr-output'));
+
+            if (applied === 0) {
+                toast('No fields auto-filled — expand "Detected text" to copy manually.');
+            } else {
+                toast(`Auto-filled ${applied} field${applied > 1 ? 's' : ''} ✓`);
+            }
+        } catch (err) {
+            console.error(err);
+            hide($('step-extract'));
+            showError(err.message || 'OCR failed. Try a clearer photo of the box.');
+        }
+    }
+
+    // ---------- output preview ----------
+    // Render the user's currently-selected lead/first photo through the
+    // same processing pipeline that the ZIP exports use, so they can see
+    // exactly what photo_01.jpg will look like before downloading. Lazy:
+    // only runs when the button is tapped. Re-runs on each tap so toggle
+    // changes are reflected.
+    let _previewURL = null;
+    async function previewOutputPhoto() {
+        const ordered = selectedInOrder();
+        if (ordered.length === 0) {
+            showError('Pick at least one listing photo (Step 4 above) before previewing.');
+            return;
+        }
+        clearError();
+        const idx = ordered[0];
+        const original = state.frames[idx];
+
+        // Show the BEFORE side immediately so the panel never looks empty.
+        $('preview-before').src = state.frameURLs[idx];
+
+        // Free the previous AFTER URL before rendering a new one.
+        if (_previewURL) { URL.revokeObjectURL(_previewURL); _previewURL = null; }
+
+        $('preview-flags').innerHTML = 'Processing…';
+        show($('preview-panel'));
+        $('preview-panel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        const processed = await processListingPhoto(original);
+        _previewURL = URL.createObjectURL(processed);
+        $('preview-after').src = _previewURL;
+
+        const flags = [];
+        if ($('opt-autocrop').checked)  flags.push('<strong>cropped</strong>');
+        if ($('opt-enhance').checked)   flags.push('<strong>enhanced</strong>');
+        if ($('opt-watermark').checked) flags.push('<strong>watermarked</strong>');
+        const sizeKB = Math.round(processed.size / 1024);
+        $('preview-flags').innerHTML = (flags.length ? 'Applied: ' + flags.join(' + ') : 'No processing applied') +
+            ` &nbsp; · &nbsp; ${sizeKB} KB`;
+    }
+
+    function closePreviewPanel() {
+        if (_previewURL) { URL.revokeObjectURL(_previewURL); _previewURL = null; }
+        hide($('preview-panel'));
+    }
+
+    // ---------- listing draft (Step 5) ----------
+    // Free-text fields → eBay-ready title + description. Everything stays
+    // in-browser; the only persistence is localStorage for sticky defaults
+    // (so brand/notes don't have to be re-typed for every figure).
+
+    const LISTING_FIELDS = ['vendor', 'series', 'character', 'year', 'variant', 'condition', 'notes', 'price', 'qty', 'height'];
+    const LS_KEY = 'bubs960-listing-defaults-v1';
+    const TITLE_MAX = 80;
+
+    function readListingForm() {
+        const f = (id) => $('f-' + id).value.trim();
+        const [condShort, condLong] = (f('condition') || '|').split('|');
+        return {
+            vendor: f('vendor'),
+            series: f('series'),
+            character: f('character'),
+            year: f('year'),
+            variant: f('variant'),
+            conditionShort: condShort,
+            conditionLong: condLong,
+            notes: f('notes'),
+            price: f('price'),
+            qty: f('qty') || '1',
+            height: f('height'),
+        };
+    }
+
+    // Title format optimized for eBay search keywords:
+    //   {Variant?} {Vendor} {Series?} {Character} {Year?} {ConditionShort}
+    // Trimmed to 80 chars by dropping the lowest-priority pieces (year, then
+    // series, then variant) before truncating the rest.
+    function buildTitle(d) {
+        const tryAssemble = (drop) => {
+            const parts = [];
+            if (!drop.has('variant') && d.variant) parts.push(d.variant);
+            if (d.vendor)                          parts.push(d.vendor);
+            if (!drop.has('series') && d.series)   parts.push(d.series);
+            if (d.character)                       parts.push(d.character);
+            if (!drop.has('year') && d.year)       parts.push(d.year);
+            if (d.conditionShort)                  parts.push(d.conditionShort);
+            return parts.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+        };
+        // Try progressively trimming low-priority fields until we fit.
+        const dropOrder = [new Set(), new Set(['year']), new Set(['year','series']), new Set(['year','series','variant'])];
+        for (const drop of dropOrder) {
+            const t = tryAssemble(drop);
+            if (t.length <= TITLE_MAX) return t;
+        }
+        // If still too long, hard-truncate the final attempt at a word boundary.
+        const last = tryAssemble(dropOrder[dropOrder.length - 1]);
+        if (last.length <= TITLE_MAX) return last;
+        const cut = last.slice(0, TITLE_MAX);
+        const ws = cut.lastIndexOf(' ');
+        return (ws > 60 ? cut.slice(0, ws) : cut).trim();
+    }
+
+    function esc(s) {
+        return String(s).replace(/[&<>"']/g, (c) =>
+            ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    function buildDescriptionHtml(d) {
+        const heading = [d.variant, d.vendor, d.series].filter(Boolean).join(' ').trim() || 'Collectible';
+        const lines = [];
+        lines.push('<div style="font-family: Arial, sans-serif; max-width: 720px;">');
+        lines.push(`  <h2 style="color:#1c3b70;margin:0 0 .25em;">${esc(heading)}${d.character ? ' — ' + esc(d.character) : ''}</h2>`);
+        lines.push('  <ul style="line-height:1.55;">');
+        if (d.character) lines.push(`    <li><strong>Character:</strong> ${esc(d.character)}</li>`);
+        if (d.vendor)    lines.push(`    <li><strong>Brand / Line:</strong> ${esc(d.vendor)}</li>`);
+        if (d.series)    lines.push(`    <li><strong>Series:</strong> ${esc(d.series)}</li>`);
+        if (d.year)      lines.push(`    <li><strong>Year:</strong> ${esc(d.year)}</li>`);
+        if (d.variant)   lines.push(`    <li><strong>Variant:</strong> ${esc(d.variant)}</li>`);
+        if (d.conditionShort) lines.push(`    <li><strong>Condition:</strong> ${esc(d.conditionShort)}</li>`);
+        if (d.height)         lines.push(`    <li><strong>Height:</strong> ${esc(d.height)}"</li>`);
+        lines.push('  </ul>');
+        if (d.conditionLong) lines.push(`  <p>${esc(d.conditionLong)}</p>`);
+        if (d.notes) {
+            const notesHtml = esc(d.notes).replace(/\n{2,}/g, '</p><p>').replace(/\n/g, '<br>');
+            lines.push(`  <p>${notesHtml}</p>`);
+        }
+        lines.push('  <hr style="border:none;border-top:1px solid #ddd;margin:1em 0;">');
+        lines.push('  <h3 style="color:#e62429;margin:.5em 0 .25em;">Why buy from Bubs960?</h3>');
+        lines.push('  <ul style="line-height:1.55;">');
+        lines.push('    <li>Real collectors — fair prices priced off real eBay sold comps.</li>');
+        lines.push('    <li>Carefully packed for safe shipping. Bubble wrap + box-in-box.</li>');
+        lines.push('    <li>We also <strong>buy collections</strong> — cash or consignment, fast payouts.</li>');
+        lines.push('  </ul>');
+        lines.push('  <p>Questions? <a href="mailto:Bubs960toys@gmail.com">Bubs960toys@gmail.com</a> &nbsp;|&nbsp; ' +
+                   '<a href="https://www.bubs960collectibles.com/">bubs960collectibles.com</a></p>');
+        lines.push('</div>');
+        return lines.join('\n');
+    }
+
+    function updateListingPreview() {
+        const d = readListingForm();
+        const title = buildTitle(d);
+        const titleEl = $('title-preview');
+        const charEl  = $('title-char');
+        titleEl.textContent = title || '—';
+        titleEl.classList.toggle('too-long', title.length > TITLE_MAX);
+        charEl.textContent  = `${title.length} / ${TITLE_MAX}`;
+        charEl.classList.toggle('too-long', title.length > TITLE_MAX);
+        $('desc-preview').innerHTML = buildDescriptionHtml(d);
+    }
+
+    // ---------- localStorage stickiness ----------
+    // Save the fields a user usually reuses (vendor / notes boilerplate / qty).
+    // Per-figure fields (character, series, year, variant, price) intentionally
+    // do NOT get persisted — they should always be typed fresh.
+    const STICKY = ['vendor', 'notes', 'qty'];
+    function saveDefaults() {
+        try {
+            const d = readListingForm();
+            const slim = Object.fromEntries(STICKY.map((k) => [k, d[k]]));
+            localStorage.setItem(LS_KEY, JSON.stringify(slim));
+        } catch (_) { /* private mode, quota — fine to ignore */ }
+    }
+    function loadDefaults() {
+        try {
+            const raw = localStorage.getItem(LS_KEY);
+            if (!raw) return;
+            const slim = JSON.parse(raw);
+            if (slim.vendor && $('f-vendor').querySelector(`option[value="${CSS.escape(slim.vendor)}"]`)) {
+                $('f-vendor').value = slim.vendor;
+            }
+            if (typeof slim.notes === 'string') $('f-notes').value = slim.notes;
+            if (slim.qty) $('f-qty').value = slim.qty;
+        } catch (_) { /* fine */ }
+    }
+
+    // ---------- clipboard ----------
+    async function copyToClipboard(text) {
+        try {
+            await navigator.clipboard.writeText(text);
+            return true;
+        } catch (_) {
+            // Fallback for older Safari / non-secure contexts.
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            let ok = false;
+            try { ok = document.execCommand('copy'); } catch (_) {}
+            document.body.removeChild(ta);
+            return ok;
+        }
+    }
+
+    async function copyTitle() {
+        const d = readListingForm();
+        const ok = await copyToClipboard(buildTitle(d));
+        toast(ok ? 'Title copied ✓' : 'Copy failed — long-press the title to copy.');
+    }
+    async function copyDescription() {
+        const d = readListingForm();
+        const ok = await copyToClipboard(buildDescriptionHtml(d));
+        toast(ok ? 'Description HTML copied ✓' : 'Copy failed.');
+    }
+
+    function clearForm() {
+        LISTING_FIELDS.forEach((k) => {
+            const el = $('f-' + k);
+            if (el.tagName === 'SELECT') el.selectedIndex = 0;
+            else el.value = (k === 'qty') ? '1' : '';
+        });
+        try { localStorage.removeItem(LS_KEY); } catch (_) {}
+        updateListingPreview();
+        toast('Form cleared');
+    }
+
+    // ---------- bundle ZIP: photos + paste-ready text + JSON record ----------
+    async function downloadBundle() {
+        if (state.selected.size === 0) {
+            showError('Pick at least one listing photo above first.');
+            return;
+        }
+        if (typeof JSZip === 'undefined') {
+            showError('ZIP library failed to load. Try again with internet.');
+            return;
+        }
+        const d = readListingForm();
+        if (!d.character && !d.vendor) {
+            showError('Fill in at least Brand and Character before downloading the bundle.');
+            return;
+        }
+        clearError();
+
+        const title = buildTitle(d);
+        const descHtml = buildDescriptionHtml(d);
+        const useCrop      = $('opt-autocrop').checked;
+        const useEnhance   = $('opt-enhance').checked;
+        const useWatermark = $('opt-watermark').checked;
+        const ordered = selectedInOrder();
+        const pad = String(ordered.length).length;
+
+        toast('Building bundle…');
+        const zip = new JSZip();
+        for (let i = 0; i < ordered.length; i++) {
+            const idx = ordered[i];
+            const name = `photo_${String(i + 1).padStart(pad, '0')}.jpg`;
+            zip.file(name, await processListingPhoto(state.frames[idx]));
+        }
+        zip.file('title.txt', title);
+        zip.file('description.html', descHtml);
+        zip.file('listing.json', JSON.stringify({
+            title,
+            vendor: d.vendor,
+            series: d.series,
+            character: d.character,
+            year: d.year ? Number(d.year) : null,
+            variant: d.variant,
+            condition: d.conditionShort,
+            conditionDescription: d.conditionLong,
+            notes: d.notes,
+            price: d.price ? Number(d.price) : null,
+            quantity: Number(d.qty) || 1,
+            heightInches: d.height ? Number(d.height) : null,
+            photoCount: ordered.length,
+            autoCropped: useCrop,
+            enhanced: useEnhance,
+            watermarked: useWatermark,
+            createdAt: new Date().toISOString(),
+            source: 'bubs960 360-spin maker',
+        }, null, 2));
+        zip.file('README.txt', [
+            'BUBS960 LISTING BUNDLE',
+            '======================',
+            '',
+            '1. eBay → Sell an Item → New Listing.',
+            '2. Paste title.txt into the Title field.',
+            '3. Upload the photo_*.jpg files. They are already in rotation order.',
+            '4. Switch the Description to HTML view, paste description.html.',
+            d.price ? `5. Set Buy It Now price: $${d.price}` : '5. Set your Buy It Now price.',
+            `6. Set Quantity: ${d.qty}`,
+            '',
+            'listing.json keeps a record of every field — handy for re-listing later.',
+            'photos are watermarked so re-listers can\'t easily steal them.',
+        ].join('\n'));
+
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const stampedSlug = (d.character || 'listing').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
+        const stamp = new Date().toISOString().slice(0, 10);
+        const filename = `bubs960-listing-${stampedSlug || 'untitled'}-${stamp}.zip`;
+        const result = await shareOrDownload(zipBlob, filename, 'application/zip');
+        saveDefaults();
+        await persistCurrentTake(); // snapshot the final form state when user "ships" a take
+        toast(result === 'shared' ? 'Bundle shared ✓' : result === 'cancelled' ? 'Cancelled' : 'Bundle ready ✓');
+    }
+
+    // ---------- spin viewer ----------
+    function renderFrame(i) {
+        const n = state.frames.length;
+        if (n === 0) return;
+        // Wrap index into [0, n)
+        const idx = ((i % n) + n) % n;
+        state.currentFrame = idx;
+        $('viewer-img').src = state.frameURLs[idx];
+        $('frame-indicator').textContent = `${idx + 1} / ${n}`;
+    }
+
+    function attachDragHandlers() {
+        const wrap = $('viewer');
+        let dragging = false;
+        let startX = 0;
+        let startFrame = 0;
+        let hinted = false;
+
+        const onDown = (e) => {
+            dragging = true;
+            startX = (e.touches ? e.touches[0].clientX : e.clientX);
+            startFrame = state.currentFrame;
+            stopAutoSpin();
+            if (!hinted) { $('viewer-hint').classList.add('fade'); hinted = true; }
+        };
+        const onMove = (e) => {
+            if (!dragging) return;
+            const x = (e.touches ? e.touches[0].clientX : e.clientX);
+            const dx = x - startX;
+            const w = wrap.clientWidth || 1;
+            // A full drag across the viewer = one full revolution.
+            const frameDelta = Math.round((dx / w) * state.frames.length);
+            renderFrame(startFrame + frameDelta * state.direction);
+            e.preventDefault();
+        };
+        const onUp = () => { dragging = false; };
+
+        wrap.addEventListener('mousedown', onDown);
+        wrap.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onUp);
+        wrap.addEventListener('touchstart', onDown, { passive: true });
+        wrap.addEventListener('touchmove',  onMove, { passive: false });
+        wrap.addEventListener('touchend',   onUp);
+    }
+
+    function startAutoSpin() {
+        stopAutoSpin();
+        let last = performance.now();
+        const fps = 24;
+        let acc = 0;
+        const loop = (now) => {
+            const dt = now - last; last = now;
+            acc += dt;
+            const step = 1000 / fps;
+            while (acc >= step) {
+                renderFrame(state.currentFrame + state.direction);
+                acc -= step;
+            }
+            state.autoSpin = requestAnimationFrame(loop);
+        };
+        state.autoSpin = requestAnimationFrame(loop);
+        $('btn-play').textContent = '⏸ Pause';
+    }
+    function stopAutoSpin() {
+        if (state.autoSpin) cancelAnimationFrame(state.autoSpin);
+        state.autoSpin = null;
+        $('btn-play').textContent = '▶ Auto-spin';
+    }
+
+    // ---------- ZIP download ----------
+    // ---------- animated spin video ----------
+    // Renders the 36 frames into a looping video via MediaRecorder over a
+    // canvas captureStream. Feature-detected; the button is hidden if the
+    // browser can't do it (e.g., iOS Safari < 16.4 or anything without
+    // canvas.captureStream support).
+    function videoExportSupported() {
+        if (typeof MediaRecorder === 'undefined') return null;
+        if (!('captureStream' in HTMLCanvasElement.prototype)) return null;
+        // Prefer MP4 (universal share, iOS Photos compatible). Fall back to WebM.
+        const candidates = [
+            { mime: 'video/mp4;codecs=avc1.42E01E', ext: 'mp4' },
+            { mime: 'video/mp4',                    ext: 'mp4' },
+            { mime: 'video/webm;codecs=vp9',        ext: 'webm' },
+            { mime: 'video/webm;codecs=vp8',        ext: 'webm' },
+            { mime: 'video/webm',                   ext: 'webm' },
+        ];
+        for (const c of candidates) {
+            if (MediaRecorder.isTypeSupported(c.mime)) return c;
+        }
+        return null;
+    }
+
+    async function exportSpinVideo() {
+        const support = videoExportSupported();
+        if (!support) {
+            showError('This browser can\'t encode video. Use Safari 16.4+, Chrome, or Firefox.');
+            return;
+        }
+        if (state.frames.length === 0) return;
+        clearError();
+
+        const fps = 24;
+        const rotations = 2;          // two full revolutions = ~3s loop, plenty for IG/Whatnot
+        const totalFrames = state.frames.length * rotations;
+
+        // Decode every frame once, up front. Faster than re-decoding inside the draw loop.
+        toast('Decoding frames…');
+        const imgs = [];
+        for (let i = 0; i < state.frames.length; i++) {
+            imgs.push(await blobToImage(state.frames[i]));
+        }
+
+        const c = document.createElement('canvas');
+        c.width  = imgs[0].naturalWidth;
+        c.height = imgs[0].naturalHeight;
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, c.width, c.height);
+
+        const stream = c.captureStream(0); // 0 = manual frame pump
+        const track = stream.getVideoTracks()[0];
+        const recorder = new MediaRecorder(stream, {
+            mimeType: support.mime,
+            videoBitsPerSecond: 5_000_000,
+        });
+        const chunks = [];
+        recorder.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+        const stopped = new Promise((res) => { recorder.onstop = res; });
+
+        recorder.start();
+
+        // Show progress in step-extract panel (viewer stays visible).
+        show($('step-extract'));
+        $('progress').value = 0;
+        $('progress-label').textContent = 'Encoding video…';
+
+        const frameMs = 1000 / fps;
+        for (let i = 0; i < totalFrames; i++) {
+            const img = imgs[i % imgs.length];
+            ctx.fillRect(0, 0, c.width, c.height); // clear (in case of transparency)
+            ctx.drawImage(img, 0, 0);
+            if (track.requestFrame) track.requestFrame();
+            // Wait one frame interval so the encoder picks it up.
+            await new Promise((r) => setTimeout(r, frameMs));
+
+            const pct = Math.round(((i + 1) / totalFrames) * 100);
+            $('progress').value = pct;
+            $('progress-pct').textContent = pct + '%';
+        }
+        recorder.stop();
+        await stopped;
+        hide($('step-extract'));
+
+        const blob = new Blob(chunks, { type: support.mime });
+        const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+        const filename = `bubs960-spin-${stamp}.${support.ext}`;
+        const result = await shareOrDownload(blob, filename, support.mime.split(';')[0]);
+        toast(result === 'shared' ? 'Shared ✓' : result === 'cancelled' ? 'Cancelled' : `Video (${support.ext.toUpperCase()}) ready ✓`);
+    }
+
+    async function downloadZip() {
+        if (typeof JSZip === 'undefined') {
+            showError('ZIP library failed to load (offline?). Frames are still viewable — try again with internet.');
+            return;
+        }
+        const zip = new JSZip();
+        const pad = String(state.frames.length).length;
+        state.frames.forEach((blob, i) => {
+            const name = `frame_${String(i + 1).padStart(pad, '0')}.jpg`;
+            zip.file(name, blob);
+        });
+        toast('Building ZIP…');
+        const zipBlob = await zip.generateAsync({ type: 'blob' }, (meta) => {
+            $('progress').value = meta.percent;
+            $('progress-pct').textContent = Math.round(meta.percent) + '%';
+        });
+        const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+        const result = await shareOrDownload(zipBlob, `bubs960-spin-${stamp}.zip`, 'application/zip');
+        toast(result === 'shared' ? 'Shared ✓' : result === 'cancelled' ? 'Cancelled' : 'ZIP ready ✓');
+    }
+
+    // On iPhone, navigator.share opens the native share sheet (AirDrop /
+    // Save to Files / Messages / Mail) so the user doesn't have to dig
+    // through the Files app. Falls back to a normal download anywhere
+    // that can't share files (most desktop browsers, older iOS).
+    async function shareOrDownload(blob, name, mime) {
+        const file = new File([blob], name, { type: mime || blob.type || 'application/octet-stream' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({ files: [file], title: name });
+                return 'shared';
+            } catch (err) {
+                if (err && err.name === 'AbortError') return 'cancelled';
+                // Any other error → fall through to download fallback.
+                console.warn('navigator.share failed, falling back:', err);
+            }
+        }
+        triggerDownload(blob, name);
+        return 'downloaded';
+    }
+
+    function triggerDownload(blob, name) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+    }
+
+    // ---------- wire up the page ----------
+    async function handleFile(file) {
+        clearError();
+        if (!file) return;
+        if (!file.type.startsWith('video/') && !/\.(mp4|mov|m4v|webm)$/i.test(file.name)) {
+            showError('That doesn\'t look like a video. Pick an MP4 or MOV.');
+            return;
+        }
+
+        const frameCount = parseInt($('frame-count').value, 10);
+        const maxDim     = parseInt($('max-dim').value, 10);
+        const quality    = parseFloat($('quality').value);
+        const autoTrim   = $('opt-trim').checked;
+
+        resetFrames();
+        hide($('step-viewer'));
+        hide($('step-listing'));
+        show($('step-extract'));
+        $('progress').value = 0;
+        $('progress-pct').textContent = '0%';
+        $('progress-label').textContent = autoTrim ? 'Scouting movement…' : 'Reading video…';
+
+        try {
+            let range = null;
+            if (autoTrim) {
+                range = await scoutMovement(file);
+                if (range.trimmed) {
+                    const trimmedStart = range.startT.toFixed(2);
+                    const trimmedEnd   = (range.duration - range.endT).toFixed(2);
+                    toast(`Trimmed ${trimmedStart}s start / ${trimmedEnd}s end`);
+                }
+                $('progress-label').textContent = 'Extracting frames…';
+            }
+            const blobs = await extractFrames(file, frameCount, maxDim, quality, range);
+            state.frames = blobs;
+            state.frameURLs = blobs.map(b => URL.createObjectURL(b));
+            renderFrame(0);
+            hide($('step-extract'));
+            show($('step-viewer'));
+            $('step-viewer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // Score frames for sharpness and auto-pick 8 across the rotation.
+            // Show the progress panel again — the viewer stays visible above it.
+            show($('step-extract'));
+            $('progress').value = 0;
+            state.scores = await scoreAllFrames(blobs);
+            state.autoPicked = pickBestPerWedge(state.scores, 8);
+            state.selected = new Set(state.autoPicked);
+            renderListingGrid();
+            hide($('step-extract'));
+            show($('step-listing'));
+            show($('step-draft'));
+            updateListingPreview();
+
+            // Persist this take so it survives a tab close / reload.
+            currentTakeId = new Date().toISOString().replace(/[:.]/g, '-');
+            await persistCurrentTake();
+        } catch (err) {
+            console.error(err);
+            hide($('step-extract'));
+            showError(err.message || 'Something went wrong extracting frames.');
+        }
+    }
+
+    function init() {
+        $('file-camera').addEventListener('change', (e) => handleFile(e.target.files[0]));
+        $('file-pick'  ).addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+        const drop = $('drop');
+        ['dragenter', 'dragover'].forEach(ev =>
+            drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('dragover'); }));
+        ['dragleave', 'drop'].forEach(ev =>
+            drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('dragover'); }));
+        drop.addEventListener('drop', (e) => {
+            const f = e.dataTransfer.files && e.dataTransfer.files[0];
+            if (f) handleFile(f);
+        });
+
+        attachDragHandlers();
+
+        $('btn-play'   ).addEventListener('click', () => state.autoSpin ? stopAutoSpin() : startAutoSpin());
+        $('btn-reverse').addEventListener('click', () => { state.direction *= -1; toast(state.direction > 0 ? 'Forward' : 'Reverse'); });
+        $('btn-zip'    ).addEventListener('click', downloadZip);
+        $('btn-video'  ).addEventListener('click', exportSpinVideo);
+        // Show the video button only if MediaRecorder + canvas.captureStream work in this browser.
+        if (videoExportSupported()) $('btn-video').hidden = false;
+        $('btn-restart').addEventListener('click', () => {
+            // Don't delete the take — just clear the active session. The
+            // user can come back to it via the Recent strip.
+            resetFrames();
+            currentTakeId = null;
+            hide($('step-viewer'));
+            hide($('step-extract'));
+            hide($('step-listing'));
+            hide($('step-draft'));
+            $('file-camera').value = '';
+            $('file-pick').value   = '';
+            renderRecent(); // refresh "current" highlight
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        $('btn-reset-pick'    ).addEventListener('click', resetToAutoPicked);
+        $('btn-preview-photo' ).addEventListener('click', () => previewOutputPhoto().catch((err) => showError(err.message || 'Preview failed.')));
+        $('preview-close'     ).addEventListener('click', closePreviewPanel);
+        $('btn-listing-zip'   ).addEventListener('click', downloadListingZip);
+
+        // Step 5 — listing draft. Live-preview on every keystroke; persist
+        // sticky fields on change so brand/notes survive a reload; also
+        // debounce-save the in-progress take to IndexedDB.
+        LISTING_FIELDS.forEach((k) => {
+            const el = $('f-' + k);
+            const ev = (el.tagName === 'SELECT') ? 'change' : 'input';
+            el.addEventListener(ev, () => {
+                updateListingPreview();
+                saveDefaults();
+                scheduleSave();
+            });
+        });
+        $('btn-copy-title').addEventListener('click', copyTitle);
+        $('btn-copy-desc' ).addEventListener('click', copyDescription);
+        $('btn-clear-form').addEventListener('click', clearForm);
+        $('btn-bundle'    ).addEventListener('click', downloadBundle);
+        $('btn-scan-box'  ).addEventListener('click', scanBoxText);
+
+        // Measurement panel wiring.
+        $('btn-measure'        ).addEventListener('click', openMeasurePanel);
+        $('measure-close'      ).addEventListener('click', closeMeasurePanel);
+        $('measure-reset'      ).addEventListener('click', resetMeasure);
+        $('measure-cycle'      ).addEventListener('click', cycleMeasurePhoto);
+        $('measure-apply'      ).addEventListener('click', applyMeasurement);
+        $('measure-ref'        ).addEventListener('change', () => {
+            const sel = $('measure-ref');
+            const custom = $('measure-ref-custom');
+            if (sel.value === 'custom') { show(custom); custom.focus(); }
+            else                         { hide(custom); }
+            measure.refMm = refMmFromUI() || 24.26;
+            updateMeasureStatus();
+        });
+        $('measure-ref-custom' ).addEventListener('input', () => {
+            measure.refMm = refMmFromUI() || 24.26;
+            updateMeasureStatus();
+        });
+
+        const stage = $('measure-stage');
+        stage.addEventListener('mousedown',  onStagePointerDown);
+        stage.addEventListener('mousemove',  onStagePointerMove);
+        window.addEventListener('mouseup',    onStagePointerUp);
+        stage.addEventListener('touchstart', onStagePointerDown, { passive: false });
+        stage.addEventListener('touchmove',  onStagePointerMove, { passive: false });
+        stage.addEventListener('touchend',   onStagePointerUp);
+        loadDefaults();
+        updateListingPreview();
+
+        // Sticky toggles. Most users will pick a setting once and want it to
+        // persist across sessions. Wrapped in try/catch for private browsing.
+        const TOGGLE_IDS = ['opt-trim', 'opt-autocrop', 'opt-enhance', 'opt-watermark'];
+        const TOGGLE_KEY = 'bubs960-toggles-v1';
+        const saveToggles = () => {
+            try {
+                const snap = Object.fromEntries(TOGGLE_IDS.map((id) => [id, $(id).checked]));
+                localStorage.setItem(TOGGLE_KEY, JSON.stringify(snap));
+            } catch (_) {}
+        };
+        try {
+            const snap = JSON.parse(localStorage.getItem(TOGGLE_KEY) || 'null');
+            if (snap) TOGGLE_IDS.forEach((id) => {
+                if (typeof snap[id] === 'boolean') $(id).checked = snap[id];
+            });
+        } catch (_) {}
+        TOGGLE_IDS.forEach((id) => $(id).addEventListener('change', saveToggles));
+
+        // Render the recent-takes strip on load (hidden if there are none).
+        renderRecent().catch((err) => console.warn('renderRecent failed:', err));
+        $('btn-export-all').addEventListener('click', () => exportAllTakes().catch((err) => showError(err.message || 'Export failed.')));
+
+        // iOS PWA install banner. iOS Safari doesn't fire 'beforeinstallprompt',
+        // so we have to detect-and-instruct manually. Only shown to iOS users
+        // who haven't already installed and haven't dismissed.
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                             window.navigator.standalone === true;
+        const ua = navigator.userAgent;
+        const isIOS = /iPhone|iPad|iPod/.test(ua) && !window.MSStream;
+        // Exclude in-app browsers (Chrome iOS, Firefox iOS) since their Share
+        // sheet doesn't expose Add to Home Screen the same way.
+        const isIOSSafari = isIOS && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua);
+        const dismissed = (() => { try { return !!localStorage.getItem('bubs960-pwa-dismissed'); } catch (_) { return false; } })();
+
+        if (isIOSSafari && !isStandalone && !dismissed) {
+            show($('pwa-banner'));
+        }
+        $('pwa-dismiss').addEventListener('click', () => {
+            hide($('pwa-banner'));
+            try { localStorage.setItem('bubs960-pwa-dismissed', '1'); } catch (_) {}
+        });
+
+        // Register the service worker so the page works offline once installed
+        // to the iPhone home screen. SW requires http(s) origin — won't run on
+        // file:// (it silently fails, which is fine).
+        if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+            navigator.serviceWorker.register('/sw.js').catch((err) => {
+                console.warn('Service worker registration failed:', err);
+            });
+        }
+
+        // Preload the watermark in the background so the first listing-photo
+        // download doesn't pay decode latency.
+        loadWatermark().catch(() => { /* logo missing in dev — ignored */ });
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
