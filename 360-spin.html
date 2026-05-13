@@ -491,6 +491,69 @@
         }
         .selection-summary strong { color: var(--text-light); }
 
+        /* Output preview panel — before/after comparison for photo_01 */
+        .preview-panel {
+            background: var(--bg-dark);
+            border: 1px solid var(--metal-light);
+            border-radius: 12px;
+            padding: 0.85rem 1rem;
+            margin-top: 1rem;
+        }
+        .preview-panel-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.6rem;
+        }
+        .preview-panel-head h3 {
+            font-size: 0.95rem;
+            color: var(--accent-gold);
+        }
+        .preview-panel-head button {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.4rem;
+            line-height: 1;
+            padding: 0 0.25rem;
+            cursor: pointer;
+        }
+        .preview-pair {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+        .preview-half {
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+        .preview-half img {
+            display: block;
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: contain;
+            background: #000;
+        }
+        .preview-label {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            background: rgba(0,0,0,0.65);
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            letter-spacing: 0.04em;
+        }
+        .preview-flags {
+            margin: 0.55rem 0 0;
+            font-size: 0.78rem;
+            font-variant-numeric: tabular-nums;
+        }
+        .preview-flags strong { color: var(--accent-gold); }
+
         /* Measurement panel — tap reference + figure → height in inches */
         .height-row { display: flex; gap: 0.5rem; align-items: center; }
         .height-row input { flex: 1; }
@@ -919,7 +982,26 @@
 
             <div class="listing-actions">
                 <button class="btn-secondary" id="btn-reset-pick">↺ Reset to auto-picked</button>
-                <button class="btn-green" id="btn-listing-zip">⬇ Download listing photos</button>
+                <button class="btn-secondary" id="btn-preview-photo">👁 Preview output</button>
+                <button class="btn-green"     id="btn-listing-zip">⬇ Download listing photos</button>
+            </div>
+
+            <div class="preview-panel hidden" id="preview-panel">
+                <div class="preview-panel-head">
+                    <h3>Output preview — photo_01</h3>
+                    <button type="button" id="preview-close" aria-label="Close">×</button>
+                </div>
+                <div class="preview-pair">
+                    <div class="preview-half">
+                        <span class="preview-label">Before</span>
+                        <img id="preview-before" alt="Original frame">
+                    </div>
+                    <div class="preview-half">
+                        <span class="preview-label">After</span>
+                        <img id="preview-after" alt="Processed frame">
+                    </div>
+                </div>
+                <p class="preview-flags tip" id="preview-flags"></p>
             </div>
         </section>
 
@@ -2348,6 +2430,51 @@
         }
     }
 
+    // ---------- output preview ----------
+    // Render the user's currently-selected lead/first photo through the
+    // same processing pipeline that the ZIP exports use, so they can see
+    // exactly what photo_01.jpg will look like before downloading. Lazy:
+    // only runs when the button is tapped. Re-runs on each tap so toggle
+    // changes are reflected.
+    let _previewURL = null;
+    async function previewOutputPhoto() {
+        const ordered = selectedInOrder();
+        if (ordered.length === 0) {
+            showError('Pick at least one listing photo (Step 4 above) before previewing.');
+            return;
+        }
+        clearError();
+        const idx = ordered[0];
+        const original = state.frames[idx];
+
+        // Show the BEFORE side immediately so the panel never looks empty.
+        $('preview-before').src = state.frameURLs[idx];
+
+        // Free the previous AFTER URL before rendering a new one.
+        if (_previewURL) { URL.revokeObjectURL(_previewURL); _previewURL = null; }
+
+        $('preview-flags').innerHTML = 'Processing…';
+        show($('preview-panel'));
+        $('preview-panel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        const processed = await processListingPhoto(original);
+        _previewURL = URL.createObjectURL(processed);
+        $('preview-after').src = _previewURL;
+
+        const flags = [];
+        if ($('opt-autocrop').checked)  flags.push('<strong>cropped</strong>');
+        if ($('opt-enhance').checked)   flags.push('<strong>enhanced</strong>');
+        if ($('opt-watermark').checked) flags.push('<strong>watermarked</strong>');
+        const sizeKB = Math.round(processed.size / 1024);
+        $('preview-flags').innerHTML = (flags.length ? 'Applied: ' + flags.join(' + ') : 'No processing applied') +
+            ` &nbsp; · &nbsp; ${sizeKB} KB`;
+    }
+
+    function closePreviewPanel() {
+        if (_previewURL) { URL.revokeObjectURL(_previewURL); _previewURL = null; }
+        hide($('preview-panel'));
+    }
+
     // ---------- listing draft (Step 5) ----------
     // Free-text fields → eBay-ready title + description. Everything stays
     // in-browser; the only persistence is localStorage for sticky defaults
@@ -2912,8 +3039,10 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
 
-        $('btn-reset-pick' ).addEventListener('click', resetToAutoPicked);
-        $('btn-listing-zip').addEventListener('click', downloadListingZip);
+        $('btn-reset-pick'    ).addEventListener('click', resetToAutoPicked);
+        $('btn-preview-photo' ).addEventListener('click', () => previewOutputPhoto().catch((err) => showError(err.message || 'Preview failed.')));
+        $('preview-close'     ).addEventListener('click', closePreviewPanel);
+        $('btn-listing-zip'   ).addEventListener('click', downloadListingZip);
 
         // Step 5 — listing draft. Live-preview on every keystroke; persist
         // sticky fields on change so brand/notes survive a reload; also
