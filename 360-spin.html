@@ -957,12 +957,50 @@
         while (hi > lo && diffs[hi] < threshold) hi--;
 
         // Sanity fallback: if scout failed (e.g., uniform video), use whole range.
-        if (hi - lo < 2) return { startT: 0, endT: duration, duration, trimmed: false };
+        if (hi - lo < 2) return { startT: 0, endT: duration, duration, trimmed: false, diffs: null, lo: 0, hi: 0, scoutCount };
 
         // Map scout indices → seconds, with a tiny safety pad inward to avoid the very-edge frames.
         const startT = Math.max(0,        ((lo + 0.5) / scoutCount) * duration);
         const endT   = Math.min(duration, ((hi + 1.5) / scoutCount) * duration);
-        return { startT, endT, duration, trimmed: (startT > 0.05 || endT < duration - 0.05) };
+        return {
+            startT, endT, duration,
+            trimmed: (startT > 0.05 || endT < duration - 0.05),
+            // Pass the raw diffs + bounds back so the extractor can resample
+            // frames to uniform ROTATION ANGLE rather than uniform time.
+            diffs, lo, hi, scoutCount,
+        };
+    }
+
+    // Map the cumulative frame-to-frame diff curve to output timestamps so that
+    // each pair of consecutive output frames represents the same amount of
+    // rotation. For a constant-speed turntable, diffs are roughly uniform and
+    // this collapses to evenly-spaced time. For a hand-spun rotation that
+    // accelerates and decelerates, it compensates so the output spin looks
+    // smooth. Returns null if the diff signal is too weak to be useful — the
+    // caller falls back to time-uniform sampling.
+    function uniformAngularTimestamps(scout, frameCount) {
+        if (!scout || !scout.diffs) return null;
+        const { diffs, lo, hi, scoutCount, duration } = scout;
+
+        // Cumulative diff across the active range: cum[0] = 0, cum[k] = sum of
+        // diffs[lo..lo + k - 1] for k in [1, hi - lo + 1].
+        const cum = [0];
+        for (let k = lo; k <= hi; k++) cum.push(cum[cum.length - 1] + diffs[k]);
+        const total = cum[cum.length - 1];
+        if (!isFinite(total) || total <= 0) return null;
+
+        const ts = new Array(frameCount);
+        for (let i = 0; i < frameCount; i++) {
+            const target = ((i + 0.5) / frameCount) * total;
+            // Linear search is fine — cum.length is at most ~40.
+            let k = 1;
+            while (k < cum.length && cum[k] < target) k++;
+            const segLen = cum[k] - cum[k - 1];
+            const frac = segLen > 0 ? (target - cum[k - 1]) / segLen : 0;
+            const kFrac = (k - 1) + frac;
+            ts[i] = ((lo + kFrac) / scoutCount) * duration;
+        }
+        return ts;
     }
 
     // ---------- frame extraction ----------
@@ -988,10 +1026,16 @@
         canvas.height = dstH;
         const ctx = canvas.getContext('2d');
 
-        // Sample frame_i at the middle of slice i within the active range.
+        // Prefer uniform-angle resampling (uses the scout's diff curve to map
+        // cumulative rotation to time). Falls back to uniform-time when there's
+        // no usable diff signal — turntable users get identical behaviour to
+        // before, handheld users get smoother spins for free.
+        const angularTs = uniformAngularTimestamps(range, frameCount);
+        const useAngular = !!angularTs;
+
         const blobs = [];
         for (let i = 0; i < frameCount; i++) {
-            const t = startT + ((i + 0.5) / frameCount) * span;
+            const t = useAngular ? angularTs[i] : startT + ((i + 0.5) / frameCount) * span;
             await seekTo(video, t);
             ctx.drawImage(video, 0, 0, dstW, dstH);
             const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', quality));
