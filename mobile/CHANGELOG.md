@@ -129,6 +129,38 @@ build a desktop surface during the gap rather than wait. Decision matrix
 - The only native-only gesture surface was `ZoomableImage`, which
   got a web variant in the previous chunk.
 
+### Release tooling + cache hardening + launch doc (this commit)
+- **`scripts/wrangler-deploy.sh`** — one-command Pages deploy:
+  sanity-checks wrangler is installed + logged in, runs
+  `npm run web:build`, copies `public/` into `dist/`, deploys.
+  `--preview` flag deploys the current branch as a preview;
+  default is production.
+- **`.github/workflows/desktop-release.yml`** — three-platform
+  CI matrix (macos / windows / ubuntu-latest). On `v*.*.*` tag
+  push, each runner builds the platform's Tauri binary and
+  uploads to a draft GitHub Release. Production env vars match
+  `eas.json`'s production profile so the desktop binary behaves
+  identically to the launch mobile binary.
+- **`src/cache/persist.ts`** — quota-recovery for the web target.
+  localStorage has a hard 5MB cap; on `QuotaExceededError` the
+  persist layer evicts the oldest ~half of our prefix-scoped
+  entries (by `fetchedAt`) and retries the write once. Non-quota
+  errors (private-browsing throws) fall through to the old
+  non-fatal silent-drop path. Three new tests in
+  `__tests__/persist.test.ts` lock the eviction order, the
+  retry-then-give-up path, and the don't-evict-on-non-quota path.
+- **`src/navigation/linking.ts`** — adds `https://app.figurepinner.com`,
+  `tauri://localhost`, and `https://tauri.localhost` to the prefix
+  list so intra-app `Linking.openURL('https://app.figurepinner.com/open/X')`
+  stays inside the SPA router instead of spawning a browser tab.
+  Native prefixes unchanged.
+- **`store-listing/DESKTOP_LAUNCH.md`** — playbook covering: download
+  page copy, code signing tradeoffs per OS (unsigned / Apple-Dev /
+  notarized / EV cert), SHA-256 manifest, auto-update strategy
+  (deferred), telemetry deltas vs mobile, support FAQ for the
+  "Windows protected your PC" + "unverified developer" pain points,
+  and a per-release checklist.
+
 ### What's still to do this week
 1. Local smoke pass: boot `npx expo start --web`, walk each surface
    (onboarding, search, figure detail with moved/miss branches,
@@ -137,8 +169,9 @@ build a desktop surface during the gap rather than wait. Decision matrix
 2. Clerk dashboard — add allowed origins for the web SDK.
 3. Source icon generation — `npx tauri icon assets/icon-1024.png`
    once the mobile icon lands.
-4. Cloudflare Pages first deploy — `wrangler login` + `wrangler
-   pages deploy ./dist --project-name figurepinner-app`.
+4. Cloudflare Pages first deploy — `./scripts/wrangler-deploy.sh`.
+5. First desktop release — `git tag v0.1.0 && git push --tags`
+   triggers the CI matrix, populates the draft GitHub Release.
 
 ### Blockers needing Steve action
 - `npm install` locally to fetch the new web deps (declared in this

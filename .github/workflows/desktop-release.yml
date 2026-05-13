@@ -1,0 +1,100 @@
+name: Desktop release build
+
+# Builds the Tauri-wrapped .dmg / .msi / .deb on tag push. Drafts a
+# GitHub Release and uploads the binaries as assets, so a single
+# `git tag v0.1.0 && git push --tags` produces three downloadable
+# installers on a single page.
+#
+# Tag scheme: v<major>.<minor>.<patch> (e.g. v0.1.0). The version is
+# also written into tauri.conf.json so installers carry it.
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to build (e.g. v0.1.0). Leave blank to build HEAD.'
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: macos
+            artifact_glob: 'mobile/src-tauri/target/release/bundle/dmg/*.dmg'
+          - os: windows-latest
+            target: windows
+            artifact_glob: 'mobile/src-tauri/target/release/bundle/msi/*.msi'
+          - os: ubuntu-latest
+            target: linux
+            artifact_glob: 'mobile/src-tauri/target/release/bundle/deb/*.deb'
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Linux build deps
+        if: matrix.target == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev \
+            build-essential curl wget libssl-dev libgtk-3-dev \
+            libayatana-appindicator3-dev librsvg2-dev
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            mobile/src-tauri/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('mobile/src-tauri/Cargo.toml') }}
+
+      - name: Install npm deps
+        working-directory: mobile
+        run: npm ci || npm install --legacy-peer-deps
+
+      - name: Build Tauri release
+        working-directory: mobile
+        env:
+          # Build-time vars baked into the JS bundle. Matches the
+          # `production` profile in eas.json so the desktop binary
+          # behaves identically to the mobile launch binary.
+          EXPO_PUBLIC_FIGUREPINNER_API: https://figurepinner-api.bubs960.workers.dev
+          EXPO_PUBLIC_EBAY_CAMPAIGN_ID: '5339147406'
+          EXPO_PUBLIC_V2_COLLECTION_SYNC: 'true'
+          EXPO_PUBLIC_V2_ALERTS: 'true'
+          # CI uses pk_test_* until the prod Clerk instance lands.
+          # Override via repo secret CLERK_PUBLISHABLE_KEY once ready.
+          EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY || 'pk_test_Zml0dGluZy1wZW5ndWluLTcwLmNsZXJrLmFjY291bnRzLmRldiQ' }}
+        run: npm run tauri:build
+
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          draft: true
+          files: ${{ matrix.artifact_glob }}
+          fail_on_unmatched_files: true
