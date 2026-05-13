@@ -370,12 +370,24 @@ function buildBodyHtml(detail, summary, itemUrl) {
   return parts.join('\n');
 }
 
+// eBay CDN hosts images at multiple sizes — Browse API typically returns the
+// `s-l500.jpg` (500px) URL. The exact same image is available at higher
+// resolutions by swapping the suffix: s-l640, s-l800, s-l1000, s-l1200,
+// s-l1600, s-l2400. We rewrite to the highest practical size so Shopify
+// ingests a high-quality original instead of the thumbnail-grade default.
+function upgradeEbayImageUrl(url) {
+  if (typeof url !== 'string') return url;
+  // Matches any /s-l<digits>.<ext> segment in an i.ebayimg.com URL.
+  return url.replace(/(\/s-l)\d+(\.(?:jpg|jpeg|png|webp))/i, '$11600$2');
+}
+
 function collectImages(detail, summary) {
   const urls = new Set();
-  if (summary?.image?.imageUrl) urls.add(summary.image.imageUrl);
-  for (const a of summary?.additionalImages ?? []) if (a?.imageUrl) urls.add(a.imageUrl);
-  if (detail?.image?.imageUrl) urls.add(detail.image.imageUrl);
-  for (const a of detail?.additionalImages ?? []) if (a?.imageUrl) urls.add(a.imageUrl);
+  const add = (u) => { if (u) urls.add(upgradeEbayImageUrl(u)); };
+  add(summary?.image?.imageUrl);
+  for (const a of summary?.additionalImages ?? []) add(a?.imageUrl);
+  add(detail?.image?.imageUrl);
+  for (const a of detail?.additionalImages ?? []) add(a?.imageUrl);
   return [...urls];
 }
 
