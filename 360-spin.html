@@ -463,6 +463,119 @@
         }
         .selection-summary strong { color: var(--text-light); }
 
+        /* Measurement panel — tap reference + figure → height in inches */
+        .height-row { display: flex; gap: 0.5rem; align-items: center; }
+        .height-row input { flex: 1; }
+        .height-row button {
+            background: var(--metal-light);
+            color: var(--text-light);
+            border: none;
+            border-radius: 8px;
+            padding: 0.55rem 0.75rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .measure-panel {
+            background: var(--bg-dark);
+            border: 1px solid var(--accent-gold);
+            border-radius: 12px;
+            padding: 0.85rem 1rem;
+            margin-top: 1rem;
+        }
+        .measure-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem; }
+        .measure-header h3 { font-size: 0.95rem; color: var(--accent-gold); }
+        .measure-header button {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.4rem;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0 0.25rem;
+        }
+
+        .measure-toolbar { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.5rem; }
+        .measure-toolbar label { font-size: 0.8rem; color: var(--text-muted); }
+        .measure-toolbar select,
+        .measure-toolbar input {
+            background: var(--bg-panel);
+            color: var(--text-light);
+            border: 1px solid var(--metal-light);
+            border-radius: 6px;
+            padding: 0.4rem 0.55rem;
+            font: inherit;
+            font-size: 0.85rem;
+        }
+
+        .measure-stage {
+            position: relative;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            /* No max-height: the stage takes the img's rendered size, so the
+               SVG overlay's viewBox lines up exactly with displayed pixels. */
+        }
+        .measure-stage img {
+            display: block;
+            width: 100%;
+            height: auto;
+            -webkit-user-drag: none;
+            pointer-events: none;
+        }
+        .measure-stage svg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .measure-stage .dot {
+            cursor: grab;
+            pointer-events: all;
+        }
+        .measure-stage .dot.dragging { cursor: grabbing; }
+        .measure-stage .ref-dot   { fill: #d4a017; stroke: #fff; stroke-width: 2; }
+        .measure-stage .fig-dot   { fill: #2ecc71; stroke: #fff; stroke-width: 2; }
+        .measure-stage .ref-line  { stroke: #d4a017; stroke-width: 3; }
+        .measure-stage .fig-line  { stroke: #2ecc71; stroke-width: 3; }
+
+        .measure-status {
+            position: absolute;
+            left: 50%;
+            top: 0.65rem;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+            font-size: 0.78rem;
+            padding: 0.35rem 0.7rem;
+            border-radius: 999px;
+            white-space: nowrap;
+            max-width: calc(100% - 1rem);
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .measure-readout {
+            font-variant-numeric: tabular-nums;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin: 0.65rem 0 0.5rem;
+        }
+        .measure-readout strong { color: var(--text-light); font-size: 1rem; }
+
+        .measure-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0.5rem;
+        }
+        @media (max-width: 380px) { .measure-actions { grid-template-columns: 1fr; } }
+
         /* OCR scan row */
         .ocr-row {
             display: flex;
@@ -851,6 +964,44 @@
                 <div class="form-field">
                     <label for="f-qty">Quantity</label>
                     <input id="f-qty" type="number" inputmode="numeric" min="1" value="1">
+                </div>
+                <div class="form-field span-2">
+                    <label for="f-height">Height (inches)</label>
+                    <div class="height-row">
+                        <input id="f-height" type="number" inputmode="decimal" min="0" step="0.1" placeholder="—">
+                        <button type="button" id="btn-measure">📏 Measure from photo</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="measure-panel hidden" id="measure-panel">
+                <div class="measure-header">
+                    <h3>📏 Tap on a photo to measure</h3>
+                    <button type="button" id="measure-close" aria-label="Close">×</button>
+                </div>
+                <div class="measure-toolbar">
+                    <label for="measure-ref">Reference:</label>
+                    <select id="measure-ref">
+                        <option value="24.26">US Quarter (0.95")</option>
+                        <option value="19.05">US Penny (0.75")</option>
+                        <option value="17.91">US Dime (0.71")</option>
+                        <option value="21.21">US Nickel (0.84")</option>
+                        <option value="66.6">US Dollar Bill width (2.62")</option>
+                        <option value="95">Funko Pop! box width (3.74")</option>
+                        <option value="custom">Custom (mm)</option>
+                    </select>
+                    <input id="measure-ref-custom" type="number" inputmode="decimal" min="1" step="0.1" placeholder="mm" class="hidden" style="width: 80px;">
+                </div>
+                <div class="measure-stage" id="measure-stage">
+                    <img id="measure-img" alt="Listing photo for measurement">
+                    <svg id="measure-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+                    <div class="measure-status" id="measure-status">Tap 2 points on the reference object</div>
+                </div>
+                <div class="measure-readout" id="measure-readout">Place 4 dots to measure the figure height.</div>
+                <div class="measure-actions">
+                    <button type="button" class="btn-secondary" id="measure-reset">↺ Reset</button>
+                    <button type="button" class="btn-secondary" id="measure-cycle">Next photo →</button>
+                    <button type="button" class="btn-green"     id="measure-apply" disabled>✓ Apply height</button>
                 </div>
             </div>
 
@@ -1489,6 +1640,7 @@
                     year: form.year, variant: form.variant,
                     conditionShort: form.conditionShort, conditionLong: form.conditionLong,
                     notes: form.notes, price: form.price, qty: form.qty,
+                    height: form.height,
                 },
                 thumbnail,
             };
@@ -1533,6 +1685,7 @@
         setVal('notes', f.notes);
         setVal('price', f.price);
         setVal('qty',   f.qty || '1');
+        setVal('height', f.height);
 
         // Repaint UI
         renderFrame(0);
@@ -1594,6 +1747,245 @@
             strip.appendChild(card);
         }
         show(sec);
+    }
+
+    // ---------- dimension estimation ----------
+    // Tap two points on a known reference object (a quarter, a Funko box
+    // edge, etc.) plus two points on the figure (top + bottom). The page
+    // computes mm-per-pixel from the reference and applies it to the
+    // figure to get a height in inches. Pure geometry — accuracy depends
+    // entirely on the user clicking accurately and on the reference and
+    // figure being on roughly the same plane / depth (so they have the
+    // same pixel-per-mm scale).
+    const measure = {
+        open: false,
+        photoIdx: 0,
+        refMm: 24.26, // quarter
+        ref: [],      // [{x, y}, {x, y}] — in image-natural pixel space
+        fig: [],
+        dragging: null, // { which: 'ref'|'fig', idx: 0|1 }
+    };
+
+    function refMmFromUI() {
+        const sel = $('measure-ref');
+        if (sel.value === 'custom') {
+            return parseFloat($('measure-ref-custom').value) || 0;
+        }
+        return parseFloat(sel.value) || 0;
+    }
+
+    function openMeasurePanel() {
+        if (state.selected.size === 0) {
+            showError('Pick at least one listing photo first (Step 4 above).');
+            return;
+        }
+        clearError();
+        // Use the user's first selected photo as the starting point.
+        const ordered = [...state.selected].sort((a, b) => a - b);
+        measure.photoIdx = ordered.indexOf(state.autoPicked[0] ?? ordered[0]);
+        if (measure.photoIdx < 0) measure.photoIdx = 0;
+        measure.open = true;
+        measure.ref = [];
+        measure.fig = [];
+        measure.refMm = refMmFromUI() || 24.26;
+        loadMeasurePhoto();
+        show($('measure-panel'));
+        $('measure-panel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function closeMeasurePanel() {
+        measure.open = false;
+        hide($('measure-panel'));
+    }
+
+    function loadMeasurePhoto() {
+        const ordered = [...state.selected].sort((a, b) => a - b);
+        if (ordered.length === 0) return;
+        const idx = ordered[measure.photoIdx % ordered.length];
+        $('measure-img').src = state.frameURLs[idx];
+        // Wait for the image to load before sizing the SVG so the viewBox is right.
+        $('measure-img').onload = () => {
+            const img = $('measure-img');
+            const svg = $('measure-svg');
+            svg.setAttribute('viewBox', `0 0 ${img.naturalWidth} ${img.naturalHeight}`);
+            svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+            redrawMeasure();
+        };
+    }
+
+    function cycleMeasurePhoto() {
+        const ordered = [...state.selected].sort((a, b) => a - b);
+        measure.photoIdx = (measure.photoIdx + 1) % ordered.length;
+        measure.ref = [];
+        measure.fig = [];
+        loadMeasurePhoto();
+        updateMeasureStatus();
+    }
+
+    function resetMeasure() {
+        measure.ref = [];
+        measure.fig = [];
+        redrawMeasure();
+        updateMeasureStatus();
+    }
+
+    function updateMeasureStatus() {
+        const s = $('measure-status');
+        let msg;
+        if (measure.ref.length < 2) {
+            msg = `Tap 2 points on the reference (${measure.ref.length}/2)`;
+        } else if (measure.fig.length < 2) {
+            msg = `Now tap top &amp; bottom of the figure (${measure.fig.length}/2)`;
+        } else {
+            msg = 'Drag dots to refine, then tap ✓ Apply';
+        }
+        s.innerHTML = msg;
+
+        const readout = $('measure-readout');
+        const apply = $('measure-apply');
+        if (measure.ref.length === 2 && measure.fig.length === 2) {
+            const result = computeHeight();
+            if (result) {
+                readout.innerHTML = `Reference ${measure.refMm} mm = ${result.refPx.toFixed(1)} px &nbsp; · &nbsp; ` +
+                                    `Figure ${result.figPx.toFixed(1)} px = <strong>${result.inches.toFixed(2)}"</strong> ` +
+                                    `<span style="color: var(--text-muted);">(${result.mm.toFixed(1)} mm)</span>`;
+                apply.disabled = false;
+                apply.dataset.value = result.inches.toFixed(2);
+            } else {
+                readout.textContent = 'Pick a non-zero reference length.';
+                apply.disabled = true;
+            }
+        } else {
+            readout.textContent = 'Place 4 dots to measure the figure height.';
+            apply.disabled = true;
+        }
+    }
+
+    function dist(p, q) { return Math.hypot(p.x - q.x, p.y - q.y); }
+
+    function computeHeight() {
+        if (measure.ref.length !== 2 || measure.fig.length !== 2) return null;
+        const refPx = dist(measure.ref[0], measure.ref[1]);
+        const figPx = dist(measure.fig[0], measure.fig[1]);
+        if (refPx < 1) return null;
+        const pxPerMm = refPx / measure.refMm;
+        const mm = figPx / pxPerMm;
+        const inches = mm / 25.4;
+        return { refPx, figPx, mm, inches };
+    }
+
+    function redrawMeasure() {
+        const svg = $('measure-svg');
+        // Clear all but keep the viewBox.
+        while (svg.firstChild) svg.removeChild(svg.firstChild);
+        const NS = 'http://www.w3.org/2000/svg';
+        const img = $('measure-img');
+        const r = Math.max(8, Math.min(img.naturalWidth, img.naturalHeight) * 0.012);
+
+        if (measure.ref.length === 2) {
+            const line = document.createElementNS(NS, 'line');
+            line.setAttribute('class', 'ref-line');
+            line.setAttribute('x1', measure.ref[0].x); line.setAttribute('y1', measure.ref[0].y);
+            line.setAttribute('x2', measure.ref[1].x); line.setAttribute('y2', measure.ref[1].y);
+            svg.appendChild(line);
+        }
+        if (measure.fig.length === 2) {
+            const line = document.createElementNS(NS, 'line');
+            line.setAttribute('class', 'fig-line');
+            line.setAttribute('x1', measure.fig[0].x); line.setAttribute('y1', measure.fig[0].y);
+            line.setAttribute('x2', measure.fig[1].x); line.setAttribute('y2', measure.fig[1].y);
+            svg.appendChild(line);
+        }
+        const addDot = (p, cls, which, idx) => {
+            const c = document.createElementNS(NS, 'circle');
+            c.setAttribute('cx', p.x); c.setAttribute('cy', p.y);
+            c.setAttribute('r', r);
+            c.setAttribute('class', 'dot ' + cls);
+            c.dataset.which = which;
+            c.dataset.idx = String(idx);
+            svg.appendChild(c);
+        };
+        measure.ref.forEach((p, i) => addDot(p, 'ref-dot', 'ref', i));
+        measure.fig.forEach((p, i) => addDot(p, 'fig-dot', 'fig', i));
+    }
+
+    // Convert a pointer event (in client space) to image-natural coordinates.
+    function eventToImageCoords(e) {
+        const img = $('measure-img');
+        const rect = img.getBoundingClientRect();
+        const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+        const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+        // img is object-fit: contain inside the stage; rect IS the rendered img area
+        // because the <img> element itself has the contained aspect ratio. Direct scale.
+        const x = (cx / rect.width)  * img.naturalWidth;
+        const y = (cy / rect.height) * img.naturalHeight;
+        return { x: Math.max(0, Math.min(img.naturalWidth,  x)),
+                 y: Math.max(0, Math.min(img.naturalHeight, y)) };
+    }
+
+    function findNearestDot(p) {
+        const all = [...measure.ref.map((q, i) => ({ q, which: 'ref', idx: i })),
+                     ...measure.fig.map((q, i) => ({ q, which: 'fig', idx: i }))];
+        if (all.length === 0) return null;
+        let best = all[0], bestD = dist(p, all[0].q);
+        for (let i = 1; i < all.length; i++) {
+            const d = dist(p, all[i].q);
+            if (d < bestD) { bestD = d; best = all[i]; }
+        }
+        const img = $('measure-img');
+        const grabRadius = Math.max(20, Math.min(img.naturalWidth, img.naturalHeight) * 0.03);
+        return bestD <= grabRadius ? best : null;
+    }
+
+    function onStagePointerDown(e) {
+        if (!measure.open) return;
+        const p = eventToImageCoords(e);
+
+        // If the user is tapping near an existing dot, grab it for dragging.
+        const hit = findNearestDot(p);
+        if (hit) {
+            measure.dragging = hit;
+            e.preventDefault();
+            return;
+        }
+
+        // Otherwise, append to the active set (ref first, then fig).
+        if (measure.ref.length < 2) {
+            measure.ref.push(p);
+        } else if (measure.fig.length < 2) {
+            measure.fig.push(p);
+        } else {
+            // Both sets full and no dot was hit — start a small drag on nearest.
+            return;
+        }
+        redrawMeasure();
+        updateMeasureStatus();
+        e.preventDefault();
+    }
+
+    function onStagePointerMove(e) {
+        if (!measure.dragging) return;
+        const p = eventToImageCoords(e);
+        const arr = measure.dragging.which === 'ref' ? measure.ref : measure.fig;
+        arr[measure.dragging.idx] = p;
+        redrawMeasure();
+        updateMeasureStatus();
+        e.preventDefault();
+    }
+
+    function onStagePointerUp() {
+        measure.dragging = null;
+    }
+
+    function applyMeasurement() {
+        const v = $('measure-apply').dataset.value;
+        if (!v) return;
+        $('f-height').value = v;
+        updateListingPreview();
+        saveDefaults();
+        scheduleSave();
+        closeMeasurePanel();
+        toast(`Height set to ${v}" ✓`);
     }
 
     // ---------- OCR: scan box text → auto-fill form ----------
@@ -1732,7 +2124,7 @@
     // in-browser; the only persistence is localStorage for sticky defaults
     // (so brand/notes don't have to be re-typed for every figure).
 
-    const LISTING_FIELDS = ['vendor', 'series', 'character', 'year', 'variant', 'condition', 'notes', 'price', 'qty'];
+    const LISTING_FIELDS = ['vendor', 'series', 'character', 'year', 'variant', 'condition', 'notes', 'price', 'qty', 'height'];
     const LS_KEY = 'bubs960-listing-defaults-v1';
     const TITLE_MAX = 80;
 
@@ -1750,6 +2142,7 @@
             notes: f('notes'),
             price: f('price'),
             qty: f('qty') || '1',
+            height: f('height'),
         };
     }
 
@@ -1799,6 +2192,7 @@
         if (d.year)      lines.push(`    <li><strong>Year:</strong> ${esc(d.year)}</li>`);
         if (d.variant)   lines.push(`    <li><strong>Variant:</strong> ${esc(d.variant)}</li>`);
         if (d.conditionShort) lines.push(`    <li><strong>Condition:</strong> ${esc(d.conditionShort)}</li>`);
+        if (d.height)         lines.push(`    <li><strong>Height:</strong> ${esc(d.height)}"</li>`);
         lines.push('  </ul>');
         if (d.conditionLong) lines.push(`  <p>${esc(d.conditionLong)}</p>`);
         if (d.notes) {
@@ -1942,6 +2336,7 @@
             notes: d.notes,
             price: d.price ? Number(d.price) : null,
             quantity: Number(d.qty) || 1,
+            heightInches: d.height ? Number(d.height) : null,
             photoCount: ordered.length,
             enhanced: useEnhance,
             watermarked: useWatermark,
@@ -2306,6 +2701,33 @@
         $('btn-clear-form').addEventListener('click', clearForm);
         $('btn-bundle'    ).addEventListener('click', downloadBundle);
         $('btn-scan-box'  ).addEventListener('click', scanBoxText);
+
+        // Measurement panel wiring.
+        $('btn-measure'        ).addEventListener('click', openMeasurePanel);
+        $('measure-close'      ).addEventListener('click', closeMeasurePanel);
+        $('measure-reset'      ).addEventListener('click', resetMeasure);
+        $('measure-cycle'      ).addEventListener('click', cycleMeasurePhoto);
+        $('measure-apply'      ).addEventListener('click', applyMeasurement);
+        $('measure-ref'        ).addEventListener('change', () => {
+            const sel = $('measure-ref');
+            const custom = $('measure-ref-custom');
+            if (sel.value === 'custom') { show(custom); custom.focus(); }
+            else                         { hide(custom); }
+            measure.refMm = refMmFromUI() || 24.26;
+            updateMeasureStatus();
+        });
+        $('measure-ref-custom' ).addEventListener('input', () => {
+            measure.refMm = refMmFromUI() || 24.26;
+            updateMeasureStatus();
+        });
+
+        const stage = $('measure-stage');
+        stage.addEventListener('mousedown',  onStagePointerDown);
+        stage.addEventListener('mousemove',  onStagePointerMove);
+        window.addEventListener('mouseup',    onStagePointerUp);
+        stage.addEventListener('touchstart', onStagePointerDown, { passive: false });
+        stage.addEventListener('touchmove',  onStagePointerMove, { passive: false });
+        stage.addEventListener('touchend',   onStagePointerUp);
         loadDefaults();
         updateListingPreview();
 
