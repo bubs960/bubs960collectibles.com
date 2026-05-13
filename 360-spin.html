@@ -7,6 +7,13 @@
     <title>360° Spin Maker | Bubs960 Collectibles</title>
     <meta name="description" content="Turn a short phone video of a figure into a drag-to-rotate 360° spin photo. Works offline on your iPhone. Download as numbered frames or a ZIP for eBay/Shopify listings.">
     <meta name="robots" content="noindex">
+
+    <!-- PWA: lets you "Add to Home Screen" on iPhone for an app-like icon -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/bubs-logo.jpg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="360 Spin">
     <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -247,6 +254,21 @@
         .actions button { width: 100%; }
         @media (max-width: 380px) { .actions { grid-template-columns: 1fr; } }
 
+        /* Toggle row in step 1 */
+        .toggle-row { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+        .toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            user-select: none;
+            padding: 0.2rem 0;
+        }
+        .toggle input { width: 18px; height: 18px; accent-color: var(--accent-gold); flex-shrink: 0; }
+        .toggle strong { color: var(--text-light); }
+
         /* Listing-photo grid */
         .thumb-grid {
             display: grid;
@@ -379,6 +401,8 @@
             <p class="tip">
                 Put the figure on a <strong>lazy-susan / turntable</strong> (or walk around it) and film a smooth
                 <strong>4–8 second</strong> rotation. Even speed = clean spin. Plain background works best.
+                Don't worry about timing the record/stop perfectly — <strong>auto-trim</strong> will cut the
+                still moments at the start and end for you.
             </p>
 
             <div class="file-zone" id="drop">
@@ -422,6 +446,17 @@
                         <option value="0.9" selected>90%</option>
                         <option value="0.95">95%</option>
                     </select>
+                </label>
+            </div>
+
+            <div class="row toggle-row" style="margin-top: 0.75rem;">
+                <label class="toggle">
+                    <input type="checkbox" id="opt-trim" checked>
+                    <span><strong>Auto-trim</strong> dead frames at start &amp; end</span>
+                </label>
+                <label class="toggle">
+                    <input type="checkbox" id="opt-watermark" checked>
+                    <span><strong>Watermark</strong> listing photos with Bubs960 logo</span>
                 </label>
             </div>
 
@@ -544,8 +579,10 @@
         stopAutoSpin();
     }
 
-    // ---------- frame extraction ----------
-    async function extractFrames(file, frameCount, maxDim, quality) {
+    // ---------- video helpers ----------
+    // Opens a file as an HTMLVideoElement, waits for metadata, and primes
+    // the iOS Safari decoder so subsequent seek+draw works reliably.
+    async function openVideo(file) {
         const url = URL.createObjectURL(file);
         const video = document.createElement('video');
         video.preload = 'auto';
@@ -554,20 +591,88 @@
         video.crossOrigin = 'anonymous';
         video.src = url;
 
-        // Wait for metadata so we know duration + dimensions.
         await new Promise((resolve, reject) => {
             video.onloadedmetadata = resolve;
             video.onerror = () => reject(new Error('Could not read that video. Try a different format (MP4 / MOV).'));
         });
-
-        // iOS Safari quirk: a quick play() then pause() primes the decoder so seek+draw works reliably.
-        try { await video.play(); video.pause(); } catch (_) { /* autoplay may be denied; seek still usually works */ }
+        try { await video.play(); video.pause(); } catch (_) { /* autoplay denied is fine, seek still usually works */ }
 
         const duration = video.duration;
         if (!isFinite(duration) || duration <= 0) {
             URL.revokeObjectURL(url);
             throw new Error('Video duration looks wrong. Re-record or pick a different file.');
         }
+        return { video, url, duration };
+    }
+
+    // ---------- auto-trim (movement scout) ----------
+    // Step through ~40 low-res frames spanning the whole video and compute
+    // the mean absolute pixel difference between consecutive frames. The
+    // figure rotating shows up as a high-diff plateau; the leading dead
+    // air (figure not yet moving) and trailing dead air (figure stopped)
+    // show up as low-diff tails. Trim them.
+    async function scoutMovement(file, scoutCount = 40) {
+        const { video, url, duration } = await openVideo(file);
+
+        const sw = 96;
+        const sh = Math.max(1, Math.round(video.videoHeight * (sw / video.videoWidth)));
+        const c = document.createElement('canvas');
+        c.width = sw; c.height = sh;
+        const cx = c.getContext('2d', { willReadFrequently: true });
+
+        const grays = new Array(scoutCount);
+        for (let i = 0; i < scoutCount; i++) {
+            const t = ((i + 0.5) / scoutCount) * duration;
+            await seekTo(video, t);
+            cx.drawImage(video, 0, 0, sw, sh);
+            const px = cx.getImageData(0, 0, sw, sh).data;
+            const g = new Float32Array(sw * sh);
+            for (let j = 0, k = 0; j < px.length; j += 4, k++) {
+                g[k] = (px[j] + px[j + 1] + px[j + 2]) * (1 / 3);
+            }
+            grays[i] = g;
+
+            const pct = Math.round(((i + 1) / scoutCount) * 50); // scout takes the first half of the bar
+            $('progress').value = pct;
+            $('progress-pct').textContent = pct + '%';
+        }
+        URL.revokeObjectURL(url);
+
+        // Frame-to-frame mean absolute difference.
+        const n = grays[0].length;
+        const diffs = new Array(scoutCount - 1);
+        for (let i = 1; i < scoutCount; i++) {
+            let s = 0;
+            const a = grays[i - 1], b = grays[i];
+            for (let j = 0; j < n; j++) s += Math.abs(b[j] - a[j]);
+            diffs[i - 1] = s / n;
+        }
+
+        // Threshold = 30% of the median diff. Anything below that is "dead air".
+        const sorted = [...diffs].sort((a, b) => a - b);
+        const median = sorted[Math.floor(sorted.length / 2)] || 0;
+        const threshold = Math.max(0.5, median * 0.3); // small absolute floor so noise-only frames don't pass
+
+        let lo = 0, hi = diffs.length - 1;
+        while (lo < diffs.length && diffs[lo] < threshold) lo++;
+        while (hi > lo && diffs[hi] < threshold) hi--;
+
+        // Sanity fallback: if scout failed (e.g., uniform video), use whole range.
+        if (hi - lo < 2) return { startT: 0, endT: duration, duration, trimmed: false };
+
+        // Map scout indices → seconds, with a tiny safety pad inward to avoid the very-edge frames.
+        const startT = Math.max(0,        ((lo + 0.5) / scoutCount) * duration);
+        const endT   = Math.min(duration, ((hi + 1.5) / scoutCount) * duration);
+        return { startT, endT, duration, trimmed: (startT > 0.05 || endT < duration - 0.05) };
+    }
+
+    // ---------- frame extraction ----------
+    async function extractFrames(file, frameCount, maxDim, quality, range) {
+        const { video, url, duration } = await openVideo(file);
+
+        const startT = range ? range.startT : 0;
+        const endT   = range ? range.endT   : duration;
+        const span   = Math.max(0.001, endT - startT);
 
         // Compute output canvas size, preserving aspect ratio.
         const srcW = video.videoWidth;
@@ -584,11 +689,10 @@
         canvas.height = dstH;
         const ctx = canvas.getContext('2d');
 
-        // Sample frame_i at (i + 0.5) / N * duration so we land in the middle of each "slice"
-        // and never hit the very last black frame.
+        // Sample frame_i at the middle of slice i within the active range.
         const blobs = [];
         for (let i = 0; i < frameCount; i++) {
-            const t = ((i + 0.5) / frameCount) * duration;
+            const t = startT + ((i + 0.5) / frameCount) * span;
             await seekTo(video, t);
             ctx.drawImage(video, 0, 0, dstW, dstH);
             const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', quality));
@@ -740,24 +844,78 @@
         toast('Restored auto-pick');
     }
 
+    // ---------- watermark ----------
+    // The Bubs960 logo gets stamped into the bottom-right of each listing
+    // photo so re-listers can't easily steal them. Decoded once and reused.
+    let _watermarkPromise = null;
+    function loadWatermark() {
+        if (_watermarkPromise) return _watermarkPromise;
+        _watermarkPromise = new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload  = () => resolve(img);
+            img.onerror = () => reject(new Error('Could not load watermark logo.'));
+            img.src = 'bubs-logo.jpg'; // same directory as the page; works both at / and locally
+        });
+        return _watermarkPromise;
+    }
+
+    function blobToImage(blob) {
+        return new Promise((resolve, reject) => {
+            const url = URL.createObjectURL(blob);
+            const img = new Image();
+            img.onload  = () => { URL.revokeObjectURL(url); resolve(img); };
+            img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not decode a frame to watermark.')); };
+            img.src = url;
+        });
+    }
+
+    async function watermarkFrame(blob, opts = {}) {
+        const widthRatio = opts.widthRatio ?? 0.14;   // logo width = 14% of frame width
+        const opacity    = opts.opacity    ?? 0.55;
+        const margin     = opts.margin     ?? 0.025;  // 2.5% inset from edges
+        const quality    = opts.quality    ?? 0.9;
+
+        const [wm, frame] = await Promise.all([loadWatermark(), blobToImage(blob)]);
+        const W = frame.naturalWidth, H = frame.naturalHeight;
+        const c = document.createElement('canvas');
+        c.width = W; c.height = H;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(frame, 0, 0);
+
+        const wmW = W * widthRatio;
+        const wmH = wmW * (wm.naturalHeight / wm.naturalWidth);
+        const x = W - wmW - W * margin;
+        const y = H - wmH - H * margin;
+
+        ctx.globalAlpha = opacity;
+        ctx.drawImage(wm, x, y, wmW, wmH);
+        ctx.globalAlpha = 1;
+
+        return new Promise((res) => c.toBlob(res, 'image/jpeg', quality));
+    }
+
     async function downloadListingZip() {
         if (state.selected.size === 0) return;
         if (typeof JSZip === 'undefined') {
             showError('ZIP library failed to load. Try again with internet.');
             return;
         }
-        const zip = new JSZip();
-        // Renumber selection to photo_01.jpg, photo_02.jpg ... in frame order.
+        const useWatermark = $('opt-watermark').checked;
         const ordered = [...state.selected].sort((a, b) => a - b);
         const pad = String(ordered.length).length;
-        ordered.forEach((idx, i) => {
+
+        toast(useWatermark ? 'Watermarking & zipping…' : 'Building ZIP…');
+        const zip = new JSZip();
+        for (let i = 0; i < ordered.length; i++) {
+            const idx = ordered[i];
             const name = `photo_${String(i + 1).padStart(pad, '0')}.jpg`;
-            zip.file(name, state.frames[idx]);
-        });
-        toast('Building ZIP…');
+            const blob = useWatermark ? await watermarkFrame(state.frames[idx]) : state.frames[idx];
+            zip.file(name, blob);
+        }
         const zipBlob = await zip.generateAsync({ type: 'blob' });
         const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
-        triggerDownload(zipBlob, `bubs960-listing-photos-${stamp}.zip`);
+        const suffix = useWatermark ? '-wm' : '';
+        triggerDownload(zipBlob, `bubs960-listing-photos${suffix}-${stamp}.zip`);
         toast(`${ordered.length} photos ready ✓`);
     }
 
@@ -875,16 +1033,28 @@
         const frameCount = parseInt($('frame-count').value, 10);
         const maxDim     = parseInt($('max-dim').value, 10);
         const quality    = parseFloat($('quality').value);
+        const autoTrim   = $('opt-trim').checked;
 
         resetFrames();
         hide($('step-viewer'));
+        hide($('step-listing'));
         show($('step-extract'));
         $('progress').value = 0;
         $('progress-pct').textContent = '0%';
-        $('progress-label').textContent = 'Reading video…';
+        $('progress-label').textContent = autoTrim ? 'Scouting movement…' : 'Reading video…';
 
         try {
-            const blobs = await extractFrames(file, frameCount, maxDim, quality);
+            let range = null;
+            if (autoTrim) {
+                range = await scoutMovement(file);
+                if (range.trimmed) {
+                    const trimmedStart = range.startT.toFixed(2);
+                    const trimmedEnd   = (range.duration - range.endT).toFixed(2);
+                    toast(`Trimmed ${trimmedStart}s start / ${trimmedEnd}s end`);
+                }
+                $('progress-label').textContent = 'Extracting frames…';
+            }
+            const blobs = await extractFrames(file, frameCount, maxDim, quality, range);
             state.frames = blobs;
             state.frameURLs = blobs.map(b => URL.createObjectURL(b));
             renderFrame(0);
@@ -940,6 +1110,19 @@
 
         $('btn-reset-pick' ).addEventListener('click', resetToAutoPicked);
         $('btn-listing-zip').addEventListener('click', downloadListingZip);
+
+        // Register the service worker so the page works offline once installed
+        // to the iPhone home screen. SW requires http(s) origin — won't run on
+        // file:// (it silently fails, which is fine).
+        if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+            navigator.serviceWorker.register('/sw.js').catch((err) => {
+                console.warn('Service worker registration failed:', err);
+            });
+        }
+
+        // Preload the watermark in the background so the first listing-photo
+        // download doesn't pay decode latency.
+        loadWatermark().catch(() => { /* logo missing in dev — ignored */ });
     }
 
     document.addEventListener('DOMContentLoaded', init);

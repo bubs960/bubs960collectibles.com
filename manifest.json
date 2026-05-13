@@ -1,0 +1,19 @@
+{
+  "name": "Bubs960 360° Spin Maker",
+  "short_name": "360 Spin",
+  "description": "Turn a phone video of a collectible into a drag-to-rotate 360° spin photo and pick the best listing photos automatically.",
+  "start_url": "/360-spin.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0e17",
+  "theme_color": "#0a0e17",
+  "icons": [
+    {
+      "src": "/bubs-logo.jpg",
+      "sizes": "192x192 512x512 1024x1024",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}
