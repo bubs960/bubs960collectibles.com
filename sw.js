@@ -13,7 +13,7 @@
 // Bump CACHE_VERSION when you ship breaking changes so old caches get
 // thrown away on the next visit.
 
-const CACHE_VERSION = 'v8'; // bump when shipping breaking changes
+const CACHE_VERSION = 'v9'; // bump when shipping breaking changes
 const CACHE_NAME = `bubs960-spin-${CACHE_VERSION}`;
 
 const PRECACHE = [

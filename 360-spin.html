@@ -305,6 +305,7 @@
         .pwa-banner .pwa-dismiss:hover { color: var(--text-light); }
 
         /* Recent-takes strip */
+        .recent-head { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
         .recent-strip {
             display: flex;
             gap: 0.6rem;
@@ -754,8 +755,11 @@
 
         <!-- RECENT TAKES (hidden until at least one save) ----------- -->
         <section class="panel hidden" id="step-recent">
-            <h2>Recent</h2>
-            <p class="tip" style="margin-bottom: 0.6rem;">
+            <div class="recent-head">
+                <h2 style="margin: 0;">Recent</h2>
+                <button class="copy-btn" id="btn-export-all" title="Download every saved take as one backup ZIP">⬇ Export all</button>
+            </div>
+            <p class="tip" style="margin: 0.45rem 0 0.6rem;">
                 Tap any take to restore its photos, picks, and form. Capped at 12; oldest drop off.
             </p>
             <div class="recent-strip" id="recent-strip"></div>
@@ -1698,6 +1702,73 @@
         await renderRecent();
         $('step-viewer').scrollIntoView({ behavior: 'smooth', block: 'start' });
         toast(`Restored "${rec.name}"`);
+    }
+
+    // Master backup ZIP — every saved take as its own folder so the user
+    // can recover from a phone wipe, switch devices, or just archive a
+    // batch. Folder name is "YYYY-MM-DD_<slug>" to sort by date.
+    async function exportAllTakes() {
+        let list = [];
+        try { list = await dbGetAllSorted(); } catch (_) {}
+        if (!list || list.length === 0) {
+            toast('No saved takes to export yet.');
+            return;
+        }
+        if (typeof JSZip === 'undefined') {
+            showError('ZIP library failed to load. Try again with internet.');
+            return;
+        }
+
+        toast(`Bundling ${list.length} take${list.length > 1 ? 's' : ''}…`);
+        const zip = new JSZip();
+
+        for (const take of list) {
+            const dateSlug = (take.createdAt || take.id).slice(0, 10);
+            const nameSlug = (take.name || 'untitled').toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'untitled';
+            const folder = `takes/${dateSlug}_${nameSlug}`;
+
+            // Photos: only the ones the user had selected for that take. If
+            // the selection was empty (edge case), fall back to all frames.
+            const selected = (take.selected && take.selected.length > 0)
+                ? [...take.selected].sort((a, b) => a - b)
+                : take.frames.map((_, i) => i);
+            const pad = String(selected.length).length;
+            for (let i = 0; i < selected.length; i++) {
+                const idx = selected[i];
+                if (!take.frames[idx]) continue;
+                const fname = `photo_${String(i + 1).padStart(pad, '0')}.jpg`;
+                zip.file(`${folder}/${fname}`, take.frames[idx]);
+            }
+
+            // listing.json with all metadata for re-listing
+            const f = take.form || {};
+            zip.file(`${folder}/listing.json`, JSON.stringify({
+                takeId: take.id,
+                createdAt: take.createdAt,
+                name: take.name,
+                vendor: f.vendor,
+                series: f.series,
+                character: f.character,
+                year: f.year ? Number(f.year) : null,
+                variant: f.variant,
+                condition: f.conditionShort,
+                conditionDescription: f.conditionLong,
+                notes: f.notes,
+                price: f.price ? Number(f.price) : null,
+                quantity: Number(f.qty) || 1,
+                heightInches: f.height ? Number(f.height) : null,
+                photoCount: selected.length,
+                source: 'bubs960 360-spin maker',
+            }, null, 2));
+        }
+
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const filename = `bubs960-takes-backup-${new Date().toISOString().slice(0, 10)}.zip`;
+        const result = await shareOrDownload(zipBlob, filename, 'application/zip');
+        toast(result === 'shared' ? 'Shared ✓' :
+              result === 'cancelled' ? 'Cancelled' :
+              `Backup of ${list.length} take${list.length > 1 ? 's' : ''} ready ✓`);
     }
 
     async function deleteTake(id) {
@@ -2733,6 +2804,7 @@
 
         // Render the recent-takes strip on load (hidden if there are none).
         renderRecent().catch((err) => console.warn('renderRecent failed:', err));
+        $('btn-export-all').addEventListener('click', () => exportAllTakes().catch((err) => showError(err.message || 'Export failed.')));
 
         // iOS PWA install banner. iOS Safari doesn't fire 'beforeinstallprompt',
         // so we have to detect-and-instruct manually. Only shown to iOS users
