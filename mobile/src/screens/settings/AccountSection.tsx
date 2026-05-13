@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useNavigation, CommonActions } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useAuth, useUser, useClerk } from '@clerk/clerk-expo';
+import { useAuth, useUser, useClerk } from '@/auth/clerkRuntime';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, radii, spacing } from '@/theme/tokens';
 import { type } from '@/theme/typography';

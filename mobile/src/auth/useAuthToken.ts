@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useAuth } from '@clerk/clerk-expo';
+import { useAuth } from '@/auth/clerkRuntime';
 
 /**
  * Returns a function that resolves to a Clerk JWT for the Worker's

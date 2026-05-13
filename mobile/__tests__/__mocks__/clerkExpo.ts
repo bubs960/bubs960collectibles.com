@@ -96,6 +96,30 @@ export function useClerk() {
   };
 }
 
+// SignIn / SignUp hooks — tests that exercise the auth screens swap in
+// their own mocks; these defaults just satisfy the clerkRuntime
+// re-export surface so unrelated test suites don't trip on missing
+// module exports.
+export function useSignIn() {
+  return {
+    isLoaded: true,
+    signIn: {
+      create: async () => ({ status: 'complete' }),
+    },
+    setActive: async (_opts: unknown) => {},
+  };
+}
+
+export function useSignUp() {
+  return {
+    isLoaded: true,
+    signUp: {
+      create: async () => ({ status: 'complete' }),
+    },
+    setActive: async (_opts: unknown) => {},
+  };
+}
+
 export function ClerkProvider({ children }: { children: React.ReactNode }) {
   return children;
 }

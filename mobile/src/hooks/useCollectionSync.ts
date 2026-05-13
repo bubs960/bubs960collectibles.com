@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useAuth } from '@clerk/clerk-expo';
+import { useAuth } from '@/auth/clerkRuntime';
 import { useAuthToken } from '@/auth/useAuthToken';
 import { withAuthRetry } from '@/auth/withAuthRetry';
 import { fetchVault, fetchWantlist } from '@/api/collectionApi';

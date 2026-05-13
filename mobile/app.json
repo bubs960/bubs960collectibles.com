@@ -23,6 +23,21 @@
         }
       ]
     },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/favicon.png",
+      "name": "FigurePinner",
+      "shortName": "FigurePinner",
+      "description": "Real eBay sold prices for action figures.",
+      "themeColor": "#0a0d1c",
+      "backgroundColor": "#0a0d1c",
+      "lang": "en",
+      "scope": "/",
+      "startUrl": "/",
+      "display": "standalone",
+      "orientation": "portrait"
+    },
     "plugins": ["expo-font"]
   }
 }

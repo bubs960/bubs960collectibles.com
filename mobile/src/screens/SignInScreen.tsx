@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useSignIn } from '@clerk/clerk-expo';
+import { useSignIn } from '@/auth/clerkRuntime';
 import { useNavigation } from '@react-navigation/native';
 import { colors, radii, spacing } from '@/theme/tokens';
 import { type } from '@/theme/typography';

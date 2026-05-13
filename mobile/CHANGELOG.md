@@ -9,7 +9,76 @@ diff without guessing.
 
 ---
 
-## Phase 12 — v1+v2 launch posture: single binary with sign-in on day one (current)
+## Phase 13 — Desktop pivot: Expo Web + PWA + Tauri (current, in progress)
+
+Apple Developer / Play Console access delayed. Steve called the audible:
+build a desktop surface during the gap rather than wait. Decision matrix
+2026-04-26:
+  - **Distribution**: PWA install (instant via Cloudflare Pages) AND a
+    real .exe / .dmg / .deb via Tauri-wrap.
+  - **Features**: full v1+v2 — sign-in, vault, wantlist, alerts on
+    desktop too. Push notifications gated behind a v3 web-push follow-up.
+  - **Codebase**: Expo Web from `mobile/` (single source of truth across
+    iOS / Android / Web).
+
+### Foundation (this commit)
+- **`app.json`** — `expo.web` block: metro bundler, standalone PWA
+  display, theme + background colors from the dark token, lang/scope/
+  startUrl pre-baked.
+- **`package.json`** — adds `react-native-web`, `react-dom`,
+  `@expo/metro-runtime`, `@clerk/clerk-react`, `@tauri-apps/cli`,
+  `@types/react-dom`. Three new scripts: `web:build`, `tauri:dev`,
+  `tauri:build`.
+- **Clerk runtime shim** (`src/auth/clerkRuntime.{ts,web.ts}`) — all
+  six Clerk-touching files in src/ now import hooks from this module
+  so a single platform branch swaps `@clerk/clerk-expo` for
+  `@clerk/clerk-react` on web. Native keeps the tokenCache flow;
+  web uses Clerk's built-in cookie + localStorage storage.
+- **`AuthProvider.web.tsx`** — drops the tokenCache prop (Clerk's
+  web SDK manages its own storage). Same `FEATURES.collectionSync`
+  gate, same publishable-key env var.
+- **`deviceId.web.ts`** — analytics device id falls back to
+  `localStorage` instead of `expo-secure-store`. Private-browsing
+  failure paths fall through to in-memory cache so the session id
+  is still stable.
+- **`NotificationsDriver.web.tsx`** — no-op shell. Browser push
+  needs a separate `/devices/web` VAPID route on the worker; deferred
+  to a v3 follow-up.
+- **`notifications/setup.web.ts`** — `expo-notifications` +
+  `expo-device` have no web surface. Replaces the four exported
+  functions with browser-`Notification` permission probes that
+  return null tokens. AlertsScreen still renders; just doesn't
+  subscribe.
+- **`ZoomableImage.web.tsx`** — replaces Reanimated worklets +
+  pinch/double-tap gestures with their desktop equivalents: mouse
+  wheel zooms around cursor, double-click toggles 1x ↔ 2x,
+  click-drag pans when zoomed, Esc resets. Honours
+  `prefers-reduced-motion` to skip the CSS transition.
+
+### What's still to do this week
+1. PWA manifest fine-tuning + service worker for offline cache +
+   install prompt.
+2. Tauri scaffold (`src-tauri/Cargo.toml`, `tauri.conf.json`, build
+   integration).
+3. Smoke pass: boot `expo start --web`, walk each surface
+   (onboarding, search, figure detail with the moved/miss branches,
+   sign-in, vault, wantlist, alerts UI, settings).
+4. Clerk dashboard: add allowed origins for the web SDK.
+5. Cloudflare Pages config (`wrangler.toml` if we want CI deploys).
+
+### Blockers needing Steve action
+- `npm install` locally to fetch the new web deps (declared in this
+  commit's package.json).
+- Boot `npx expo start --web` and report errors so I can patch.
+- Hosting decision: `app.figurepinner.com` subdomain or
+  `figurepinner.com/app/*` path.
+- Desktop icon (1024×1024 PNG — same as mobile is fine; Tauri
+  generates `.ico` + `.icns`).
+- Install Rust toolchain ahead of Day-4 Tauri step.
+
+---
+
+## Phase 12 — v1+v2 launch posture: single binary with sign-in on day one
 
 Engineer 2026-04-26 confirmed all four v2 endpoints (devices / vault /
 wantlist / JWKS middleware) plus batch lookup are live in prod. Steve
