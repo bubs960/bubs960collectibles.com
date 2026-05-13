@@ -19,6 +19,7 @@ import { FEATURES } from '@/config/features';
 import { track, setAnalyticsSink } from '@/analytics/dispatch';
 import { createHttpSink } from '@/analytics/httpSink';
 import { registerServiceWorker } from '@/web/swRegister';
+import { MaxWidthShell } from '@/web/MaxWidthShell';
 import { colors } from '@/theme/tokens';
 import { type } from '@/theme/typography';
 import appJson from './app.json';
@@ -75,7 +76,9 @@ export default function App() {
         <GestureHandlerRootView style={styles.root}>
           <SafeAreaProvider>
             <StatusBar style="light" />
-            <AppNavigator />
+            <MaxWidthShell>
+              <AppNavigator />
+            </MaxWidthShell>
             {FEATURES.collectionSync && <CollectionSyncDriver />}
             {FEATURES.alerts && <NotificationsDriver />}
           </SafeAreaProvider>

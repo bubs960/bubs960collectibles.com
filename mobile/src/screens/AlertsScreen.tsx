@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   Pressable,
   StyleSheet,
@@ -22,6 +21,7 @@ import {
 import { formatPriceDollars } from '@/shared/formatters';
 import type { CollectionItem } from '@/collection/localStore';
 import type { RootStackParamList } from '@/navigation/types';
+import { PermissionBanner } from './alerts/PermissionBanner';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Alerts'>;
 
@@ -87,45 +87,6 @@ export function AlertsScreen() {
   );
 }
 
-function PermissionBanner({
-  status,
-  working,
-  onEnable,
-}: {
-  status: PermissionStatus;
-  working: boolean;
-  onEnable: () => void;
-}) {
-  if (status === 'granted') return null;
-  return (
-    <View style={styles.banner}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.bannerTitle}>
-          {status === 'denied' ? 'Notifications are off' : 'Turn on notifications'}
-        </Text>
-        <Text style={styles.bannerBody}>
-          {status === 'denied'
-            ? 'Enable alerts in iOS / Android settings so we can ping you on price drops.'
-            : "We'll only notify you when a figure on your wantlist crosses your target."}
-        </Text>
-      </View>
-      <Pressable
-        onPress={onEnable}
-        disabled={working || status === 'denied'}
-        accessibilityRole="button"
-        accessibilityLabel="Enable notifications"
-        style={({ pressed }) => [
-          styles.bannerBtn,
-          (working || status === 'denied') && { opacity: 0.5 },
-          pressed && { opacity: 0.8 },
-        ]}
-      >
-        {working ? <ActivityIndicator color={colors.text} /> : <Text style={styles.bannerBtnText}>Enable</Text>}
-      </Pressable>
-    </View>
-  );
-}
-
 function AlertRow({
   item,
   navigate,
@@ -167,29 +128,6 @@ const styles = StyleSheet.create({
   },
   title: { ...type.h1, color: colors.text },
   sub: { ...type.meta, color: colors.muted },
-  banner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    margin: spacing.md,
-    padding: spacing.md,
-    backgroundColor: colors.surface0,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.accent,
-  },
-  bannerTitle: { ...type.body, color: colors.text, fontSize: 15 },
-  bannerBody: { ...type.meta, color: colors.muted, marginTop: 2 },
-  bannerBtn: {
-    minHeight: 44,
-    minWidth: 80,
-    paddingHorizontal: spacing.md,
-    borderRadius: radii.md,
-    backgroundColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bannerBtnText: { ...type.eyebrow, color: colors.text },
   list: { padding: spacing.md, gap: spacing.xs },
   row: {
     flexDirection: 'row',

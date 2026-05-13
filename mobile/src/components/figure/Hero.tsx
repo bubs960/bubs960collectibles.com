@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dimensions, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { colors, radii, spacing } from '@/theme/tokens';
 import { type } from '@/theme/typography';
 import { cleanFigureName } from '@/shared/cleanFigureName';
@@ -17,10 +17,14 @@ interface Props {
   onZoomed?: (scale: number) => void;
 }
 
-const WIDTH = Dimensions.get('window').width;
-const HEIGHT = Math.round((WIDTH * 5) / 4); // 4:5 per spec §8.2
+// Match MaxWidthShell's 600px cap on web so the hero doesn't stretch
+// across a 1920px monitor. Native passes through unconstrained.
+const MAX_WIDTH = 600;
 
 export function Hero({ figure, rarity = null, onZoomChange, onZoomed }: Props) {
+  const { width: windowWidth } = useWindowDimensions();
+  const WIDTH = Math.min(windowWidth, MAX_WIDTH);
+  const HEIGHT = Math.round((WIDTH * 5) / 4); // 4:5 per spec §8.2
   const name = cleanFigureName(figure.name);
   const subtitleParts = [figure.line, figure.series ? `Series ${figure.series}` : null, figure.year]
     .filter(Boolean)

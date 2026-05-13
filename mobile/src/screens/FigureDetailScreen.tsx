@@ -260,7 +260,7 @@ export function FigureDetailScreen() {
     <View style={styles.root}>
       <Animated.View
         pointerEvents="none"
-        style={[styles.stickyHeader, { opacity: headerOpacity, width: dims.width }]}
+        style={[styles.stickyHeader, { opacity: headerOpacity, width: Math.min(dims.width, 600) }]}
       >
         <SafeAreaView edges={['top']} style={styles.stickyHeaderInner}>
           <Text numberOfLines={1} style={styles.stickyTitle}>

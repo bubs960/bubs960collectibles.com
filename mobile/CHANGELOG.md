@@ -161,6 +161,60 @@ build a desktop surface during the gap rather than wait. Decision matrix
   "Windows protected your PC" + "unverified developer" pain points,
   and a per-release checklist.
 
+### Component audit + desktop layout (this commit)
+Surface-by-surface audit of remaining mobile-only patterns. Three
+real issues; everything else either works on react-native-web's
+polyfills or degrades acceptably.
+
+- **AlertsScreen permission banner** — extracted to
+  `src/screens/alerts/PermissionBanner.{tsx,web.tsx}`. Native asks
+  for push permission via `expo-notifications` and calls the worker's
+  `/api/v1/devices` endpoint. Web variant renders a different banner
+  ("Alerts fire on your phone — install FigurePinner on iOS or
+  Android to receive them") because web push is deferred to v3.
+  Same prop interface so the screen consumer code is unchanged.
+- **Desktop layout cap** — `src/web/MaxWidthShell.{tsx,web.tsx}`
+  added and wired into `App.tsx`. On screens >600px, the app renders
+  inside a centered 600px-wide column with a soft drop-shadow on
+  either side (suggests "phone in a desktop window"). Native is a
+  passthrough. Picked 600 because it's the rough phone/tablet break
+  in iOS HIG and gives long figure names + market panel rows enough
+  breathing room without going chat-app wide.
+- **Hero pixel-width clamp** — `Hero.tsx` switched from a
+  module-load `Dimensions.get('window').width` constant to
+  `useWindowDimensions()` clamped at 600 inside the component.
+  Same change applied to `FigureDetailScreen.tsx`'s sticky-header
+  width style. Without these, the hero stretches to 1920px on a
+  desktop monitor and looks ridiculous; with them, the hero
+  matches the shell width across all targets.
+
+### Audit conclusions (no patch needed)
+- **`expo-haptics`, `expo-web-browser`, `expo-linking`** — ship
+  Expo SDK 51 web stubs (no-op / `window.open` / URL API). Already
+  flagged in chunk 3.
+- **`Alert.alert`** (Vault + Wantlist remove flows) — RN-Web maps
+  to `window.alert` / `window.confirm`. Browser modal vs native
+  action sheet; acceptable for v1.
+- **`Keyboard.dismiss`** (Search) — no-op on web; no on-screen
+  keyboard to dismiss.
+- **`KeyboardAvoidingView`** (SignIn) — no-op on web; CSS layout
+  doesn't push content up under a software keyboard that doesn't
+  exist.
+- **`RefreshControl`** (FigureDetail) — RN-Web renders it but the
+  pull-to-refresh gesture is touch-only. Desktop users use a
+  browser reload or F5 instead. The control is invisible at rest,
+  so no visual artifact.
+- **`pagingEnabled` ScrollView** (Onboarding) — RN-Web has limited
+  snap-to-page support, but the Next button drives the flow so
+  the missing snap is cosmetic. CSS scroll-snap polish is a
+  follow-up.
+- **`TextInput autoFocus + returnKeyType="search"`** (Search) —
+  RN-Web emits the correct `<input type="search">` with `autofocus`.
+- **`Animated.Value` + `Animated.ScrollView`** (FigureDetail hero
+  collapse) — Built-in `Animated` (not Reanimated) works on
+  react-native-web with the same API.
+- **`Image` from `expo-image`** — works on web via picture element.
+
 ### What's still to do this week
 1. Local smoke pass: boot `npx expo start --web`, walk each surface
    (onboarding, search, figure detail with moved/miss branches,
