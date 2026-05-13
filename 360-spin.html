@@ -852,6 +852,10 @@
                     <span><strong>Auto-trim</strong> dead frames at start &amp; end</span>
                 </label>
                 <label class="toggle">
+                    <input type="checkbox" id="opt-autocrop">
+                    <span><strong>Auto-crop</strong> to figure, square with white background <em style="color: var(--text-muted); font-style: italic;">(experimental — works best on plain backgrounds)</em></span>
+                </label>
+                <label class="toggle">
                     <input type="checkbox" id="opt-enhance" checked>
                     <span><strong>Enhance</strong> listing photos (lift shadows + saturation)</span>
                 </label>
@@ -1543,12 +1547,102 @@
         return new Promise((res) => c.toBlob(res, 'image/jpeg', quality));
     }
 
+    // ---------- auto-crop to figure ----------
+    // Cheap foreground-detection by sampling the four corners as background,
+    // then walking the image at stride 2 to find the bounding box of pixels
+    // that are significantly different from background. We then expand the
+    // box by a small padding ratio, pad to a square with white fill (eBay
+    // listings prefer square + white), and re-encode. Works great on plain
+    // tabletop / wall backgrounds; gracefully returns the original blob if
+    // no foreground is detected (so a busy background can't make things
+    // worse than they were).
+    async function autoCropFrame(blob, opts = {}) {
+        const padding = opts.padding ?? 0.08;    // 8% extra around bbox
+        const tol     = opts.tolerance ?? 38;    // RGB Euclidean threshold
+        const quality = opts.quality   ?? 0.9;
+
+        const img = await blobToImage(blob);
+        const W = img.naturalWidth, H = img.naturalHeight;
+        if (W < 32 || H < 32) return blob;
+
+        const sc = document.createElement('canvas');
+        sc.width = W; sc.height = H;
+        const sctx = sc.getContext('2d', { willReadFrequently: true });
+        sctx.drawImage(img, 0, 0);
+        const px = sctx.getImageData(0, 0, W, H).data;
+
+        // Sample background from 4 corner patches (~4% of min dimension).
+        const cs = Math.max(2, Math.floor(Math.min(W, H) * 0.04));
+        let bgR = 0, bgG = 0, bgB = 0, n = 0;
+        const corners = [[0,0], [W - cs, 0], [0, H - cs], [W - cs, H - cs]];
+        for (const [x0, y0] of corners) {
+            for (let y = y0; y < y0 + cs; y++) {
+                for (let x = x0; x < x0 + cs; x++) {
+                    const i = (y * W + x) * 4;
+                    bgR += px[i]; bgG += px[i + 1]; bgB += px[i + 2];
+                    n++;
+                }
+            }
+        }
+        bgR /= n; bgG /= n; bgB /= n;
+
+        // Bounding box at stride-2 to halve the work; perfectly fine since
+        // we expand by padding afterward.
+        const tolSq = tol * tol;
+        let minX = W, minY = H, maxX = -1, maxY = -1;
+        for (let y = 0; y < H; y += 2) {
+            for (let x = 0; x < W; x += 2) {
+                const i = (y * W + x) * 4;
+                const dr = px[i]     - bgR;
+                const dg = px[i + 1] - bgG;
+                const db = px[i + 2] - bgB;
+                if (dr * dr + dg * dg + db * db > tolSq) {
+                    if (x < minX) minX = x;
+                    if (x > maxX) maxX = x;
+                    if (y < minY) minY = y;
+                    if (y > maxY) maxY = y;
+                }
+            }
+        }
+        // Nothing detected (e.g., near-uniform image) → leave the photo alone.
+        if (maxX < 0 || (maxX - minX) * (maxY - minY) < W * H * 0.02) return blob;
+
+        const bboxW = maxX - minX;
+        const bboxH = maxY - minY;
+        const padX = Math.round(bboxW * padding);
+        const padY = Math.round(bboxH * padding);
+        const cx0 = Math.max(0, minX - padX);
+        const cy0 = Math.max(0, minY - padY);
+        const cx1 = Math.min(W - 1, maxX + padX);
+        const cy1 = Math.min(H - 1, maxY + padY);
+        const cw = cx1 - cx0 + 1;
+        const ch = cy1 - cy0 + 1;
+
+        // Output square = side of the longer crop dimension, content centered,
+        // white background per eBay convention.
+        const side = Math.max(cw, ch);
+        const oc = document.createElement('canvas');
+        oc.width = side; oc.height = side;
+        const octx = oc.getContext('2d');
+        octx.fillStyle = '#ffffff';
+        octx.fillRect(0, 0, side, side);
+        const offX = Math.round((side - cw) / 2);
+        const offY = Math.round((side - ch) / 2);
+        octx.drawImage(img, cx0, cy0, cw, ch, offX, offY, cw, ch);
+
+        return new Promise((res) => oc.toBlob(res, 'image/jpeg', quality));
+    }
+
     // Run a listing photo through every active processor in order:
-    // enhance first (so the watermark stays clean), then watermark.
+    // crop → enhance → watermark. Order matters: crop first so subsequent
+    // ops don't waste work on background pixels; watermark last so it
+    // doesn't get cropped out or stretched.
     async function processListingPhoto(blob) {
+        const useCrop      = $('opt-autocrop').checked;
         const useEnhance   = $('opt-enhance').checked;
         const useWatermark = $('opt-watermark').checked;
         let out = blob;
+        if (useCrop)      out = await autoCropFrame(out);
         if (useEnhance)   out = await enhanceFrame(out);
         if (useWatermark) out = await watermarkFrame(out);
         return out;
@@ -1585,12 +1679,13 @@
             showError('ZIP library failed to load. Try again with internet.');
             return;
         }
+        const useCrop      = $('opt-autocrop').checked;
         const useEnhance   = $('opt-enhance').checked;
         const useWatermark = $('opt-watermark').checked;
         const ordered = selectedInOrder();
         const pad = String(ordered.length).length;
 
-        toast((useEnhance || useWatermark) ? 'Processing & zipping…' : 'Building ZIP…');
+        toast((useCrop || useEnhance || useWatermark) ? 'Processing & zipping…' : 'Building ZIP…');
         const zip = new JSZip();
         for (let i = 0; i < ordered.length; i++) {
             const idx = ordered[i];
@@ -1599,7 +1694,7 @@
         }
         const zipBlob = await zip.generateAsync({ type: 'blob' });
         const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
-        const suffix = (useEnhance ? '-e' : '') + (useWatermark ? '-wm' : '');
+        const suffix = (useCrop ? '-c' : '') + (useEnhance ? '-e' : '') + (useWatermark ? '-wm' : '');
         const result = await shareOrDownload(zipBlob, `bubs960-listing-photos${suffix}-${stamp}.zip`, 'application/zip');
         toast(result === 'shared' ? 'Shared ✓' : result === 'cancelled' ? 'Cancelled' : `${ordered.length} photos ready ✓`);
     }
@@ -2444,6 +2539,7 @@
 
         const title = buildTitle(d);
         const descHtml = buildDescriptionHtml(d);
+        const useCrop      = $('opt-autocrop').checked;
         const useEnhance   = $('opt-enhance').checked;
         const useWatermark = $('opt-watermark').checked;
         const ordered = selectedInOrder();
@@ -2472,6 +2568,7 @@
             quantity: Number(d.qty) || 1,
             heightInches: d.height ? Number(d.height) : null,
             photoCount: ordered.length,
+            autoCropped: useCrop,
             enhanced: useEnhance,
             watermarked: useWatermark,
             createdAt: new Date().toISOString(),
@@ -2867,7 +2964,7 @@
 
         // Sticky toggles. Most users will pick a setting once and want it to
         // persist across sessions. Wrapped in try/catch for private browsing.
-        const TOGGLE_IDS = ['opt-trim', 'opt-enhance', 'opt-watermark'];
+        const TOGGLE_IDS = ['opt-trim', 'opt-autocrop', 'opt-enhance', 'opt-watermark'];
         const TOGGLE_KEY = 'bubs960-toggles-v1';
         const saveToggles = () => {
             try {
