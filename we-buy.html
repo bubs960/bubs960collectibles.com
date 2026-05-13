@@ -808,9 +808,9 @@
         <div class="buy-hero-inner">
             <div class="early-access-banner">⚡ Early Access · Now Accepting Select Inquiries · Full Program Coming Soon</div>
             <div class="kicker">Sell Us Your Collection</div>
-            <h1 class="buy-title">Got Figures?<br>We Got Cash.</h1>
+            <h1 class="buy-title">24-Hour Quote.<br>No eBay Fees.</h1>
             <p class="buy-lead">
-                Old collection in the attic? Estate to clear? <strong>Buy outright or consign</strong> — your call. Quotes priced from <span class="cash">real eBay sold comps</span>. <strong>Read how we price before submitting</strong> — our buy offers land around 40-60% of retail, consignment recovers more.
+                <strong>40–60% cash</strong> outright or <strong>65–80% via consignment</strong> — priced from <span class="cash">real eBay sold comps</span>. No lowballs, no inflated promises. Read the methodology first so you know exactly what we'll offer before you submit.
             </p>
             <div class="cta-row">
                 <a href="#methodology" class="btn btn-money">How We Price First →</a>
@@ -1076,7 +1076,7 @@
                 <a href="#methodology" class="methodology-link">Read How We Price First →</a>
             </div>
 
-            <form class="intake js-remote-form" data-formspree="xykljadr" action="mailto:Bubs960toys@gmail.com" method="POST" enctype="text/plain">
+            <form class="intake js-remote-form" data-formspree="xykljadr" action="mailto:Bubs960toys@gmail.com" method="POST" enctype="multipart/form-data">
                 <div class="grid-2">
                     <div>
                         <label class="field-label" for="seller-name">Your Name</label>
@@ -1149,11 +1149,13 @@
                     <label class="field-label" for="seller-expect">Your Target Price (optional but helps)</label>
                     <input id="seller-expect" type="text" name="expectation" placeholder="A number, a range, or 'whatever's fair' — being specific speeds things up">
                 </div>
+                <div>
+                    <label class="field-label" for="seller-photos">Photos <span style="color:var(--accent-yellow);font-weight:700;">(big speed-up — phone snaps are fine)</span></label>
+                    <input id="seller-photos" type="file" name="photos[]" accept="image/*" multiple style="padding: 0.6rem; background: #111; border: 2px dashed #f1c40f; border-radius: 6px; color: var(--text-muted); cursor: pointer; width: 100%;">
+                    <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.4rem;">Group shots work great. Close-ups on grails or anything notable. No need for studio quality — we just need to see what you've got.</p>
+                </div>
                 <input type="hidden" name="_subject" value="Bubs960 — New Collection Offer">
                 <input type="hidden" name="form_type" value="we-buy-intake">
-                <p style="color: var(--text-muted); font-size: 0.85rem; font-style: italic; text-align: center;">
-                    Photos make quotes fast — email them to <a href="mailto:Bubs960toys@gmail.com" style="color: var(--accent-yellow);">Bubs960toys@gmail.com</a> after you submit.
-                </p>
                 <button type="submit" class="btn btn-money">Get My Quote →</button>
                 <div class="form-status" aria-live="polite"></div>
             </form>

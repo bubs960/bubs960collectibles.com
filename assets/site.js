@@ -43,6 +43,24 @@ const GA4_ID = 'G-QG8J17L0XS';
   }
 })();
 
+// ---------- Footer year auto-update ----------
+// Every page hard-codes "© 2026 Bubs960..." in the footer. Sweep the DOM
+// once on load and replace the year with the current one. Removes the
+// "looks like a stale template" smell without touching 25 HTML files.
+(function () {
+  const update = () => {
+    const year = new Date().getFullYear();
+    document.querySelectorAll('.footer-bottom').forEach((el) => {
+      el.innerHTML = el.innerHTML.replace(/©\s*\d{4}/, `© ${year}`);
+    });
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', update);
+  } else {
+    update();
+  }
+})();
+
 // ---------- Floating "Shop Everywhere" widget ----------
 // Bottom-right pill with three quick links: Direct shop, eBay, Whatnot.
 // Lets buyers jump to whichever platform they prefer without hunting menus.

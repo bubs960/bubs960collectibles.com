@@ -896,7 +896,7 @@ const FOOTER_HTML = `
       </ul>
     </div>
   </div>
-  <div class="footer-bottom">&copy; 2026 Bubs960 Collectibles. All rights reserved.</div>
+  <div class="footer-bottom">&copy; ${new Date().getFullYear()} Bubs960 Collectibles. All rights reserved.</div>
 </footer>
 `;
 

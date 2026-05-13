@@ -830,10 +830,124 @@
             .logo-container img { max-width: 250px; }
             .section { padding: 3.5rem 1.25rem; }
         }
+
+        /* --- Reviews band --- */
+        .reviews-band { text-align: center; }
+        .reviews-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+            text-align: left;
+        }
+        .review-card {
+            background: var(--bg-panel);
+            border: 2px solid #1a2233;
+            border-left: 4px solid var(--accent-yellow);
+            border-radius: 10px;
+            padding: 1.5rem;
+            position: relative;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .review-card:hover { transform: translateY(-3px); border-left-color: var(--primary-red); }
+        .review-stars { color: var(--accent-yellow); font-size: 1.1rem; letter-spacing: 2px; margin-bottom: 0.5rem; }
+        .review-card blockquote {
+            color: #dfe3ec;
+            font-style: italic;
+            line-height: 1.55;
+            margin: 0 0 1rem;
+            font-size: 0.95rem;
+        }
+        .review-attribution { font-size: 0.85rem; color: var(--text-muted); }
+        .review-attribution strong { color: var(--accent-yellow); display: block; }
+        .reviews-cta { margin-top: 2rem; }
+        .reviews-cta a {
+            color: var(--accent-yellow);
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.9rem;
+            border-bottom: 2px solid var(--accent-yellow);
+            padding-bottom: 2px;
+        }
+        .reviews-cta a:hover { color: #fff; border-bottom-color: #fff; }
+
+        /* --- Founder band --- */
+        .founder-band { background: var(--bg-panel-2, #0a1120); }
+        .founder-wrap {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 2.5rem;
+            align-items: center;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .founder-photo {
+            aspect-ratio: 1 / 1;
+            border-radius: 50%;
+            background: linear-gradient(145deg, var(--primary-red), #6a0c0e);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 4px solid var(--accent-yellow);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            font-family: 'Bangers', cursive;
+            color: var(--accent-yellow);
+            font-size: 3rem;
+            letter-spacing: 4px;
+            text-shadow: 3px 3px 0 #000;
+        }
+        .founder-title {
+            font-family: 'Bangers', cursive;
+            font-size: 2.5rem;
+            letter-spacing: 2px;
+            color: var(--accent-yellow);
+            text-shadow: 2px 2px 0 var(--primary-red);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+        }
+        .founder-copy p { color: #dfe3ec; line-height: 1.7; margin-bottom: 1rem; font-size: 1.05rem; }
+        .founder-copy a { color: var(--accent-yellow); text-decoration: underline; }
+        .founder-sig {
+            font-style: italic;
+            color: var(--text-muted) !important;
+            font-size: 0.95rem !important;
+            margin-top: 0.5rem !important;
+        }
+        @media (max-width: 700px) {
+            .founder-wrap { grid-template-columns: 1fr; text-align: center; }
+            .founder-photo { width: 160px; margin: 0 auto; font-size: 2.25rem; }
+        }
+
+        /* --- Featured platform card --- */
+        .platform-card.featured {
+            border-color: var(--accent-yellow);
+            background: linear-gradient(145deg, var(--bg-panel), #1a1d2e);
+            position: relative;
+        }
+        .platform-card.featured::before {
+            content: 'Best Price';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: var(--accent-yellow);
+            color: #111;
+            font-family: 'Bangers', cursive;
+            font-size: 0.85rem;
+            letter-spacing: 1.5px;
+            padding: 0.35rem 0.9rem;
+            border-radius: 6px;
+            transform: rotate(8deg);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            text-transform: uppercase;
+        }
+
+        /* --- We-buy band slim version --- */
+        .we-buy-lead { font-size: 1.15rem; line-height: 1.6; color: #dfe3ec; margin-bottom: 1rem; }
     </style>
 </head>
 <body>
-    <a class="announce-bar" href="/we-buy.html#methodology">⚡ Early Access · Selling a collection? <strong>Read how we price</strong> <span class="arrow">→</span></a>
+    <a class="announce-bar" href="/we-buy.html#methodology">Selling a collection? <strong>Read how we price first</strong> <span class="arrow">→</span></a>
 
     <div class="marquee" aria-hidden="true">
         <div class="marquee-track">
@@ -882,9 +996,8 @@
             </p>
 
             <div class="hero-actions">
-                <a href="/we-buy.html" class="btn btn-money">💵 Sell Your Collection</a>
+                <a href="/we-buy.html" class="btn btn-money">Sell Your Collection</a>
                 <a href="/shop/index.html" class="btn btn-primary">Shop the Vault</a>
-                <a href="/live.html" class="btn btn-ghost">Catch Live Shows</a>
             </div>
         </div>
     </section>
@@ -894,17 +1007,12 @@
     <section class="we-buy-band" id="we-buy-cta">
         <div class="we-buy-inner">
             <div class="we-buy-copy">
-                <div class="we-buy-kicker">⚡ Early Access · We Buy &amp; Consign</div>
-                <h2>Got Figures?<br>We Got Options.</h2>
-                <p>Collection in the attic? Estate to clear? <strong>Buy outright or consign</strong> — your call. <strong>Read how we price first</strong> — our outright offers land around 40-60% of retail, consignment recovers more. No surprises, no inflated expectations.</p>
-                <div class="we-buy-actions">
-                    <a href="/we-buy.html#methodology" class="btn btn-money">How We Price →</a>
-                    <a href="/we-buy.html#intake" class="btn btn-ghost">Submit Intake</a>
-                </div>
+                <div class="we-buy-kicker">Ready to sell?</div>
+                <p class="we-buy-lead"><strong>Three fields, 24-hour quote</strong> — backed by real eBay sold comps. <a href="/we-buy.html#methodology" style="color: var(--accent-yellow); text-decoration: underline;">See how we price first</a> so the offer doesn't surprise you.</p>
                 <div class="we-buy-points">
-                    <span>✓ Honest methodology up front</span>
                     <span>✓ Cash or consignment</span>
-                    <span>✓ Full rollout coming soon</span>
+                    <span>✓ 40–60% outright · 65–80% consign</span>
+                    <span>✓ Any size, 1 piece to 1,000+</span>
                 </div>
             </div>
             <div class="we-buy-stamp" aria-hidden="true">
@@ -924,7 +1032,7 @@
                     <textarea name="details" placeholder="What you've got — brands, characters, rough quantity…" required></textarea>
                     <input type="hidden" name="_subject" value="Bubs960 — Quick Pitch (homepage)">
                     <input type="hidden" name="form_type" value="we-buy-homepage-mini">
-                    <button type="submit" class="btn btn-money">Send Pitch →</button>
+                    <button type="submit" class="btn btn-money">Get My Quote →</button>
                     <div class="form-status" aria-live="polite"></div>
                 </form>
             </div>
@@ -979,15 +1087,24 @@
 
     <section class="section" id="shop">
         <h2 class="section-title">Where To Shop</h2>
-        <p class="section-kicker">Active distribution channels — click through and grab something today.</p>
+        <p class="section-kicker">Pick your platform — same inventory, same pricing fairness, choose the checkout that suits you.</p>
 
         <div class="distribution-grid">
+            <article class="platform-card live featured">
+                <div class="platform-header">
+                    <span class="platform-name">Shop Direct</span>
+                    <span class="platform-status active">15% Off</span>
+                </div>
+                <p>Our own storefront — no platform fees, 15% off auto-applied at checkout vs. eBay retail. Best price for direct buyers.</p>
+                <a href="/shop/index.html" class="platform-btn">Shop The Vault</a>
+            </article>
+
             <article class="platform-card live">
                 <div class="platform-header">
                     <span class="platform-name">eBay</span>
                     <span class="platform-status active">Live</span>
                 </div>
-                <p>Fixed-price listings and auctions. Full photos, clean grading notes, fast shipping from the Bubs960 eBay store.</p>
+                <p>Fixed-price listings with eBay buyer protection. Familiar checkout, fast shipping from the Bubs960 store.</p>
                 <a href="https://www.ebay.com/usr/bubs960" target="_blank" rel="noopener" class="platform-btn">Shop on eBay</a>
             </article>
 
@@ -999,15 +1116,59 @@
                 <p>Catch live auctions, breaks, and giveaways. Follow the channel for show times and exclusive ringside prices.</p>
                 <a href="https://www.whatnot.com/user/bubs960" target="_blank" rel="noopener" class="platform-btn">Follow on Whatnot</a>
             </article>
+        </div>
+    </section>
 
-            <article class="platform-card">
-                <div class="platform-header">
-                    <span class="platform-name">Shopify Store</span>
-                    <span class="platform-status">Coming Soon</span>
+    <div class="rope" aria-hidden="true"></div>
+
+    <section class="section reviews-band" id="reviews">
+        <h2 class="section-title">Real Collectors, Real Reviews</h2>
+        <p class="section-kicker">Buyers, sellers, traders — what the locker room is saying.</p>
+
+        <div class="reviews-grid">
+            <article class="review-card reveal">
+                <div class="review-stars">★★★★★</div>
+                <blockquote>"Cleaned out my dad's basement — 300+ wrestling figures from the 90s. Bubs gave me a fair quote same day, sent a prepaid label that afternoon, and the money hit my account the moment the boxes arrived. Would've taken me a year to sell those on eBay."</blockquote>
+                <div class="review-attribution">
+                    <strong>Dan P.</strong> <span>Seller — Estate Collection</span>
                 </div>
-                <p>The main event — our own storefront with no platform fees. Join the VIP list below for a launch discount code.</p>
-                <a href="#vip" class="platform-btn">Join VIP List</a>
             </article>
+
+            <article class="review-card reveal">
+                <div class="review-stars">★★★★★</div>
+                <blockquote>"Elite 87 Stone Cold showed up packed like it was going to Fort Knox. Bubble was perfect, tracking was on point, and the photos on the listing were the exact shape I got. First of many."</blockquote>
+                <div class="review-attribution">
+                    <strong>Mike R.</strong> <span>Buyer — MOC Collector</span>
+                </div>
+            </article>
+
+            <article class="review-card reveal">
+                <div class="review-stars">★★★★★</div>
+                <blockquote>"Caught the Thursday show, snagged a grail at ringside price, chatted with Bubs the whole time. Felt more like a hangout than a stream. Already on the follow list for next week."</blockquote>
+                <div class="review-attribution">
+                    <strong>James K.</strong> <span>Whatnot Viewer</span>
+                </div>
+            </article>
+        </div>
+
+        <p class="reviews-cta">
+            <a href="/testimonials.html">Read all collector stories →</a>
+        </p>
+    </section>
+
+    <div class="rope" aria-hidden="true"></div>
+
+    <section class="section founder-band" id="founder">
+        <div class="founder-wrap">
+            <div class="founder-photo" aria-hidden="true">
+                <span>BUBS</span>
+            </div>
+            <div class="founder-copy">
+                <h2 class="founder-title">Hi, I'm Steve</h2>
+                <p>I've been collecting wrestling figures and pop culture pieces since the cardback days. Started Bubs960 because every dealer I worked with either lowballed estates or ghosted on small lots — neither felt right.</p>
+                <p>Now I run this thing the way I'd want someone to run it for me: real prices from real eBay comps, no inflated promises, and quotes back within a day. If you've got something I should see, <a href="/we-buy.html#intake">tell me about it</a>. If you're shopping, <a href="/shop/index.html">my vault is open</a>.</p>
+                <p class="founder-sig">— Steve, Bubs960 Collectibles</p>
+            </div>
         </div>
     </section>
 
