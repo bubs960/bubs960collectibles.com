@@ -12,8 +12,9 @@ name: eBay Sold-Item Sync
 #   SHOPIFY_STORE, SHOPIFY_ADMIN_TOKEN
 
 on:
-  schedule:
-    - cron: '*/15 * * * *'
+  # Cron paused while we debug auth issues. Re-enable by uncommenting.
+  # schedule:
+  #   - cron: '*/15 * * * *'
   workflow_dispatch:
     inputs:
       lookback_minutes:

@@ -17,14 +17,16 @@ name: Build Site from Shopify
 # If secrets are missing, the build falls back to local JSON shells.
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'products/**'
-      - 'scripts/**'
-      - '.github/workflows/shopify-sync.yml'
-  schedule:
-    - cron: '0 * * * *'
+  # Cron + auto-rebuild on script change paused while we debug.
+  # Re-enable by uncommenting both blocks below.
+  # push:
+  #   branches: [main]
+  #   paths:
+  #     - 'products/**'
+  #     - 'scripts/**'
+  #     - '.github/workflows/shopify-sync.yml'
+  # schedule:
+  #   - cron: '0 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -48,6 +50,7 @@ jobs:
         env:
           SHOPIFY_STORE: ${{ secrets.SHOPIFY_STORE }}
           SHOPIFY_ADMIN_TOKEN: ${{ secrets.SHOPIFY_ADMIN_TOKEN }}
+          SHOPIFY_STOREFRONT_TOKEN: ${{ secrets.SHOPIFY_STOREFRONT_TOKEN }}
         run: node scripts/build-pages.mjs
 
       - name: Commit generated pages
