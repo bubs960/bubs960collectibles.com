@@ -105,9 +105,18 @@ function normalize(p, storeDomain) {
   // Dedupe (featuredImage usually duplicates first image)
   const uniqueImages = [...new Set(imageUrls)];
 
+  // Extract numeric Shopify product id from the GraphQL GID
+  // (e.g. "gid://shopify/Product/1234567890" -> "1234567890").
+  // Needed for the Shopify Buy Button SDK on the static site.
+  const shopifyProductId = (() => {
+    const m = (p.id ?? '').toString().match(/\/Product\/(\d+)$/);
+    return m ? m[1] : null;
+  })();
+
   return {
     handle: p.handle,
     title: p.title,
+    shopifyProductId,
     description: p.descriptionHtml ?? '',
     vendor: p.vendor,
     productType: p.productType || undefined,

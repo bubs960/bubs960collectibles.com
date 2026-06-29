@@ -15,6 +15,12 @@ const SITE_BRAND = 'Bubs960 Collectibles';
 const SITE_URL = 'https://www.bubs960collectibles.com';
 const DEFAULT_OG_IMAGE = `${SITE_URL}/bubs-logo.jpg`;
 
+// Shopify Buy Button SDK config. Storefront tokens are public-safe
+// (read-only, scoped). If unset, product pages fall back to a plain
+// "Buy Here" link pointing at the Shopify product page.
+const SHOPIFY_BUY_DOMAIN = process.env.SHOPIFY_STORE || 'bubs960-collectibles.myshopify.com';
+const SHOPIFY_STOREFRONT_TOKEN = process.env.SHOPIFY_STOREFRONT_TOKEN || '';
+
 function fmtPrice(p) {
   if (p == null || p === '') return '';
   const n = Number(p);
@@ -35,7 +41,12 @@ function buyButtons(p) {
   }
   const links = p.buyLinks ?? {};
   const out = [];
-  if (links.shopify) {
+  // If we have both a storefront token AND a Shopify product id, render the
+  // Buy Button SDK mount point so checkout stays embedded on our site.
+  // Otherwise fall back to a plain link to the Shopify product page.
+  if (SHOPIFY_STOREFRONT_TOKEN && p.shopifyProductId) {
+    out.push(`<div class="buy-button-mount" data-product-id="${escapeHtml(p.shopifyProductId)}"></div>`);
+  } else if (links.shopify) {
     out.push(`<a class="btn btn-primary" href="${escapeHtml(links.shopify)}" target="_blank" rel="noopener">Buy Here · 15% Off at Checkout</a>`);
   }
   if (links.ebay) {
@@ -46,6 +57,102 @@ function buyButtons(p) {
   }
   out.push(`<a class="btn btn-ghost" href="/index.html#contact">Ask a Question</a>`);
   return out.join('\n');
+}
+
+// Renders the Shopify Buy Button SDK loader. Called once per product page.
+// The SDK reads any element with .buy-button-mount and replaces it with a
+// styled buy button + cart trigger that opens a modal cart overlay on our
+// site. Customers never leave bubs960collectibles.com.
+function buyButtonScript() {
+  if (!SHOPIFY_STOREFRONT_TOKEN) return '';
+  return `
+<script type="text/javascript">
+(function () {
+  var SCRIPT_URL = 'https://sdks.shopifycdn.com/buy-button/latest/buy-button-storefront.min.js';
+  var DOMAIN = ${JSON.stringify(SHOPIFY_BUY_DOMAIN)};
+  var TOKEN  = ${JSON.stringify(SHOPIFY_STOREFRONT_TOKEN)};
+
+  function init() {
+    var mounts = document.querySelectorAll('.buy-button-mount');
+    if (mounts.length === 0) return;
+    var client = ShopifyBuy.buildClient({ domain: DOMAIN, storefrontAccessToken: TOKEN });
+    ShopifyBuy.UI.onReady(client).then(function (ui) {
+      mounts.forEach(function (mount) {
+        var productId = mount.dataset.productId;
+        if (!productId) return;
+        ui.createComponent('product', {
+          id: productId,
+          node: mount,
+          moneyFormat: '$\{{amount}}',
+          options: {
+            product: {
+              iframe: false,
+              contents: { img: false, title: false, price: false, description: false, options: false, quantity: false },
+              text: { button: 'Buy Here · 15% Off at Checkout' },
+              styles: {
+                button: {
+                  'background-color': '#e62429',
+                  'font-family': "'Bangers', cursive",
+                  'font-size': '20px',
+                  'letter-spacing': '2px',
+                  'text-transform': 'uppercase',
+                  'border-radius': '6px',
+                  'padding': '14px 24px',
+                  ':hover': { 'background-color': '#c91d22' },
+                  ':focus': { 'background-color': '#c91d22' },
+                },
+              },
+            },
+            modalProduct: {
+              contents: { img: true, imgWithCarousel: true, button: false, buttonWithQuantity: true, description: true },
+              styles: {
+                product: { '@media (min-width: 601px)': { 'max-width': '100%', 'margin-left': '0', 'margin-bottom': '0' } },
+                button: {
+                  'background-color': '#e62429',
+                  'font-family': "'Bangers', cursive",
+                  'letter-spacing': '2px',
+                  ':hover': { 'background-color': '#c91d22' },
+                  ':focus': { 'background-color': '#c91d22' },
+                },
+              },
+            },
+            cart: {
+              text: { title: 'Your Cart', total: 'Subtotal', empty: 'Your cart is empty.', notice: '15% off auto-applies at checkout.', button: 'Checkout' },
+              styles: {
+                button: {
+                  'background-color': '#e62429',
+                  'font-family': "'Bangers', cursive",
+                  'letter-spacing': '2px',
+                  ':hover': { 'background-color': '#c91d22' },
+                  ':focus': { 'background-color': '#c91d22' },
+                },
+              },
+              popup: false,
+            },
+            toggle: {
+              styles: {
+                toggle: {
+                  'background-color': '#e62429',
+                  ':hover': { 'background-color': '#c91d22' },
+                  ':focus': { 'background-color': '#c91d22' },
+                },
+              },
+            },
+          },
+        });
+      });
+    });
+  }
+
+  if (window.ShopifyBuy && window.ShopifyBuy.UI) { init(); }
+  else {
+    var s = document.createElement('script');
+    s.async = true; s.src = SCRIPT_URL; s.onload = init;
+    document.head.appendChild(s);
+  }
+})();
+</script>
+`;
 }
 
 function imageGallery(images, title) {
@@ -1152,6 +1259,7 @@ function productPage(p, allProducts = []) {
   </div>
 </div>
 ${relatedSection}
+${buyButtonScript()}
 ${FOOT}`;
 }
 
